@@ -1,0 +1,40 @@
+# Detective Mosa — .gitignore
+#
+# Internal docs are hidden by DYNAMIC WHITELIST (ignore-everything-except),
+# never by naming them individually — GIT.md §1. That rule protects itself:
+# do not add explicit lines naming any internal doc or tool-config directory.
+
+# --- Root-level internal docs (dynamic whitelist: everything but README.md) ---
+/*.md
+!/README.md
+
+# --- Root-level internal dot-directories (dynamic whitelist: everything but .github/) ---
+# Also covers the Godot 4 import cache (.godot/) and the legacy Godot 3
+# import folder (.import/) as a side effect — both belong here anyway.
+/.*/
+!/.github/
+
+# --- Internal working folders ---
+/context/
+/tickets/
+/design/
+/art/source/
+
+# --- Internal root files not caught by the whitelists above ---
+.gitmessage
+*.pdf
+
+# --- Godot: engine + import cache already covered by the dot-dir whitelist ---
+
+# --- Godot: Android export secrets — never committed ---
+/export_presets.cfg
+*.keystore
+*.jks
+/android/build/
+
+# --- Godot: generated/derived, safe to rebuild ---
+*.translation
+*.tmp
+
+# NOTE: *.import files are intentionally NOT ignored — Godot needs them to
+# resolve assets, and every teammate's clone breaks without them (GIT.md §3).
