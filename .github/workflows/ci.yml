@@ -1,0 +1,103 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  GODOT_VERSION: 4.7.1-stable
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        if: always()
+
+      - uses: lihop/setup-godot@v3
+        if: always()
+        with:
+          version: ${{ env.GODOT_VERSION }}
+          cache: true
+
+      - name: Headless import warm-up
+        if: always()
+        run: godot --headless --path . --import --quit
+
+      - name: Install gdtoolkit
+        if: always()
+        run: pip install gdtoolkit==4.5.0
+
+      - name: gdformat --check
+        if: always()
+        run: python tools/check_quality.py format-lint
+
+      - name: Script parse (--check-only)
+        if: always()
+        run: python tools/check_quality.py parse
+
+      - name: Trace guard
+        if: always()
+        run: python tools/check_quality.py trace
+
+      - name: Token guard
+        if: always()
+        run: python tools/check_quality.py token
+
+      - name: Trust guard
+        if: always()
+        run: python tools/check_quality.py trust
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        if: always()
+
+      - uses: lihop/setup-godot@v3
+        if: always()
+        with:
+          version: ${{ env.GODOT_VERSION }}
+          cache: true
+
+      - name: Headless import warm-up
+        if: always()
+        run: godot --headless --path . --import --quit
+
+      - name: GUT tests
+        if: always()
+        env:
+          GODOT_DISABLE_LEAK_CHECKS: "1"
+        run: python tools/check_quality.py gut
+
+  build:
+    runs-on: ubuntu-latest
+    container: barichello/godot-ci:4.7.1
+    needs: [quality, test]
+    steps:
+      - uses: actions/checkout@v4
+        if: always()
+
+      - name: Materialize export preset (debug-only, no secrets)
+        if: always()
+        # export_presets.cfg is gitignored (GIT.md §3) because a real one carries keystore
+        # paths/passwords. This build is debug-only, and Godot has auto-generated the debug
+        # keystore since 4.3 — so the committed .example.cfg (DM-003) is safe to use as-is.
+        run: cp export_presets.example.cfg export_presets.cfg
+
+      - name: Headless import warm-up
+        if: always()
+        run: godot --headless --path . --import --quit
+
+      - name: Export Android debug APK
+        if: always()
+        run: |
+          mkdir -p build/android
+          godot --headless --export-debug "Android Debug" build/android/detective-mosa-debug.apk
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: detective-mosa-debug-apk
+          path: build/android/*.apk

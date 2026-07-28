@@ -17,7 +17,7 @@ Wire it up once per clone:
 
 Checks (mirrors .github/workflows/ci.yml):
   lint/format : gdformat --check · gdlint
-  parse       : godot --headless --check-only, per script, over src/
+  parse       : godot --headless --check-only, per script, over src/ + tests/
   grep guards : trace · token · trust
   GUT tests   : only once the GUT addon is actually installed (DM-047)
 
@@ -40,6 +40,7 @@ sys.stderr.reconfigure(encoding="utf-8")
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SRC = REPO_ROOT / "src"
+TESTS = REPO_ROOT / "tests"
 GUT_ADDON = REPO_ROOT / "addons" / "gut" / "gut_cmdln.gd"
 SELF = Path(__file__).resolve()
 
@@ -59,9 +60,14 @@ TRUST_WRITE_RE = re.compile(r"\btrust\s*=[^=]")
 
 
 def gd_files() -> list[Path]:
-    if not SRC.exists():
-        return []
-    return sorted(SRC.rglob("*.gd"))
+    # src/ (our code) and tests/ (our tests) are in scope. addons/ (GUT, vendored
+    # third-party) is deliberately excluded — we don't own its style, and reformatting
+    # it would fight every future upstream update.
+    files: list[Path] = []
+    for root in (SRC, TESTS):
+        if root.exists():
+            files += root.rglob("*.gd")
+    return sorted(files)
 
 
 def tracked_files() -> list[str]:
@@ -142,16 +148,23 @@ def check_trace_guard() -> list[str]:
     return []
 
 
+def token_guard_scope() -> list[Path]:
+    # Same scope philosophy as gd_files(): our code and our scenes/resources,
+    # never addons/ (vendored, not ours to police).
+    files: list[Path] = []
+    for root in (SRC, TESTS):
+        if root.exists():
+            files += root.rglob("*.gd")
+            files += root.rglob("*.tscn")
+            files += root.rglob("*.tres")
+    return sorted(files)
+
+
 def check_token_guard() -> list[str]:
     hits = []
-    for path in tracked_files():
-        norm = path.replace("\\", "/")
+    for full in token_guard_scope():
+        norm = str(full.relative_to(REPO_ROOT)).replace("\\", "/")
         if norm in TOKEN_GUARD_EXCLUDES:
-            continue
-        if not (norm.endswith(".gd") or norm.endswith(".tscn") or norm.endswith(".tres")):
-            continue
-        full = REPO_ROOT / norm
-        if not full.exists():
             continue
         text = full.read_text(encoding="utf-8", errors="replace")
         if HEX_COLOR_RE.search(text):
@@ -193,7 +206,7 @@ def check_gut() -> list[str]:
         godot, "--headless", "--path", str(REPO_ROOT),
         "-s", "res://addons/gut/gut_cmdln.gd",
         "-gdir=res://tests", "-ginclude_subdirs",
-        "-gexit_on_complete", "-gconfig=.gutconfig.json",
+        "-gexit", "-gconfig=.gutconfig.json",
     ]
     sys.stderr.write("  · GUT tests ... ")
     sys.stderr.flush()
@@ -216,14 +229,28 @@ def main() -> int:
         )
         return 0
 
+    # CI runs each of these as its own workflow step (so `if: always()` means what it
+    # says — one red check must never hide another). `--only` lets it call the exact
+    # same functions this hook uses locally instead of re-implementing the checks in
+    # workflow YAML. No argument (the pre-push hook's case): run everything in one pass.
+    checks = {
+        "format-lint": check_format_and_lint,
+        "parse": check_parse,
+        "trace": check_trace_guard,
+        "token": check_token_guard,
+        "trust": check_trust_guard,
+        "gut": check_gut,
+    }
+    only = sys.argv[1] if len(sys.argv) > 1 else None
+    if only is not None and only not in checks:
+        sys.stderr.write(f"unknown --only target '{only}'; choices: {', '.join(checks)}\n")
+        return 2
+    selected = {only: checks[only]} if only else checks
+
     sys.stderr.write("\nQuality gate (same checks CI runs):\n")
     failures: list[str] = []
-    failures += check_format_and_lint()
-    failures += check_parse()
-    failures += check_trace_guard()
-    failures += check_token_guard()
-    failures += check_trust_guard()
-    failures += check_gut()
+    for fn in selected.values():
+        failures += fn()
 
     if failures:
         sys.stderr.write(
