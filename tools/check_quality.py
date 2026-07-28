@@ -210,7 +210,8 @@ def check_gut() -> list[str]:
     ]
     sys.stderr.write("  · GUT tests ... ")
     sys.stderr.flush()
-    env = dict(**os.environ, GODOT_DISABLE_LEAK_CHECKS="1")
+    env = os.environ.copy()
+    env["GODOT_DISABLE_LEAK_CHECKS"] = "1"
     result = subprocess.run(cmd, cwd=REPO_ROOT, capture_output=True, text=True, env=env)
     if result.returncode == 0:
         sys.stderr.write("ok\n")
