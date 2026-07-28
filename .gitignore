@@ -32,6 +32,9 @@
 *.jks
 /android/build/
 
+# --- Build output — regenerable, and APKs are large binaries ---
+/build/
+
 # --- Godot: generated/derived, safe to rebuild ---
 *.translation
 *.tmp
