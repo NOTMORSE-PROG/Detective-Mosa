@@ -7,6 +7,7 @@ on:
 
 env:
   GODOT_VERSION: 4.7.1-stable
+  GODOT_DOWNLOAD_URL: https://github.com/godotengine/godot/releases/download/4.7.1-stable/Godot_v4.7.1-stable_linux.x86_64.zip
 
 jobs:
   quality:
@@ -15,11 +16,17 @@ jobs:
       - uses: actions/checkout@v4
         if: always()
 
-      - uses: lihop/setup-godot@v3
+      - name: Install Godot (headless — plain binary, no graphical wrapper)
         if: always()
-        with:
-          version: ${{ env.GODOT_VERSION }}
-          cache: true
+        # Not using lihop/setup-godot here: it symlinks `godot` to a wrapper script meant
+        # for graphical/X11 testing, which fails with "Exec format error" in a headless-only
+        # job like this one. A direct download of the official binary sidesteps it entirely.
+        run: |
+          curl -sL "$GODOT_DOWNLOAD_URL" -o godot.zip
+          unzip -q godot.zip
+          sudo mv Godot_v4.7.1-stable_linux.x86_64 /usr/local/bin/godot
+          sudo chmod +x /usr/local/bin/godot
+          godot --version
 
       - name: Headless import warm-up
         if: always()
@@ -31,23 +38,23 @@ jobs:
 
       - name: gdformat --check
         if: always()
-        run: python tools/check_quality.py format-lint
+        run: python3 tools/check_quality.py format-lint
 
       - name: Script parse (--check-only)
         if: always()
-        run: python tools/check_quality.py parse
+        run: python3 tools/check_quality.py parse
 
       - name: Trace guard
         if: always()
-        run: python tools/check_quality.py trace
+        run: python3 tools/check_quality.py trace
 
       - name: Token guard
         if: always()
-        run: python tools/check_quality.py token
+        run: python3 tools/check_quality.py token
 
       - name: Trust guard
         if: always()
-        run: python tools/check_quality.py trust
+        run: python3 tools/check_quality.py trust
 
   test:
     runs-on: ubuntu-latest
@@ -55,11 +62,14 @@ jobs:
       - uses: actions/checkout@v4
         if: always()
 
-      - uses: lihop/setup-godot@v3
+      - name: Install Godot (headless — plain binary, no graphical wrapper)
         if: always()
-        with:
-          version: ${{ env.GODOT_VERSION }}
-          cache: true
+        run: |
+          curl -sL "$GODOT_DOWNLOAD_URL" -o godot.zip
+          unzip -q godot.zip
+          sudo mv Godot_v4.7.1-stable_linux.x86_64 /usr/local/bin/godot
+          sudo chmod +x /usr/local/bin/godot
+          godot --version
 
       - name: Headless import warm-up
         if: always()
@@ -69,7 +79,7 @@ jobs:
         if: always()
         env:
           GODOT_DISABLE_LEAK_CHECKS: "1"
-        run: python tools/check_quality.py gut
+        run: python3 tools/check_quality.py gut
 
   build:
     runs-on: ubuntu-latest
