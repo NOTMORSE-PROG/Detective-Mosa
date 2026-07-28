@@ -13,6 +13,9 @@ config_version=5
 config/name="Detective Mosa"
 run/main_scene="res://src/scenes/Boot.tscn"
 config/features=PackedStringArray("4.7")
+boot_splash/bg_color=Color(0.0784314, 0.0627451, 0.054902, 1)
+boot_splash/show_image=false
+config/icon="res://art/ui/icon/icon-legacy-192.png"
 
 [display]
 
