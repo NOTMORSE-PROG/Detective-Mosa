@@ -85,6 +85,13 @@ jobs:
     runs-on: ubuntu-latest
     container: barichello/godot-ci:4.7.1
     needs: [quality, test]
+    env:
+      # barichello/godot-ci bakes export templates, the debug keystore, and Android/Java
+      # SDK paths into /root/... at image-build time. GitHub Actions' `container:` jobs
+      # remap $HOME to /github/home regardless, which points Godot at an empty directory
+      # and makes it report "no export template found" as if DM-001 never ran. Restoring
+      # HOME to where the image actually put everything fixes it without touching the image.
+      HOME: /root
     steps:
       - uses: actions/checkout@v4
         if: always()
