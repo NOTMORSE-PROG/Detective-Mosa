@@ -18,7 +18,7 @@ Wire it up once per clone:
 Checks (mirrors .github/workflows/ci.yml):
   lint/format : gdformat --check · gdlint
   parse       : godot --headless --check-only, per script, over src/ + tests/
-  grep guards : trace · token · trust
+  grep guards : trace · token · trust · audio
   GUT tests   : only once the GUT addon is actually installed (DM-047)
 
 Escape hatch: MOSA_SKIP_QUALITY=1 git push — for genuine emergencies only,
@@ -67,6 +67,13 @@ HEX_COLOR_RE = re.compile(r"#[0-9A-Fa-f]{6}\b")
 # GameState.gd (DM-049) is the only file allowed to write `trust`.
 TRUST_GUARD_EXCLUDES = {"src/autoload/GameState.gd"}
 TRUST_WRITE_RE = re.compile(r"\btrust\s*=[^=]")
+
+# AudioDirector (DM-011) is the only thing allowed to own an AudioStreamPlayer - every
+# other scene/script goes through AudioDirector.set_mood()/play_sfx() instead
+# (CODING.md's "scenes never touch an AudioStreamPlayer directly").
+AUDIO_GUARD_EXCLUDES = {"src/autoload/AudioDirector.gd", "src/autoload/AudioDirector.tscn"}
+AUDIO_PLAYER_TSCN_RE = re.compile(r'type="AudioStreamPlayer[23]?D?"')
+AUDIO_PLAYER_GD_RE = re.compile(r"\bAudioStreamPlayer[23]?D?\.new\(")
 
 
 def known_autoloads() -> set[str]:
@@ -245,6 +252,23 @@ def check_trust_guard() -> list[str]:
     return []
 
 
+def check_audio_guard() -> list[str]:
+    hits = []
+    for full in token_guard_scope():
+        norm = str(full.relative_to(REPO_ROOT)).replace("\\", "/")
+        if norm in AUDIO_GUARD_EXCLUDES:
+            continue
+        text = full.read_text(encoding="utf-8", errors="replace")
+        if AUDIO_PLAYER_TSCN_RE.search(text) or AUDIO_PLAYER_GD_RE.search(text):
+            hits.append(norm)
+    if hits:
+        sys.stderr.write("  ! audio guard: FAILED (AudioStreamPlayer owned outside AudioDirector)\n")
+        sys.stderr.write("".join(f"      {h}\n" for h in hits))
+        return ["audio guard"]
+    sys.stderr.write("  · audio guard ... ok\n")
+    return []
+
+
 def check_gut() -> list[str]:
     if not GUT_ADDON.exists():
         sys.stderr.write("  ? GUT tests: addon not installed yet (DM-047) — cannot verify\n")
@@ -291,6 +315,7 @@ def main() -> int:
         "trace": check_trace_guard,
         "token": check_token_guard,
         "trust": check_trust_guard,
+        "audio": check_audio_guard,
         "gut": check_gut,
     }
     only = sys.argv[1] if len(sys.argv) > 1 else None
