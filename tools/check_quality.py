@@ -194,16 +194,45 @@ def check_parse() -> list[str]:
 
 
 def check_trace_guard() -> list[str]:
+    """Two scopes, because file contents alone are NOT enough.
+
+    The original version checked only tracked file contents, leaving commit
+    *messages* unchecked entirely. An attribution trailer went into 10 of the
+    first 19 commits and reached the public remote while this guard reported
+    green every time - GIT.md's first bullet names that exact trailer, and the
+    check implementing the rule could not see it. Both scopes now.
+    """
+    hits: list[str] = []
+
+    # Scope 1 - tracked file contents (the original check).
     result = subprocess.run(
         ["git", "grep", "-il", _TRACE_WORD, "--"] + tracked_files(),
         capture_output=True, text=True, cwd=REPO_ROOT,
     )
-    hits = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    hits += [f"file: {ln.strip()}" for ln in result.stdout.splitlines() if ln.strip()]
+
+    # Scope 2 - every commit message in history, bodies and trailers included.
+    log = subprocess.run(
+        ["git", "log", "--all", "--format=%H%x00%an <%ae>%x00%B%x00---"],
+        capture_output=True, text=True, cwd=REPO_ROOT,
+    )
+    if log.returncode == 0:
+        needles = (_TRACE_WORD, "co-authored-by", "anthropic", "generated with")
+        for record in log.stdout.split("\0---"):
+            if not record.strip():
+                continue
+            sha = record.split("\0")[0].strip()[:9]
+            blob = record.lower()
+            for needle in needles:
+                if needle in blob:
+                    hits.append(f"commit {sha}: message contains '{needle}'")
+                    break
+
     if hits:
         sys.stderr.write("  ! trace guard: FAILED\n")
         sys.stderr.write("".join(f"      {h}\n" for h in hits))
         return ["trace guard"]
-    sys.stderr.write("  · trace guard ... ok\n")
+    sys.stderr.write("  · trace guard ... ok (files + commit messages)\n")
     return []
 
 
