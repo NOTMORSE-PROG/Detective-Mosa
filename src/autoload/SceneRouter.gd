@@ -1,9 +1,75 @@
 extends Node
 # Autoload, last in the fixed order (CODING.md §3). Reads GameState; triggers
 # AudioDirector mood/SFX on transitions. All scene transitions go through here - no scene
-# loads another directly.
+# loads another directly, and no scene handles hardware BACK itself (DM-051).
 
 signal scene_changed(scene_path: String)
+signal overlay_opened(scene_path: String)
+signal overlay_closed(scene_path: String)
+
+## Set by a mini-game mid-submission (CANON #17) so a stray BACK can never discard marks
+## or fire a submission early. This ticket (DM-051) only establishes the contract - no
+## mini-game exists yet to set it. Checked first, before anything else, on every BACK.
+var back_blocked: bool = false
+
+## Registered by whichever scene is currently active, for "what does BACK do here" when
+## no overlay is open - e.g. Continue/Settings point this at their own on-screen Back
+## handler, Title points it at its confirm-before-quit prompt. The routing DECISION
+## (overlay-close vs. delegate) stays centralised here, per the ticket's own "one place,
+## not five ad-hoc handlers" rule; only the screen-specific "what happens" logic is
+## delegated back out.
+var back_handler: Callable = Callable()
+
+var _overlay_stack: Array[CanvasLayer] = []
+
+
+## Lets a screen that can be reached BOTH as a normal destination (Settings via Title's
+## own button) AND as a stacked overlay (Settings via the pause menu) tell the two apart,
+## so its own Back button/BACK press can close the overlay instead of scene-swapping away
+## from a still-paused game underneath it (mosa-ui-designer, DM-051 consult - a real bug
+## found in Settings.gd's original hardcoded go_to("Title.tscn"), not a hypothetical).
+func has_open_overlay() -> bool:
+	return not _overlay_stack.is_empty()
+
+
+func _notification(what: int) -> void:
+	match what:
+		NOTIFICATION_WM_GO_BACK_REQUEST:
+			_handle_back()
+		NOTIFICATION_APPLICATION_PAUSED:
+			# The OS backgrounding the app (Home button, app switch, incoming call) -
+			# a different trigger from the player opening a menu, but "audio resumes
+			# without doubling or silence" (DM-051 AC) needs it handled the same way:
+			# always pause audio on backgrounding, regardless of whether an overlay
+			# happens to be open. get_tree().paused is deliberately left alone here -
+			# it stays solely owned by the overlay stack (open_overlay/close_overlay),
+			# one clear owner rather than two mechanisms that could disagree.
+			AudioDirector.set_paused(true)
+		NOTIFICATION_APPLICATION_RESUMED:
+			# Only resume audio if nothing is still holding it paused on purpose - if
+			# the player backgrounded the app while the pause menu was already open,
+			# coming back to the foreground must not silently start the music again
+			# out from under an on-screen paused state they haven't dismissed yet.
+			if not has_open_overlay():
+				AudioDirector.set_paused(false)
+
+
+func _handle_back() -> void:
+	if back_blocked:
+		return
+	if not _overlay_stack.is_empty():
+		close_overlay()
+		return
+	if back_handler.is_valid():
+		back_handler.call()
+	else:
+		# "BACK opens the pause menu during gameplay" (DM-051 AC) is the default when
+		# nothing more specific is registered, not a silent no-op - so a future gameplay
+		# scene that never gets around to registering its own back_handler still gets
+		# correct BACK behaviour for free, rather than a dead button nobody notices until
+		# a real device test catches it. Title/Continue/Settings all explicitly override
+		# this with their own handler; this only fires for a scene that hasn't.
+		open_overlay("res://src/scenes/PauseMenu.tscn")
 
 
 func go_to(scene_path: String) -> void:
@@ -14,3 +80,55 @@ func go_to(scene_path: String) -> void:
 		# future screen never has to remember to wire it in itself.
 		AudioDirector.play_sfx(&"ui_transition")
 		scene_changed.emit(scene_path)
+
+
+## Adds a scene on top of whatever's currently active without destroying it - S19's pause
+## menu over frozen gameplay, or Settings stacked over the pause menu. A CanvasLayer, not
+## a Control reparented under the current scene: a child of the paused/dimmed scene would
+## inherit that location's CanvasModulate colour grade (DESIGN.md §1's per-location hue
+## families), and the frozen chip-fill/surface tokens would stop rendering as their
+## actual frozen hex values (mosa-ui-designer, DM-051 consult). Pauses the tree on the
+## first overlay; a second overlay stacking on top (e.g. Settings-from-pause) does not
+## re-pause what's already paused.
+##
+## Accepts either a CanvasLayer-rooted scene (PauseMenu.tscn, ConfirmDialog.tscn) or a
+## Control-rooted one (Settings.tscn, already built and evidence-captured as a standalone
+## `go_to()` destination for DM-010, not worth the re-verification risk of changing its
+## root type just to satisfy this newer caller) - a Control gets auto-wrapped in a fresh
+## CanvasLayer rather than forcing every overlay-eligible scene to be authored one way.
+func open_overlay(scene_path: String) -> CanvasLayer:
+	var instance: Node = load(scene_path).instantiate()
+	var layer: CanvasLayer
+	if instance is CanvasLayer:
+		layer = instance
+	else:
+		layer = CanvasLayer.new()
+		layer.add_child(instance)
+	layer.set_meta(&"scene_path", scene_path)
+	get_tree().root.add_child(layer)
+
+	var was_empty := _overlay_stack.is_empty()
+	_overlay_stack.append(layer)
+	if was_empty:
+		# Only the first overlay pauses gameplay+audio together (DM-051 AC) - a second
+		# overlay stacking on top (Settings-from-pause) doesn't re-pause what's already
+		# paused, and closing it shouldn't resume audio while the first overlay is still up.
+		get_tree().paused = true
+		AudioDirector.set_paused(true)
+	AudioDirector.play_sfx(&"ui_open_menu")
+	overlay_opened.emit(scene_path)
+	return layer
+
+
+## Closes the topmost overlay only - "BACK inside a menu goes up one level," not out of
+## every level at once.
+func close_overlay() -> void:
+	if _overlay_stack.is_empty():
+		return
+	var layer: CanvasLayer = _overlay_stack.pop_back()
+	var scene_path: String = layer.get_meta(&"scene_path", "")
+	layer.queue_free()
+	if _overlay_stack.is_empty():
+		get_tree().paused = false
+		AudioDirector.set_paused(false)
+	overlay_closed.emit(scene_path)

@@ -17,6 +17,9 @@ func before_each() -> void:
 func after_each() -> void:
 	_clear_real_slots()
 	GameState.reset_to_defaults()
+	while SceneRouter.has_open_overlay():
+		SceneRouter.close_overlay()
+	get_tree().paused = false
 
 
 func _clear_real_slots() -> void:
@@ -53,3 +56,14 @@ func test_new_game_resets_game_state() -> void:
 
 	assert_eq(GameState.trust, GameState.TUNABLES.trust_start)
 	assert_eq(GameState.chapter, 1)
+
+
+## DM-051 AC: "BACK at the title prompts before quitting, never quits silently."
+func test_back_opens_a_confirm_dialog_rather_than_quitting_directly() -> void:
+	_screen = TITLE_SCENE.instantiate()
+	add_child_autofree(_screen)
+
+	_screen._on_back_pressed()
+	await get_tree().process_frame
+
+	assert_true(SceneRouter.has_open_overlay(), "BACK must prompt, not quit silently")

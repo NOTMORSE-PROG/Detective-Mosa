@@ -86,3 +86,36 @@ func test_set_bus_volume_persists_through_save_manager() -> void:
 	var settings := SaveManager.load_settings()
 	assert_almost_eq(float(settings.get("ui_volume", -1.0)), 0.4, 0.01)
 	AudioDirector.set_bus_volume(&"UI", 1.0)
+
+
+## DM-051: pausing the SceneTree does not pause audio on its own (playback is
+## server-driven) - set_paused() is what DM-051's overlay mechanism relies on to
+## actually freeze the soundscape together with the frozen scene.
+func test_set_paused_true_pauses_the_bgm_player() -> void:
+	AudioDirector.set_mood(&"barangay_calm")
+	await get_tree().create_timer(0.2).timeout
+	AudioDirector.set_paused(true)
+	assert_true(AudioDirector._bgm_player.stream_paused)
+	AudioDirector.set_paused(false)
+
+
+func test_set_paused_false_resumes_the_bgm_player() -> void:
+	AudioDirector.set_mood(&"barangay_calm")
+	await get_tree().create_timer(0.2).timeout
+	AudioDirector.set_paused(true)
+	AudioDirector.set_paused(false)
+	assert_false(AudioDirector._bgm_player.stream_paused)
+
+
+func test_set_paused_does_not_block_a_fresh_sfx_play_afterwards() -> void:
+	# A player that was stream_paused while idle must still play normally once picked
+	# for a new play() call (verified against the real engine before relying on it) -
+	# otherwise every UI tap inside a paused pause-menu would go silent.
+	AudioDirector.set_paused(true)
+	AudioDirector.set_paused(false)
+	AudioDirector.play_sfx(&"ui_tap")
+	var any_playing := false
+	for p in AudioDirector._ui_players:
+		if p.playing:
+			any_playing = true
+	assert_true(any_playing)

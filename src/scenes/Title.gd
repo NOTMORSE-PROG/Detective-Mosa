@@ -27,6 +27,14 @@ func _ready() -> void:
 	_build_glow()
 	_build_mosa()
 	_build_buttons()
+	# BACK at the title prompts before quitting, never quits silently (DM-051 AC).
+	SceneRouter.back_handler = _on_back_pressed
+
+
+func _on_back_pressed() -> void:
+	var dialog := SceneRouter.open_overlay("res://src/scenes/ConfirmDialog.tscn") as ConfirmDialog
+	dialog.set_body(tr("ui.confirm.quit_game_body"))
+	dialog.confirmed.connect(get_tree().quit)
 
 
 ## mosa-critic (DM-010 review, finding #3): measured the actual render - chip-fill buttons

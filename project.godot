@@ -16,6 +16,14 @@ config/features=PackedStringArray("4.7")
 boot_splash/bg_color=Color(0.0784314, 0.0627451, 0.054902, 1)
 boot_splash/show_image=false
 config/icon="res://art/ui/icon/icon-legacy-192.png"
+; Godot's own default (true) quits the app immediately on Android's hardware BACK,
+; before NOTIFICATION_WM_GO_BACK_REQUEST ever reaches the SceneTree - found on the real
+; device (DM-051's device pass): BACK from Title closed the app outright instead of
+; opening the quit-confirm dialog, with the whole SceneRouter._notification() handler
+; never running at all. false routes BACK through that notification instead, letting
+; SceneRouter._handle_back() actually receive it (DM-051, tickets/M1-design-system/).
+; Verified against ProjectSettings.get_setting() directly before relying on the key name.
+config/quit_on_go_back=false
 
 [audio]
 

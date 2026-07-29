@@ -50,6 +50,12 @@ func _ready() -> void:
 		add_child(_build_slot_row(slots))
 
 	_build_back_button()
+	# Hardware BACK does exactly what the on-screen Back button does (DM-051) - one
+	# routing decision, not two behaviours to keep in sync. Continue is only ever
+	# reached via go_to() (never as an overlay), so unlike Settings.gd this handler
+	# doesn't need to be context-aware - it's still registered through the same
+	# mechanism for consistency, not duplicated as a special case.
+	SceneRouter.back_handler = _on_back_pressed
 
 
 func _build_slot_row(slots: Array[Dictionary]) -> Control:

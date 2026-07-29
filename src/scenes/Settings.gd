@@ -45,6 +45,9 @@ func _ready() -> void:
 		add_child(_build_slider_row(label_key, bus, row_top))
 
 	_build_back_button()
+	# Hardware BACK does exactly what the on-screen Back button does (DM-051) - one
+	# routing decision, not two behaviours to keep in sync.
+	SceneRouter.back_handler = _on_back_pressed
 
 
 ## Every child here anchors PRESET_TOP_LEFT (a pure point anchor) with absolute
@@ -160,5 +163,14 @@ func _build_back_button() -> void:
 	add_child(back)
 
 
+## Context-aware, not a single hardcoded destination (mosa-ui-designer, DM-051 consult -
+## a real bug, not hypothetical): Settings is reached two ways - Title's own button
+## (go_to(), no overlay) and the pause menu's Settings button (open_overlay(), stacked on
+## top). A hardcoded go_to("Title.tscn") is correct for the first and actively
+## destructive for the second - it would scene-swap away from a still-paused, still-live
+## game underneath, discarding the entire reason the overlay architecture exists.
 func _on_back_pressed() -> void:
-	SceneRouter.go_to("res://src/scenes/Title.tscn")
+	if SceneRouter.has_open_overlay():
+		SceneRouter.close_overlay()
+	else:
+		SceneRouter.go_to("res://src/scenes/Title.tscn")

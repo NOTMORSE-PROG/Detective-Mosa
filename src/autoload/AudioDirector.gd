@@ -107,6 +107,20 @@ func get_bus_volume(bus: StringName) -> float:
 	return db_to_linear(AudioServer.get_bus_volume_db(AudioServer.get_bus_index(bus)))
 
 
+## Pausing the SceneTree (DM-051's overlay mechanism) does not pause audio - playback is
+## server-driven, not tied to node _process (mosa-ui-designer, DM-051 consult, verified
+## against the real 4.7.1 build before relying on it). stream_paused, not stopped and not
+## volume-ducked: preserves playback position, so Resume doesn't jump or skip. Grep-
+## guarded public surface stays the same shape (set_mood/play_sfx/set_bus_volume/
+## get_bus_volume/set_paused) - no scene ever reaches an AudioStreamPlayer directly.
+func set_paused(paused: bool) -> void:
+	_bgm_player.stream_paused = paused
+	for player: AudioStreamPlayer in _sfx_players:
+		player.stream_paused = paused
+	for player: AudioStreamPlayer in _ui_players:
+		player.stream_paused = paused
+
+
 func _build_mood_graph() -> void:
 	var asi := AudioStreamInteractive.new()
 	_mood_order.assign(MOOD_CLIPS.keys())

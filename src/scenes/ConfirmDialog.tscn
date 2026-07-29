@@ -1,0 +1,46 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://src/scenes/ConfirmDialog.gd" id="1_ujjmc"]
+[ext_resource type="StyleBox" path="res://data/stylebox/surface_panel.tres" id="2_l8yqw"]
+
+[node name="ConfirmDialog" type="CanvasLayer" unique_id=1344574078]
+script = ExtResource("1_ujjmc")
+
+[node name="Scrim" type="ColorRect" parent="." unique_id=773453909]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Panel" type="PanelContainer" parent="Scrim" unique_id=1520357424]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -256.0
+offset_top = -104.0
+offset_right = 256.0
+offset_bottom = 104.0
+theme_override_styles/panel = ExtResource("2_l8yqw")
+
+[node name="Margin" type="MarginContainer" parent="Scrim/Panel" unique_id=876463739]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="VBox" type="VBoxContainer" parent="Scrim/Panel/Margin" unique_id=1406596700]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="Body" type="Label" parent="Scrim/Panel/Margin/VBox" unique_id=1881583463]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="ButtonRow" type="HBoxContainer" parent="Scrim/Panel/Margin/VBox" unique_id=1788571526]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1

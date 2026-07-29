@@ -16,6 +16,7 @@ extends Resource
 @export var gold_ink: Color  ## Cream-plate-safe gold (DM-007 freeze) - see change log
 @export var gold_deep: Color
 @export var sky: Color
+@export var scrim: Color  ## Full-scene modal backing, bg-deep @ 85% (DM-051) - see change log
 
 @export_group("Component family (Reference B)")
 @export var chip_fill: Color
