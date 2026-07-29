@@ -39,5 +39,8 @@
 *.translation
 *.tmp
 
+# --- Python: bytecode cache, regenerable ---
+__pycache__/
+
 # NOTE: *.import files are intentionally NOT ignored — Godot needs them to
 # resolve assets, and every teammate's clone breaks without them (GIT.md §3).
