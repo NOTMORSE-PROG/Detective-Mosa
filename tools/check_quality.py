@@ -211,9 +211,14 @@ def check_trace_guard() -> list[str]:
     )
     hits += [f"file: {ln.strip()}" for ln in result.stdout.splitlines() if ln.strip()]
 
-    # Scope 2 - every commit message in history, bodies and trailers included.
+    # Scope 2 - commit messages on THIS branch's history, bodies and trailers
+    # included. Deliberately HEAD and not --all: --all pulls in refs/remotes/*,
+    # which are a snapshot of someone else's (or a pre-rewrite) history that we
+    # are not responsible for and often cannot fix. Scanning --all makes it
+    # impossible to push a cleaned-up history while the old traced remote ref is
+    # still fetched locally - the guard blocks the very fix it should allow.
     log = subprocess.run(
-        ["git", "log", "--all", "--format=%H%x00%an <%ae>%x00%B%x00---"],
+        ["git", "log", "HEAD", "--format=%H%x00%an <%ae>%x00%B%x00---"],
         capture_output=True, text=True, cwd=REPO_ROOT,
     )
     if log.returncode == 0:
