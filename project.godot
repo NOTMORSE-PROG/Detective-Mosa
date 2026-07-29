@@ -11,11 +11,22 @@ config_version=5
 [application]
 
 config/name="Detective Mosa"
-run/main_scene="res://src/scenes/Boot.tscn"
+run/main_scene="res://src/scenes/Title.tscn"
 config/features=PackedStringArray("4.7")
 boot_splash/bg_color=Color(0.0784314, 0.0627451, 0.054902, 1)
 boot_splash/show_image=false
 config/icon="res://art/ui/icon/icon-legacy-192.png"
+
+[audio]
+
+buses/default_bus_layout="res://data/audio_buses.tres"
+
+[autoload]
+
+GameState="*res://src/autoload/GameState.gd"
+SaveManager="*res://src/autoload/SaveManager.gd"
+AudioDirector="*res://src/autoload/AudioDirector.tscn"
+SceneRouter="*res://src/autoload/SceneRouter.gd"
 
 [display]
 
@@ -23,6 +34,15 @@ window/size/viewport_width=1024
 window/size/viewport_height=768
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+
+[gui]
+
+theme/custom="res://data/theme.tres"
+
+[internationalization]
+
+locale/translations=PackedStringArray("res://i18n/strings.fil.translation")
+locale/fallback="fil"
 
 [rendering]
 
