@@ -1,0 +1,448 @@
+[gd_resource type="Resource" script_class="AssetManifest" format=3]
+
+[ext_resource type="Script" path="res://data/AssetManifest.gd" id="1_g181h"]
+[ext_resource type="Script" path="res://data/AssetSlot.gd" id="2_wkqbc"]
+
+[sub_resource type="Resource" id="Resource_xbg2r"]
+script = ExtResource("2_wkqbc")
+id = &"mosa_idle_front"
+path = "res://art/characters/mosa/MOSA-IdleFront.png"
+kind = &"character"
+canvas_size = Vector2i(285, 812)
+anchor = "bottom-center"
+owner = "Lana"
+screens = Array[StringName]([&"S4", &"S5", &"S7"])
+
+[sub_resource type="Resource" id="Resource_h08rm"]
+script = ExtResource("2_wkqbc")
+id = &"mosa_thinking_front"
+path = "res://art/characters/mosa/MOSA-ThinkingFront.png"
+kind = &"character"
+canvas_size = Vector2i(256, 812)
+anchor = "bottom-center"
+owner = "Lana"
+screens = Array[StringName]([&"S7"])
+
+[sub_resource type="Resource" id="Resource_nnreu"]
+script = ExtResource("2_wkqbc")
+id = &"mosa_shocked_front"
+path = "res://art/characters/mosa/MOSA-ShockedFront.png"
+kind = &"character"
+canvas_size = Vector2i(370, 811)
+anchor = "bottom-center"
+owner = "Lana"
+screens = Array[StringName]([&"S4"])
+
+[sub_resource type="Resource" id="Resource_lgf0g"]
+script = ExtResource("2_wkqbc")
+id = &"mosa_disappointed_front"
+path = "res://art/characters/mosa/MOSA-DisappointedFront.png"
+kind = &"character"
+canvas_size = Vector2i(267, 811)
+anchor = "bottom-center"
+owner = "Lana"
+screens = Array[StringName]([&"S4"])
+
+[sub_resource type="Resource" id="Resource_3kf68"]
+script = ExtResource("2_wkqbc")
+id = &"mangver_idle_front"
+path = "res://art/characters/mangver/MANGVER-IdleFront.png"
+kind = &"character"
+canvas_size = Vector2i(275, 823)
+anchor = "bottom-center"
+owner = "Lana"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_ck73i"]
+script = ExtResource("2_wkqbc")
+id = &"jorge_idle_front"
+path = "res://art/characters/jorge/JORGE-IdleFront.png"
+kind = &"character"
+canvas_size = Vector2i(322, 811)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S7"])
+
+[sub_resource type="Resource" id="Resource_nrcbk"]
+script = ExtResource("2_wkqbc")
+id = &"jorge_angry_front"
+path = "res://art/characters/jorge/JORGE-AngryFront.png"
+kind = &"character"
+canvas_size = Vector2i(317, 811)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4"])
+
+[sub_resource type="Resource" id="Resource_uog4r"]
+script = ExtResource("2_wkqbc")
+id = &"bugoy_idle_front"
+path = "res://art/characters/bugoy/BUGOY-IdleFront.png"
+kind = &"character"
+canvas_size = Vector2i(308, 811)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S7"])
+
+[sub_resource type="Resource" id="Resource_77b8b"]
+script = ExtResource("2_wkqbc")
+id = &"bugoy_phone_front"
+path = "res://art/characters/bugoy/BUGOY-PhoneFront.png"
+kind = &"character"
+canvas_size = Vector2i(288, 811)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4"])
+
+[sub_resource type="Resource" id="Resource_qg1f5"]
+script = ExtResource("2_wkqbc")
+id = &"alingvilma_idle_front"
+path = "res://art/characters/alingvilma/ALINGVILMA-IdleFront.png"
+kind = &"character"
+canvas_size = Vector2i(291, 811)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_eix0a"]
+script = ExtResource("2_wkqbc")
+id = &"alingvilma_shocked_front"
+path = "res://art/characters/alingvilma/ALINGVILMA-ShockedFront.png"
+kind = &"character"
+canvas_size = Vector2i(293, 811)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4"])
+
+[sub_resource type="Resource" id="Resource_opc83"]
+script = ExtResource("2_wkqbc")
+id = &"mosa_idle_left"
+path = "res://art/characters/mosa/MOSA-IdleLeft.png"
+kind = &"character"
+canvas_size = Vector2i(196, 812)
+anchor = "bottom-center"
+owner = "Lana"
+screens = Array[StringName]([&"S4", &"S5", &"S7"])
+
+[sub_resource type="Resource" id="Resource_7rxl5"]
+script = ExtResource("2_wkqbc")
+id = &"mosa_thinking_left"
+path = "res://art/characters/mosa/MOSA-ThinkingLeft.png"
+kind = &"character"
+canvas_size = Vector2i(203, 812)
+anchor = "bottom-center"
+owner = "Lana"
+screens = Array[StringName]([&"S7"])
+
+[sub_resource type="Resource" id="Resource_2jetg"]
+script = ExtResource("2_wkqbc")
+id = &"mosa_shocked_left"
+path = "res://art/characters/mosa/MOSA-ShockedLeft.png"
+kind = &"character"
+canvas_size = Vector2i(197, 811)
+anchor = "bottom-center"
+owner = "Lana"
+screens = Array[StringName]([&"S4"])
+
+[sub_resource type="Resource" id="Resource_bdph5"]
+script = ExtResource("2_wkqbc")
+id = &"mosa_disappointed_left"
+path = "res://art/characters/mosa/MOSA-DisappointedLeft.png"
+kind = &"character"
+canvas_size = Vector2i(189, 811)
+anchor = "bottom-center"
+owner = "Lana"
+screens = Array[StringName]([&"S4"])
+
+[sub_resource type="Resource" id="Resource_cqogc"]
+script = ExtResource("2_wkqbc")
+id = &"mangver_idle_left"
+path = "res://art/characters/mangver/MANGVER-IdleLeft.png"
+kind = &"character"
+canvas_size = Vector2i(240, 823)
+anchor = "bottom-center"
+owner = "Lana"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_7ke2p"]
+script = ExtResource("2_wkqbc")
+id = &"jorge_idle_left"
+path = "res://art/characters/jorge/JORGE-IdleLeft.png"
+kind = &"character"
+canvas_size = Vector2i(191, 811)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S7"])
+
+[sub_resource type="Resource" id="Resource_mftse"]
+script = ExtResource("2_wkqbc")
+id = &"jorge_angry_left"
+path = "res://art/characters/jorge/JORGE-AngryLeft.png"
+kind = &"character"
+canvas_size = Vector2i(192, 811)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4"])
+
+[sub_resource type="Resource" id="Resource_yiy0u"]
+script = ExtResource("2_wkqbc")
+id = &"bugoy_idle_left"
+path = "res://art/characters/bugoy/BUGOY-IdleLeft.png"
+kind = &"character"
+canvas_size = Vector2i(180, 811)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S7"])
+
+[sub_resource type="Resource" id="Resource_l2qek"]
+script = ExtResource("2_wkqbc")
+id = &"bugoy_phone_left"
+path = "res://art/characters/bugoy/BUGOY-PhoneLeft.png"
+kind = &"character"
+canvas_size = Vector2i(250, 811)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4"])
+
+[sub_resource type="Resource" id="Resource_p04iu"]
+script = ExtResource("2_wkqbc")
+id = &"alingvilma_idle_left"
+path = "res://art/characters/alingvilma/ALINGVILMA-IdleLeft.png"
+kind = &"character"
+canvas_size = Vector2i(301, 811)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_nadx7"]
+script = ExtResource("2_wkqbc")
+id = &"alingvilma_shocked_left"
+path = "res://art/characters/alingvilma/ALINGVILMA-ShockedLeft.png"
+kind = &"character"
+canvas_size = Vector2i(250, 811)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4"])
+
+[sub_resource type="Resource" id="Resource_yrtkj"]
+script = ExtResource("2_wkqbc")
+id = &"mosa_idle_right"
+path = "res://art/characters/mosa/MOSA-IdleRight.png"
+kind = &"character"
+canvas_size = Vector2i(197, 812)
+anchor = "bottom-center"
+owner = "Lana"
+screens = Array[StringName]([&"S4", &"S5", &"S7"])
+
+[sub_resource type="Resource" id="Resource_ilfv1"]
+script = ExtResource("2_wkqbc")
+id = &"mosa_thinking_right"
+path = "res://art/characters/mosa/MOSA-ThinkingRight.png"
+kind = &"character"
+canvas_size = Vector2i(197, 812)
+anchor = "bottom-center"
+owner = "Lana"
+screens = Array[StringName]([&"S7"])
+
+[sub_resource type="Resource" id="Resource_nv3kh"]
+script = ExtResource("2_wkqbc")
+id = &"mosa_shocked_right"
+path = "res://art/characters/mosa/MOSA-ShockedRight.png"
+kind = &"character"
+canvas_size = Vector2i(197, 811)
+anchor = "bottom-center"
+owner = "Lana"
+screens = Array[StringName]([&"S4"])
+
+[sub_resource type="Resource" id="Resource_bbiin"]
+script = ExtResource("2_wkqbc")
+id = &"mosa_disappointed_right"
+path = "res://art/characters/mosa/MOSA-DisappointedRight.png"
+kind = &"character"
+canvas_size = Vector2i(171, 811)
+anchor = "bottom-center"
+owner = "Lana"
+screens = Array[StringName]([&"S4"])
+
+[sub_resource type="Resource" id="Resource_mirar"]
+script = ExtResource("2_wkqbc")
+id = &"mangver_idle_right"
+path = "res://art/characters/mangver/MANGVER-IdleRight.png"
+kind = &"character"
+canvas_size = Vector2i(253, 823)
+anchor = "bottom-center"
+owner = "Lana"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_pxwbu"]
+script = ExtResource("2_wkqbc")
+id = &"jorge_idle_right"
+path = "res://art/characters/jorge/JORGE-IdleRight.png"
+kind = &"character"
+canvas_size = Vector2i(229, 811)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S7"])
+
+[sub_resource type="Resource" id="Resource_o0swn"]
+script = ExtResource("2_wkqbc")
+id = &"jorge_angry_right"
+path = "res://art/characters/jorge/JORGE-AngryRight.png"
+kind = &"character"
+canvas_size = Vector2i(231, 811)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4"])
+
+[sub_resource type="Resource" id="Resource_mcfp0"]
+script = ExtResource("2_wkqbc")
+id = &"bugoy_idle_right"
+path = "res://art/characters/bugoy/BUGOY-IdleRight.png"
+kind = &"character"
+canvas_size = Vector2i(220, 811)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S7"])
+
+[sub_resource type="Resource" id="Resource_kig17"]
+script = ExtResource("2_wkqbc")
+id = &"bugoy_phone_right"
+path = "res://art/characters/bugoy/BUGOY-PhoneRight.png"
+kind = &"character"
+canvas_size = Vector2i(281, 811)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4"])
+
+[sub_resource type="Resource" id="Resource_n7h8h"]
+script = ExtResource("2_wkqbc")
+id = &"alingvilma_idle_right"
+path = "res://art/characters/alingvilma/ALINGVILMA-IdleRight.png"
+kind = &"character"
+canvas_size = Vector2i(345, 811)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_h3n5f"]
+script = ExtResource("2_wkqbc")
+id = &"alingvilma_shocked_right"
+path = "res://art/characters/alingvilma/ALINGVILMA-ShockedRight.png"
+kind = &"character"
+canvas_size = Vector2i(315, 811)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4"])
+
+[sub_resource type="Resource" id="Resource_a05yr"]
+script = ExtResource("2_wkqbc")
+id = &"jorge_shy_front"
+path = "res://art/characters/jorge/JORGE-ShyFront.png"
+kind = &"character"
+canvas_size = Vector2i(350, 811)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4"])
+
+[sub_resource type="Resource" id="Resource_egmxo"]
+script = ExtResource("2_wkqbc")
+id = &"jorge_shy_left"
+path = "res://art/characters/jorge/JORGE-ShyLeft.png"
+kind = &"character"
+canvas_size = Vector2i(320, 820)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4"])
+
+[sub_resource type="Resource" id="Resource_m2rap"]
+script = ExtResource("2_wkqbc")
+id = &"jorge_shy_right"
+path = "res://art/characters/jorge/JORGE-ShyRight.png"
+kind = &"character"
+canvas_size = Vector2i(320, 820)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4"])
+
+[sub_resource type="Resource" id="Resource_sh0g4"]
+script = ExtResource("2_wkqbc")
+id = &"alingvilma_smile_front"
+path = "res://art/characters/alingvilma/ALINGVILMA-SmileFront.png"
+kind = &"character"
+canvas_size = Vector2i(303, 811)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4"])
+
+[sub_resource type="Resource" id="Resource_4sckm"]
+script = ExtResource("2_wkqbc")
+id = &"alingvilma_smile_left"
+path = "res://art/characters/alingvilma/ALINGVILMA-SmileLeft.png"
+kind = &"character"
+canvas_size = Vector2i(320, 820)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4"])
+
+[sub_resource type="Resource" id="Resource_gatu4"]
+script = ExtResource("2_wkqbc")
+id = &"alingvilma_smile_right"
+path = "res://art/characters/alingvilma/ALINGVILMA-SmileRight.png"
+kind = &"character"
+canvas_size = Vector2i(320, 820)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4"])
+
+[sub_resource type="Resource" id="Resource_rt838"]
+script = ExtResource("2_wkqbc")
+id = &"mosa_movement_walkcycle"
+path = "res://art/characters/mosa/movement/MOSA-All-Sprites.png"
+kind = &"character"
+canvas_size = Vector2i(256, 256)
+anchor = "top-left (frame grid)"
+owner = "Lana"
+screens = Array[StringName]([&"S7"])
+
+[sub_resource type="Resource" id="Resource_1t36s"]
+script = ExtResource("2_wkqbc")
+id = &"sala_amber_backdrop"
+path = "res://art/backdrops/sala-amber_backdrop.png"
+kind = &"backdrop_content"
+canvas_size = Vector2i(1600, 768)
+anchor = "top-left"
+owner = "Lana"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_rerq1"]
+script = ExtResource("2_wkqbc")
+id = &"sala_amber_framing"
+path = "res://art/backdrops/sala-amber_framing.png"
+kind = &"backdrop_framing"
+canvas_size = Vector2i(1600, 768)
+anchor = "top-left"
+owner = "Lana"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_wm7e5"]
+script = ExtResource("2_wkqbc")
+id = &"court_gold_backdrop"
+path = "res://art/backdrops/court-gold_backdrop.png"
+kind = &"backdrop_content"
+canvas_size = Vector2i(1600, 768)
+anchor = "top-left"
+owner = "Lana"
+screens = Array[StringName]([&"S7"])
+
+[sub_resource type="Resource" id="Resource_vf7qs"]
+script = ExtResource("2_wkqbc")
+id = &"court_gold_framing"
+path = "res://art/backdrops/court-gold_framing.png"
+kind = &"backdrop_framing"
+canvas_size = Vector2i(1600, 768)
+anchor = "top-left"
+owner = "Lana"
+screens = Array[StringName]([&"S7"])
+
+[resource]
+script = ExtResource("1_g181h")
+slots = Array[ExtResource("2_wkqbc")]([SubResource("Resource_xbg2r"), SubResource("Resource_h08rm"), SubResource("Resource_nnreu"), SubResource("Resource_lgf0g"), SubResource("Resource_3kf68"), SubResource("Resource_ck73i"), SubResource("Resource_nrcbk"), SubResource("Resource_uog4r"), SubResource("Resource_77b8b"), SubResource("Resource_qg1f5"), SubResource("Resource_eix0a"), SubResource("Resource_opc83"), SubResource("Resource_7rxl5"), SubResource("Resource_2jetg"), SubResource("Resource_bdph5"), SubResource("Resource_cqogc"), SubResource("Resource_7ke2p"), SubResource("Resource_mftse"), SubResource("Resource_yiy0u"), SubResource("Resource_l2qek"), SubResource("Resource_p04iu"), SubResource("Resource_nadx7"), SubResource("Resource_yrtkj"), SubResource("Resource_ilfv1"), SubResource("Resource_nv3kh"), SubResource("Resource_bbiin"), SubResource("Resource_mirar"), SubResource("Resource_pxwbu"), SubResource("Resource_o0swn"), SubResource("Resource_mcfp0"), SubResource("Resource_kig17"), SubResource("Resource_n7h8h"), SubResource("Resource_h3n5f"), SubResource("Resource_a05yr"), SubResource("Resource_egmxo"), SubResource("Resource_m2rap"), SubResource("Resource_sh0g4"), SubResource("Resource_4sckm"), SubResource("Resource_gatu4"), SubResource("Resource_rt838"), SubResource("Resource_1t36s"), SubResource("Resource_rerq1"), SubResource("Resource_wm7e5"), SubResource("Resource_vf7qs")])
