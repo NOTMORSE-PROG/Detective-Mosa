@@ -1,0 +1,24 @@
+class_name Tunables
+extends Resource
+# Every trust delta, life count, threshold, and timing lives here so
+# mosa-minigame-designer can rebalance without a code change (CODING.md §1).
+# Shape is not a new decision — every field traces to an existing CANON.md ruling,
+# already catalogued in context/ENGINEERING.md §3.
+
+## Trust — CANON #8
+@export var trust_start: int = 50
+@export var trust_min: int = 0
+@export var trust_max: int = 100
+@export var trust_chismis_delta: int = 25
+@export var trust_minigame_failure_delta: int = -5
+@export var trust_pass_threshold: int = 50
+
+## Lives — SYS2, CANON #17
+@export var lives_start: int = 3
+
+## Chapter 1 Chase It — CANON #14
+@export var ch1_clue_total: int = 4
+@export var ch1_clue_unlock_threshold: int = 3
+
+## Save system — CANON #15
+@export var save_slot_count: int = 3

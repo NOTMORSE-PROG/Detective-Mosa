@@ -49,6 +49,16 @@ SELF = Path(__file__).resolve()
 # it implements every time this file is checked out.
 _TRACE_WORD = "".join(["c", "l", "a", "u", "d", "e"])
 
+# `godot --check-only --script <file>` checks a script in isolation, outside the normal
+# autoload-instantiation sequence — so it cannot resolve another autoload's name and
+# raises a false "Identifier not found" for any script that references one. Confirmed a
+# long-standing upstream engine limitation (godotengine/godot#78587, #9810, #111515,
+# #3156), not a bug in the script: the same file compiles and runs with zero errors in
+# the real, fully-booted project (verified at DM-049 — `--quit-after 1` exits clean).
+# From here on almost every script under src/ references GameState by name, so this
+# false positive would otherwise block nearly every future push.
+_IDENTIFIER_NOT_FOUND_RE = re.compile(r"Identifier not found: (\S+)")
+
 # data/ is where DM-007 will put the palette resource; hex there is the
 # source of truth, not a violation. Confirm this path when DM-007 lands.
 TOKEN_GUARD_EXCLUDES = {"data/palette.tres"}
@@ -57,6 +67,42 @@ HEX_COLOR_RE = re.compile(r"#[0-9A-Fa-f]{6}\b")
 # GameState.gd (DM-049) is the only file allowed to write `trust`.
 TRUST_GUARD_EXCLUDES = {"src/autoload/GameState.gd"}
 TRUST_WRITE_RE = re.compile(r"\btrust\s*=[^=]")
+
+
+def known_autoloads() -> set[str]:
+    # Parsed straight from project.godot's own [autoload] section, so this never drifts
+    # out of sync with what's actually registered — no separate list to maintain.
+    project_file = REPO_ROOT / "project.godot"
+    if not project_file.exists():
+        return set()
+    names: set[str] = set()
+    in_autoload_section = False
+    for line in project_file.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if stripped.startswith("[") and stripped.endswith("]"):
+            in_autoload_section = stripped == "[autoload]"
+            continue
+        if in_autoload_section and "=" in stripped:
+            names.add(stripped.split("=", 1)[0].strip())
+    return names
+
+
+def _autoload_check_only_false_positive(output: str, autoloads: set[str]) -> bool:
+    found = _IDENTIFIER_NOT_FOUND_RE.findall(output)
+    if not found or any(name not in autoloads for name in found):
+        return False
+    # Every remaining SCRIPT ERROR / ERROR line must be explained by that same cause, so
+    # a real second bug can never hide behind the known false positive.
+    for line in output.splitlines():
+        text = line.strip()
+        if not (text.startswith("SCRIPT ERROR:") or text.startswith("ERROR:")):
+            continue
+        if "Identifier not found:" in text:
+            continue
+        if "Failed to load script" in text and "Compilation failed" in text:
+            continue
+        return False
+    return True
 
 
 def gd_files() -> list[Path]:
@@ -115,6 +161,7 @@ def check_parse() -> list[str]:
         return []
     if not files:
         return []
+    autoloads = known_autoloads()
     failures = []
     for f in files:
         rel = str(f.relative_to(REPO_ROOT))
@@ -126,11 +173,15 @@ def check_parse() -> list[str]:
         )
         if result.returncode == 0:
             sys.stderr.write("ok\n")
-        else:
-            sys.stderr.write("FAILED\n")
-            tail = (result.stdout + result.stderr).strip().splitlines()[-15:]
-            sys.stderr.write("\n".join(f"      {line}" for line in tail) + "\n")
-            failures.append(f"parse {rel}")
+            continue
+        output = result.stdout + result.stderr
+        if _autoload_check_only_false_positive(output, autoloads):
+            sys.stderr.write("ok (known --check-only/autoload false positive, godot#78587)\n")
+            continue
+        sys.stderr.write("FAILED\n")
+        tail = output.strip().splitlines()[-15:]
+        sys.stderr.write("\n".join(f"      {line}" for line in tail) + "\n")
+        failures.append(f"parse {rel}")
     return failures
 
 

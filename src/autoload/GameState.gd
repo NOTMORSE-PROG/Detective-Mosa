@@ -1,0 +1,70 @@
+extends Node
+# Autoload, first in the fixed order (CODING.md §3): GameState -> SaveManager ->
+# AudioDirector -> SceneRouter. Pure state - depends on no other autoload.
+
+signal trust_changed(new_trust: int)
+
+const TUNABLES: Tunables = preload("res://data/tunables.tres")
+
+var trust: int = TUNABLES.trust_start
+var lives: int = TUNABLES.lives_start
+var chapter: int = 1
+var flags: Dictionary = {}
+var clues_found: Array[StringName] = []
+
+
+## The sharing decision - CANON #8. The only other trust mutator is
+## apply_minigame_failure() below. CODING.md §4: nothing else, anywhere, may write
+## `trust` - enforced by the CI trust guard, not just this comment.
+func apply_chismis(verified: bool) -> void:
+	var delta: int = TUNABLES.trust_chismis_delta if verified else -TUNABLES.trust_chismis_delta
+	trust = clampi(trust + delta, TUNABLES.trust_min, TUNABLES.trust_max)
+	trust_changed.emit(trust)
+
+
+## 0-lives retry only - CANON #8. Never called for a normal mini-game pass.
+func apply_minigame_failure() -> void:
+	trust = clampi(
+		trust + TUNABLES.trust_minigame_failure_delta, TUNABLES.trust_min, TUNABLES.trust_max
+	)
+	trust_changed.emit(trust)
+
+
+## New Game. Not a thesis-relevant trust mutator (CODING.md §4's "exactly two methods"
+## is about gameplay events) - this sets the starting value, the same way the field's
+## own default does at boot.
+func reset_to_defaults() -> void:
+	trust = TUNABLES.trust_start
+	lives = TUNABLES.lives_start
+	chapter = 1
+	flags = {}
+	clues_found = []
+	trust_changed.emit(trust)
+
+
+## SaveManager's load path. Rehydrates a previously-computed value from disk rather
+## than mutating it - kept inside GameState (not SaveManager) so the CI trust guard's
+## one-file allowlist still holds, and so GameState stays the only thing that ever
+## assigns `trust` (CODING.md §4).
+func restore_from_save(data: Dictionary) -> void:
+	trust = clampi(
+		int(data.get("trust", TUNABLES.trust_start)), TUNABLES.trust_min, TUNABLES.trust_max
+	)
+	lives = int(data.get("lives", TUNABLES.lives_start))
+	chapter = int(data.get("chapter", 1))
+	flags = data.get("flags", {})
+	var found: Array[StringName] = []
+	for entry: Variant in data.get("clues_found", []):
+		found.append(StringName(entry))
+	clues_found = found
+	trust_changed.emit(trust)
+
+
+func to_save_dict() -> Dictionary:
+	return {
+		"trust": trust,
+		"lives": lives,
+		"chapter": chapter,
+		"flags": flags,
+		"clues_found": clues_found,
+	}
