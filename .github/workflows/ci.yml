@@ -60,6 +60,14 @@ jobs:
         if: always()
         run: python3 tools/check_quality.py audio
 
+      - name: Asset size guard
+        if: always()
+        run: python3 tools/check_quality.py assets
+
+      - name: Asset intake progress
+        if: always()
+        run: godot --headless --path . -s tools/count_placeholders.gd
+
   test:
     runs-on: ubuntu-latest
     steps:

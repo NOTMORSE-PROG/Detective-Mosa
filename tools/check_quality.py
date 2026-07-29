@@ -19,6 +19,7 @@ Checks (mirrors .github/workflows/ci.yml):
   lint/format : gdformat --check · gdlint
   parse       : godot --headless --check-only, per script, over src/ + tests/
   grep guards : trace · token · trust · audio
+  asset sizes : tools/check_asset_sizes.py (DM-008) - the 4096px mobile ceiling
   GUT tests   : only once the GUT addon is actually installed (DM-047)
 
 Escape hatch: MOSA_SKIP_QUALITY=1 git push — for genuine emergencies only,
@@ -269,6 +270,23 @@ def check_audio_guard() -> list[str]:
     return []
 
 
+def check_asset_sizes() -> list[str]:
+    # tools/check_asset_sizes.py (DM-008) is a standalone script with its own PNG-header
+    # parser (no PIL dependency at push-time) - called here, not reimplemented, so there
+    # is exactly one place this logic lives.
+    result = subprocess.run(
+        [sys.executable, str(REPO_ROOT / "tools" / "check_asset_sizes.py")],
+        cwd=REPO_ROOT, capture_output=True, text=True,
+    )
+    if result.returncode == 0:
+        sys.stderr.write("  · asset sizes ... ok\n")
+        return []
+    sys.stderr.write("  ! asset sizes: FAILED\n")
+    tail = (result.stdout + result.stderr).strip().splitlines()[-20:]
+    sys.stderr.write("\n".join(f"      {line}" for line in tail) + "\n")
+    return ["asset sizes"]
+
+
 def check_gut() -> list[str]:
     if not GUT_ADDON.exists():
         sys.stderr.write("  ? GUT tests: addon not installed yet (DM-047) — cannot verify\n")
@@ -316,6 +334,7 @@ def main() -> int:
         "token": check_token_guard,
         "trust": check_trust_guard,
         "audio": check_audio_guard,
+        "assets": check_asset_sizes,
         "gut": check_gut,
     }
     only = sys.argv[1] if len(sys.argv) > 1 else None
