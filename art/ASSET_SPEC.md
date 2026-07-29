@@ -78,6 +78,15 @@ different screen shape will show empty black strips down the sides of your art.
 canvas.** Treat the outer ~290px on each side as a bonus — nice to fill with more scene, but
 never where the important thing is, because narrower phones won't show it.
 
+⚠️ **Backdrops are always COVER-transformed at render time, never placed 1:1** (`DESIGN.md
+§5`, 2026-07-29 reopen). 1600px isn't wide enough for every real device: the test Xiaomi's
+real logical viewport under `expand` stretch measures 1706.67px wide (2400×1080 physical,
+scaled). A backdrop placed at its native 1:1 size on a phone wider than 1600 logical px would
+show black bars down both sides — a real bug found on `DM-010`'s device pass, not a
+hypothetical. Every backdrop-consuming scene scales the source texture to at least cover the
+full logical viewport width (bottom-anchored, so the floor line stays put and any excess is
+cropped from the ceiling) rather than trusting the 1600px canvas to always be wide enough.
+
 ## Every backdrop needs a near-black framing layer — this is not optional
 
 Look at any Hollow Knight screenshot (the reference the game's whole look is built from):

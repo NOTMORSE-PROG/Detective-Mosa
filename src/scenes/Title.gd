@@ -1,32 +1,46 @@
 extends Control
 # Screen S1 - Title, the game's entry point (project.godot run/main_scene). Layout spec:
-# mosa-ui-designer consult, DM-010 (2026-07-29). Structure built in code, not the .tscn,
-# so the real measured sprite aspect ratio drives its own layout math directly rather than
-# a hand-guessed offset that then needs correcting - same convention as AssetAudit.gd (S23).
+# mosa-ui-designer consult, DM-010 (2026-07-29 initial build; 2026-07-29 reopen redesign -
+# backdrop/depth stack, corrected touch sizes, two-tier lockup, safe-area insets). Structure
+# built in code, not the .tscn, same convention as AssetAudit.gd.
 
 ## The prologue doesn't exist yet (DM-015, M2 - this ticket is M1, design-system only).
 ## Guarded so New Game/Continue stay honestly functional (real GameState mutation, real
 ## audio/visual feedback) without erroring on a scene that isn't built yet. Flagged in
 ## STATE.md; DM-015 replaces this path outright, no change needed here when it does.
 const PROLOGUE_SCENE_PATH: String = "res://src/scenes/Prologue.tscn"
+const SALA_BACKDROP_SCENE: PackedScene = preload("res://src/scenes/parts/SalaBackdrop.tscn")
 
 const MOSA_SPRITE: Texture2D = preload("res://art/characters/mosa/MOSA-IdleFront.png")
-const MOSA_HEIGHT: float = 560.0
-const EDGE_MARGIN: float = 32.0
+# 496, down from 560 (mosa-ui-designer, DM-010 reopen item 6) - the redesigned two-tier
+# wordmark and lit backdrop give Mosa more visual competition than the original flat
+# ColorRect background did; a slightly smaller figure reads as grounded in the scene rather
+# than pasted in front of it.
+const MOSA_HEIGHT: float = 496.0
+const GROUND_SHADOW_SIZE: Vector2 = Vector2(240, 72)
+
 const BUTTON_COLUMN_WIDTH: float = 320.0
-const BUTTON_GAP: float = 16.0
-const BUTTON_COLUMN_RIGHT_MARGIN: float = 16.0
-const BUTTON_COLUMN_BOTTOM_MARGIN: float = 32.0
+# 16 -> 24 (DESIGN.md §5, 2026-07-29 reopen) - part of the same touch-correction pass as
+# ChromeButton's 120/96 heights; a 16px gap between 120px-tall targets reads as cramped
+# next to the new scale.
+const BUTTON_GAP: float = 24.0
 
 var _palette: Palette = load("res://data/palette.tres")
 var _continue_button: ChromeButton
+var _sala_backdrop: SalaBackdrop
+var _mosa_rect: TextureRect
 
 
 func _ready() -> void:
+	_sala_backdrop = SALA_BACKDROP_SCENE.instantiate()
+	add_child(_sala_backdrop)
+
 	_build_wordmark()
-	_build_glow()
 	_build_mosa()
 	_build_buttons()
+	_update_ground_shadow()
+	get_viewport().size_changed.connect(_update_ground_shadow)
+
 	# BACK at the title prompts before quitting, never quits silently (DM-051 AC).
 	SceneRouter.back_handler = _on_back_pressed
 
@@ -37,105 +51,134 @@ func _on_back_pressed() -> void:
 	dialog.confirmed.connect(get_tree().quit)
 
 
-## mosa-critic (DM-010 review, finding #3): measured the actual render - chip-fill buttons
-## hit 14.44:1 against bg-deep, brighter and larger-area than the gold wordmark's 8.77:1,
-## so the eye has two competing maximal-brightness anchors with no clear winner (DESIGN.md
-## §0.1: "a screen with no clear focal point is a defect"). Fix, per the critic's own
-## suggestion: a soft backing panel in gold-deep (the token's documented use case -
-## "warm shadow/vignette") behind the wordmark, giving it real visual weight before the
-## button layer competes. Text width measured directly (Font.get_string_size), not guessed,
-## so the panel hugs the actual string rather than an arbitrary box.
+## Two-tier lockup (mosa-ui-designer, DM-010 reopen item 3), replacing the single-line
+## wordmark + gold-deep backing panel: `DETECTIVE` (48px, `heading`) over `MOSA` (96px, the
+## new `display` tier), a thin rule, then the subtitle. The gold-deep backing panel is
+## deleted outright - `mosa-critic`'s finding #3 (no focal point) is now solved by the
+## backdrop's own KeyLight sitting behind this lockup instead of a flat coloured chip, which
+## also removes the "reads as a debug chip" complaint the panel never fully escaped.
 func _build_wordmark() -> void:
-	var text := tr("ui.title.wordmark")
-	var text_size := get_theme_default_font().get_string_size(
-		text, HORIZONTAL_ALIGNMENT_LEFT, -1, 48
-	)
+	var margins := SafeAreaInsets.get_edge_margins(get_viewport_rect().size)
+	var left: float = margins["left"]
+	var top: float = margins["top"]
 
-	var backing := Panel.new()
-	backing.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = _palette.gold_deep
-	sb.set_corner_radius_all(8)
-	sb.content_margin_left = 16
-	sb.content_margin_right = 16
-	sb.content_margin_top = 8
-	sb.content_margin_bottom = 8
-	backing.add_theme_stylebox_override("panel", sb)
-	backing.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	backing.offset_left = EDGE_MARGIN - 16
-	backing.offset_top = 48 - 8
-	backing.offset_right = backing.offset_left + text_size.x + 32
-	backing.offset_bottom = backing.offset_top + text_size.y + 16
-	add_child(backing)
+	var detective := Label.new()
+	detective.text = tr("ui.title.wordmark_detective")
+	detective.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	detective.offset_left = left
+	detective.offset_top = top
+	detective.add_theme_font_size_override("font_size", 48)
+	detective.add_theme_color_override("font_color", _palette.gold)
+	# KeyLight sits directly behind this lockup (SalaBackdrop.gd) to give it real visual
+	# weight - but a `PointLight2D` crosses CanvasLayer boundaries (verified), so without
+	# this the light additively brightens the gold TEXT too, gold-on-gold, and crushes its
+	# own contrast against the backdrop instead of adding to it. `light_mask = 0` keeps the
+	# glow ambient - visible bleeding in from behind the letterforms, never on top of them.
+	detective.light_mask = 0
+	add_child(detective)
 
-	var label := Label.new()
-	label.text = text
-	label.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	label.offset_left = EDGE_MARGIN
-	label.offset_top = 48
-	label.add_theme_font_size_override("font_size", 48)
-	label.add_theme_color_override("font_color", _palette.gold)
-	add_child(label)
+	var mosa_word := Label.new()
+	mosa_word.text = tr("ui.title.wordmark_mosa")
+	mosa_word.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	mosa_word.offset_left = left
+	# Tight lockup, not two independent lines (mosa-critic's own vocabulary for this kind
+	# of pairing) - the two tiers sit close enough to read as one mark.
+	mosa_word.offset_top = top + 40.0
+	mosa_word.add_theme_font_size_override("font_size", 96)
+	mosa_word.add_theme_color_override("font_color", _palette.gold)
+	mosa_word.light_mask = 0  # same KeyLight-contrast reasoning as `detective` above.
+	add_child(mosa_word)
 
+	var font := get_theme_default_font()
+	var detective_width := font.get_string_size(detective.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 48).x
+	var mosa_width := font.get_string_size(mosa_word.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 96).x
+	var rule_width := maxf(detective_width, mosa_width)
+	var rule_top := top + 40.0 + 112.0
 
-## Soft radial gold glow behind Mosa (mosa-ui-designer consult). GradientTexture2D, not a
-## PointLight2D/shader - Title is Control-rooted, so a 2D light node wouldn't composite the
-## way it does over the Node2D gameplay backdrops.
-func _build_glow() -> void:
-	var gradient := Gradient.new()
-	gradient.set_color(0, Color(_palette.gold.r, _palette.gold.g, _palette.gold.b, 0.35))
-	gradient.set_color(1, Color(_palette.gold.r, _palette.gold.g, _palette.gold.b, 0.0))
-	var gradient_texture := GradientTexture2D.new()
-	gradient_texture.gradient = gradient
-	gradient_texture.fill = GradientTexture2D.FILL_RADIAL
-	gradient_texture.width = 640
-	gradient_texture.height = 640
+	var rule := ColorRect.new()
+	rule.color = _palette.gold
+	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rule.light_mask = 0  # same KeyLight-contrast reasoning as the wordmark labels above.
+	rule.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	rule.offset_left = left
+	rule.offset_top = rule_top
+	rule.offset_right = left + rule_width
+	rule.offset_bottom = rule_top + 2.0
+	add_child(rule)
 
-	var rect := TextureRect.new()
-	rect.texture = gradient_texture
-	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	# Centered roughly on Mosa's upper body/head - true-bottom-anchored like Mosa herself
-	# (A3), not a fixed y, so it tracks correctly if MOSA_HEIGHT ever changes.
-	rect.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-	rect.offset_left = EDGE_MARGIN - 220
-	rect.offset_bottom = -(MOSA_HEIGHT - 180)
-	rect.offset_right = rect.offset_left + 640
-	rect.offset_top = rect.offset_bottom - 640
-	add_child(rect)
+	var subtitle := Label.new()
+	subtitle.text = tr("ui.title.subtitle")
+	subtitle.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	subtitle.offset_left = left
+	subtitle.offset_top = rule_top + 16.0
+	subtitle.offset_right = left + maxf(rule_width, 320.0)
+	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	subtitle.add_theme_font_size_override("font_size", 26)
+	subtitle.add_theme_color_override("font_color", _palette.surface)
+	subtitle.light_mask = 0  # same KeyLight-contrast reasoning as the wordmark labels above.
+	add_child(subtitle)
 
 
 func _build_mosa() -> void:
+	var margins := SafeAreaInsets.get_edge_margins(get_viewport_rect().size)
 	var aspect := float(MOSA_SPRITE.get_width()) / float(MOSA_SPRITE.get_height())
 	var width := MOSA_HEIGHT * aspect
 
-	var rect := TextureRect.new()
-	rect.texture = MOSA_SPRITE
-	rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT
-	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	# True-edge anchored (A3): feet near the real bottom edge, left-anchored, regardless
-	# of how much extra width a wider-than-4:3 phone reveals. offset_bottom is -8, not a
-	# literal 0: mosa-critic (DM-010 review, finding #1) measured MOSA-IdleFront.png's own
-	# art directly and found zero built-in bottom padding (opaque pixels run to the very
-	# last row), so an offset of 0 sliced both shoe soles clean off against the true
-	# viewport edge rather than "standing at the edge." 8px is the grid's own step.
-	rect.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-	rect.offset_left = EDGE_MARGIN
-	rect.offset_bottom = -8
-	rect.offset_right = EDGE_MARGIN + width
-	rect.offset_top = -8 - MOSA_HEIGHT
-	add_child(rect)
+	_mosa_rect = TextureRect.new()
+	_mosa_rect.texture = MOSA_SPRITE
+	_mosa_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_mosa_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT
+	_mosa_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# True-edge anchored (A3): feet near the real bottom edge, left-anchored at the live
+	# safe-area margin (not a fixed 32/48 - a real device's landscape notch eats a SIDE,
+	# not the top, so Mosa's own left edge has to respect it too), regardless of how much
+	# extra width a wider-than-4:3 phone reveals. offset_bottom is -8, not a literal 0:
+	# mosa-critic (DM-010 review, finding #1) measured MOSA-IdleFront.png's own art directly
+	# and found zero built-in bottom padding, so an offset of 0 sliced both shoe soles clean
+	# off against the true viewport edge. 8px is the grid's own step. This offset matches
+	# the sala backdrop's own COVER-transform floor line (bottom-anchored, DM-010 reopen
+	# item 1), so Mosa's feet and the painted floor agree.
+	_mosa_rect.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
+	_mosa_rect.offset_left = margins["left"]
+	_mosa_rect.offset_bottom = -8
+	_mosa_rect.offset_right = margins["left"] + width
+	_mosa_rect.offset_top = -8 - MOSA_HEIGHT
+	add_child(_mosa_rect)
+
+
+## Contact shadow (mosa-ui-designer, DM-010 reopen item 6) lives on `SalaBackdrop` (behind
+## Mosa, on the graded/lit layer), not here - but only this screen knows her true edge-
+## anchored position, so it's computed here and pushed down rather than re-derived inside
+## SalaBackdrop itself. Re-run on viewport resize (Tier 1, TESTING.md §1): Mosa's own
+## anchor-relative position doesn't move on a width-only resize, but a height change shifts
+## the floor line, and the shadow has no anchor system of its own to follow it for free.
+func _update_ground_shadow() -> void:
+	if _mosa_rect == null or _sala_backdrop == null:
+		return
+	var margins := SafeAreaInsets.get_edge_margins(get_viewport_rect().size)
+	var aspect := float(MOSA_SPRITE.get_width()) / float(MOSA_SPRITE.get_height())
+	var width := MOSA_HEIGHT * aspect
+	var vp_height := get_viewport_rect().size.y
+	# mosa-ui-designer review (2026-07-29): couldn't confirm the shadow was visible at all
+	# in the evidence. Root cause found by re-deriving the geometry, not by eye: centering
+	# the ellipse ON the floor line put half its 72px height below `vp_height` - off-screen,
+	# invisible, leaving only a thin unrecognisable arc. The ellipse's BOTTOM edge belongs
+	# on the floor line (a shadow sits on the ground, it isn't bisected by it).
+	var floor_y := vp_height - 8.0
+	var center := Vector2(margins["left"] + width / 2.0, floor_y - GROUND_SHADOW_SIZE.y / 2.0)
+	_sala_backdrop.show_ground_shadow(center, GROUND_SHADOW_SIZE)
 
 
 func _build_buttons() -> void:
+	var margins := SafeAreaInsets.get_edge_margins(get_viewport_rect().size)
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", BUTTON_GAP)
 	# True-edge anchored (A3): right-anchored, so the void between Mosa and the buttons
 	# grows on a wider phone rather than either edge drifting off-frame.
 	column.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
-	column.offset_right = -BUTTON_COLUMN_RIGHT_MARGIN
-	column.offset_left = -BUTTON_COLUMN_RIGHT_MARGIN - BUTTON_COLUMN_WIDTH
-	column.offset_bottom = -BUTTON_COLUMN_BOTTOM_MARGIN
+	column.offset_right = -margins["right"]
+	column.offset_left = -margins["right"] - BUTTON_COLUMN_WIDTH
+	column.offset_bottom = -margins["bottom"]
 	column.offset_top = column.offset_bottom - (3 * ChromeButton.HEIGHT_PRIMARY + 2 * BUTTON_GAP)
 	add_child(column)
 

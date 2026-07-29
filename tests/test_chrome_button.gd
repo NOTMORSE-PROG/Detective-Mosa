@@ -15,12 +15,17 @@ func test_set_enabled_sets_disabled_flag_and_visual_together() -> void:
 	var button := ChromeButton.new("Continue", true)
 	add_child_autofree(button)
 
+	# DESIGN.md §5 (2026-07-29 reopen): the disabled visual is now the `disabled` stylebox
+	# override + a dash icon, not a self_modulate alpha dim (measured 3.9:1, under the
+	# 4.5:1 WCAG floor) - self_modulate stays MODULATE_DEFAULT in both states.
 	button.set_enabled(false)
 	assert_true(button.disabled)
-	assert_eq(button.self_modulate, ChromeButton.MODULATE_DISABLED)
+	assert_not_null(button.icon, "disabled state must show the dash glyph")
+	assert_eq(button.self_modulate, ChromeButton.MODULATE_DEFAULT)
 
 	button.set_enabled(true)
 	assert_false(button.disabled)
+	assert_null(button.icon, "enabled state must clear the dash glyph")
 	assert_eq(button.self_modulate, ChromeButton.MODULATE_DEFAULT)
 
 

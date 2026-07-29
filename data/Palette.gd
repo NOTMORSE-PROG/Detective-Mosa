@@ -31,3 +31,6 @@ extends Resource
 @export_group("Lives (speech bubbles)")
 @export var lives_full: Color
 @export var lives_spent: Color
+
+@export_group("Per-location grades (DESIGN.md §1)")
+@export var grade_sala_amber: Color  ## CanvasModulate tint for Mang Ver's sala (DM-010 reopen)

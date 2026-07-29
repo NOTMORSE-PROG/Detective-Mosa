@@ -31,7 +31,8 @@ func test_palette_has_no_accidental_default_black_fields() -> void:
 		palette.trust_uncertain,
 		palette.trust_doubted,
 		palette.lives_full,
-		palette.lives_spent
+		palette.lives_spent,
+		palette.grade_sala_amber
 	]
 	for c: Color in fields:
 		assert_ne(c, Color(0, 0, 0, 1), "a palette field was left at the unset default")

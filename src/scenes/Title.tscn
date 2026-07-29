@@ -8,10 +8,3 @@ anchors_preset = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 script = ExtResource("1_lhblf")
-
-[node name="Background" type="ColorRect" parent="." unique_id=1437432488]
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-mouse_filter = 2
-color = Color(0.078431375, 0.0627451, 0.05490196, 1)

@@ -33,7 +33,7 @@ func test_continue_is_disabled_on_a_fresh_install() -> void:
 	_screen = TITLE_SCENE.instantiate()
 	add_child_autofree(_screen)
 	assert_true(_screen._continue_button.disabled)
-	assert_eq(_screen._continue_button.self_modulate, ChromeButton.MODULATE_DISABLED)
+	assert_not_null(_screen._continue_button.icon, "disabled state must show the dash glyph")
 
 
 func test_continue_is_enabled_when_any_slot_has_a_save() -> void:
@@ -41,7 +41,7 @@ func test_continue_is_enabled_when_any_slot_has_a_save() -> void:
 	_screen = TITLE_SCENE.instantiate()
 	add_child_autofree(_screen)
 	assert_false(_screen._continue_button.disabled)
-	assert_eq(_screen._continue_button.self_modulate, ChromeButton.MODULATE_DEFAULT)
+	assert_null(_screen._continue_button.icon, "enabled state must clear the dash glyph")
 
 
 func test_new_game_resets_game_state() -> void:

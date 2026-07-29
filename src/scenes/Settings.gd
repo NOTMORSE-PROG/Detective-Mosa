@@ -1,18 +1,42 @@
 extends Control
 # Screen S3 - Settings + audio mixer. Layout spec: mosa-ui-designer consult, DM-010
-# (2026-07-29). Structure built in code, same convention as Title.gd/Continue.gd.
+# (2026-07-29 initial build; 2026-07-29 reopen redesign - panel+scrim over the sala,
+# corrected touch sizes, visible slider fill, bordered grabber). Structure built in code,
+# same convention as Title.gd/Continue.gd.
 
-const ROW_HEIGHT: float = 64.0
-const ROW_GAP: float = 24.0
-const LABEL_WIDTH: float = 220.0
-const VALUE_WIDTH: float = 80.0
-# S2/S3 are utility screens - centered and fixed at the 992px safe content width, not
-# true-edge anchored the way S1's hero content is (mosa-ui-designer consult, section A3).
-const ROW_LEFT: float = 16.0
-const ROW_WIDTH: float = 992.0
+const SALA_BACKDROP_SCENE: PackedScene = preload("res://src/scenes/parts/SalaBackdrop.tscn")
+const PANEL_STYLE: StyleBoxFlat = preload("res://data/stylebox/surface_panel.tres")
 const TRACK_STYLE: StyleBoxFlat = preload("res://data/stylebox/slider_track.tres")
+# Visible-value fix (mosa-ui-designer, DM-010 reopen item 7): the old build used the same
+# neutral track style for both the background AND the filled/progress portion, so a
+# slider's actual value was invisible without reading the "%" label next to it.
+const FILL_STYLE: StyleBoxFlat = preload("res://data/stylebox/slider_fill.tres")
+
+# 864x560 (DM-010 reopen item 5) - "kills the debug-menu read entirely": everything,
+# including Back, now sits inside one opaque plate over the scrim'd sala rather than
+# floating directly on a flat background colour.
+const PANEL_SIZE: Vector2 = Vector2(864, 560)
+const PANEL_PADDING: float = 32.0
+const CONTENT_WIDTH: float = PANEL_SIZE.x - 2 * PANEL_PADDING
+
+# 64 -> 96 (DESIGN.md §0.8 P0 fix - dp != logical px under `expand`, see ChromeButton.gd).
+const ROW_HEIGHT: float = 96.0
+const ROW_GAP: float = 16.0
+const HEADLINE_HEIGHT: float = 48.0
+const HEADLINE_TO_ROWS_GAP: float = 16.0
+const ROWS_TO_BACK_GAP: float = 16.0
+# 220 -> 288 (mosa-ui-designer, DM-010 reopen item 7): "Mga Tunog sa Interface" measured
+# wider than the old 220px column and `clip_text` would silently amputate it.
+const LABEL_WIDTH: float = 288.0
+const VALUE_WIDTH: float = 80.0
+const ROW_INNER_GAP: float = 16.0
+# 14 -> 20 (grabber diameter 28 -> 40, same P0 correction as every other interactive
+# element this reopen).
+const GRABBER_RADIUS: float = 20.0
+const GRABBER_DIAMETER: int = 40
 
 var _palette: Palette = load("res://data/palette.tres")
+var _sala_backdrop: SalaBackdrop
 
 # (i18n key, AudioDirector bus constant) - order matches the spec's Music/SFX/UI rows.
 var _rows: Array[Array] = [
@@ -23,28 +47,68 @@ var _rows: Array[Array] = [
 
 
 func _ready() -> void:
+	_sala_backdrop = SALA_BACKDROP_SCENE.instantiate()
+	add_child(_sala_backdrop)
+	_sala_backdrop.hide_ground_shadow()  # S3 never shows Mosa - explicit, not relied on default.
+
+	var scrim := ColorRect.new()
+	scrim.color = _palette.scrim
+	scrim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	scrim.light_mask = 0  # uniform dim regardless of the sala's own lighting underneath.
+	scrim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(scrim)
+
+	# Plain `Panel`, not `PanelContainer` - a `Container` forcibly resizes/repositions
+	# every direct child to fill its own rect, which fights the hand-authored absolute-
+	# offset convention every other screen this session uses (found by looking at the
+	# actual render: the panel filled almost the whole screen and every child collapsed
+	# onto the same overlapping rect, not the intended 864x560 plate with positioned
+	# content). `Panel` only draws the stylebox and leaves child layout alone.
+	var panel := Panel.new()
+	panel.add_theme_stylebox_override("panel", PANEL_STYLE)
+	# `light_mask = 0` (found by looking at the actual render, not guessed): the sala's
+	# `LampLight` sits at a viewport-relative position and bled unevenly across this plate
+	# at some viewport sizes, splitting it into two visibly different brightness zones.
+	# Unlike S1's wordmark (which wants the KeyLight glow behind it), S3's panel is a flat
+	# utility dialog meant to read as one consistent plate regardless of what the sala's
+	# lighting is doing behind the scrim.
+	panel.light_mask = 0
+	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	panel.offset_left = -PANEL_SIZE.x / 2.0
+	panel.offset_right = PANEL_SIZE.x / 2.0
+	panel.offset_top = -PANEL_SIZE.y / 2.0
+	panel.offset_bottom = PANEL_SIZE.y / 2.0
+	add_child(panel)
+
 	# 26px, matching Continue.gd's eyebrow exactly - mosa-critic (DM-010 review,
-	# finding #8) measured this label at 48px, pixel-identical in cap-height to S1's own
-	# game-name wordmark, and found S2's populated state has no headline at this tier at
-	# all (only its own 26px eyebrow). Two utility screens using the same structural role
-	# (a plain top-left screen title, no dynamic headline content of its own) now share
-	# one scale instead of three different ones across S1/S2/S3.
+	# finding #8) found S2/S3 using different type scales for the same structural role.
 	var headline := Label.new()
 	headline.text = tr("ui.title.settings")
 	headline.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	headline.offset_left = 16
-	headline.offset_top = 48
+	headline.offset_left = PANEL_PADDING
+	headline.offset_top = PANEL_PADDING
 	headline.add_theme_font_size_override("font_size", 26)
-	headline.add_theme_color_override("font_color", _palette.surface)
-	add_child(headline)
+	# ink, not surface (DM-010 reopen correction): this now sits on the cream `surface`
+	# plate, not directly on bg-deep - `surface`'s own text colour would be near-invisible
+	# on itself. `ink` is the frozen, contrast-verified pairing for text-on-plate.
+	headline.add_theme_color_override("font_color", _palette.ink)
+	# `light_mask = 0` (found by looking at the actual render): `light_mask` does not
+	# cascade from a parent CanvasItem to its children - the panel's own exclusion left
+	# every one of its child Labels still lit at the default `light_mask = 1`, and the
+	# reopen's own `KeyLight` boost (raised to fix S1's focal point) now reaches far enough
+	# to wash this row too. Every visible child of this panel needs its own exclusion, not
+	# just the panel background.
+	headline.light_mask = 0
+	panel.add_child(headline)
 
+	var rows_top := PANEL_PADDING + HEADLINE_HEIGHT + HEADLINE_TO_ROWS_GAP
 	for i in range(_rows.size()):
 		var label_key: String = _rows[i][0]
 		var bus: StringName = _rows[i][1]
-		var row_top := 136.0 + i * (ROW_HEIGHT + ROW_GAP)
-		add_child(_build_slider_row(label_key, bus, row_top))
+		var row_top := rows_top + i * (ROW_HEIGHT + ROW_GAP)
+		panel.add_child(_build_slider_row(label_key, bus, row_top))
 
-	_build_back_button()
+	_build_back_button(panel)
 	# Hardware BACK does exactly what the on-screen Back button does (DM-051) - one
 	# routing decision, not two behaviours to keep in sync.
 	SceneRouter.back_handler = _on_back_pressed
@@ -53,17 +117,14 @@ func _ready() -> void:
 ## Every child here anchors PRESET_TOP_LEFT (a pure point anchor) with absolute
 ## offset_left/top/right/bottom - proven reliable already in Title.gd/Continue.gd.
 ## PRESET_LEFT_WIDE/RIGHT_WIDE look like they should work for "span across, anchored to
-## one side" but are actually edge-POINT anchors (anchor_left == anchor_right == 0, or
-## both == 1): offset_right under LEFT_WIDE is measured from the SAME reference as
-## offset_left, not from the opposite edge, which collapsed every row to zero width -
-## caught by looking at the actual render (a static circle with no visible track, stuck
-## at the left regardless of value), not by re-reading the anchor math.
+## one side" but are actually edge-POINT anchors - caught by looking at the actual render
+## the first time this screen was built (DM-010 initial pass), not re-derived since.
 func _build_slider_row(label_key: String, bus: StringName, top: float) -> Control:
 	var row := Control.new()
 	row.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	row.offset_left = ROW_LEFT
+	row.offset_left = PANEL_PADDING
 	row.offset_top = top
-	row.offset_right = ROW_LEFT + ROW_WIDTH
+	row.offset_right = PANEL_PADDING + CONTENT_WIDTH
 	row.offset_bottom = top + ROW_HEIGHT
 
 	var label := Label.new()
@@ -73,48 +134,56 @@ func _build_slider_row(label_key: String, bus: StringName, top: float) -> Contro
 	label.offset_top = 0
 	label.offset_right = LABEL_WIDTH
 	label.offset_bottom = ROW_HEIGHT
-	label.clip_text = true
-	label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	# autowrap, not clip_text+ellipsis (mosa-ui-designer, DM-010 reopen item 7): a longer
+	# Taglish label overflowing 220px would have been silently amputated by the old
+	# clip-and-ellipsis treatment. Same discipline Continue.gd's own overflow fixes use.
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.add_theme_font_size_override("font_size", 26)
-	label.add_theme_color_override("font_color", _palette.surface)
+	label.add_theme_color_override("font_color", _palette.ink_soft)
+	label.light_mask = 0  # same non-cascading light_mask reasoning as the headline above.
 	row.add_child(label)
 
 	var value_label := Label.new()
 	value_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	value_label.offset_left = ROW_WIDTH - VALUE_WIDTH
+	value_label.offset_left = CONTENT_WIDTH - VALUE_WIDTH
 	value_label.offset_top = 0
-	value_label.offset_right = ROW_WIDTH
+	value_label.offset_right = CONTENT_WIDTH
 	value_label.offset_bottom = ROW_HEIGHT
 	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	value_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	value_label.add_theme_font_size_override("font_size", 26)
-	value_label.add_theme_color_override("font_color", _palette.surface)
+	value_label.add_theme_color_override("font_color", _palette.ink)
+	value_label.light_mask = 0  # same non-cascading light_mask reasoning as the headline above.
 	row.add_child(value_label)
 
-	# GRABBER_RADIUS-inset on both sides: mosa-critic (DM-010 review, finding #7) measured
-	# all three grabbers floating ~15px past their own track's visible end at max value.
-	# Godot positions a Slider's grabber icon by its own CENTER along the full control
-	# width, so at value=1.0 the circle's radius extends past the control's right edge
-	# (and past the left edge at value=0) unless the control itself is inset by that
-	# radius - the fill stylebox tracks the same center point, which is why fill-end and
-	# grabber-position visibly disagreed with each other before this fix.
-	const GRABBER_RADIUS: float = 14.0
+	# GRABBER_RADIUS-inset on both sides (DM-010 initial finding #7, still correct at the
+	# new 20px radius): Godot positions a Slider's grabber icon by its own CENTER along the
+	# full control width, so at value=1.0 the circle's radius extends past the control's
+	# right edge (and past the left edge at value=0) unless the control itself is inset by
+	# that radius.
 	var slider := HSlider.new()
 	slider.min_value = 0.0
 	slider.max_value = 1.0
 	slider.step = 0.01
 	slider.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	slider.offset_left = LABEL_WIDTH + ROW_GAP + GRABBER_RADIUS
+	slider.offset_left = LABEL_WIDTH + ROW_INNER_GAP + GRABBER_RADIUS
 	slider.offset_top = 0
-	slider.offset_right = ROW_WIDTH - VALUE_WIDTH - ROW_GAP - GRABBER_RADIUS
+	slider.offset_right = CONTENT_WIDTH - VALUE_WIDTH - ROW_INNER_GAP - GRABBER_RADIUS
 	slider.offset_bottom = ROW_HEIGHT  # generous touch area, thin visual track
+	slider.light_mask = 0  # same non-cascading light_mask reasoning as the headline above.
 	slider.add_theme_stylebox_override("slider", TRACK_STYLE)
-	slider.add_theme_stylebox_override("grabber_area", TRACK_STYLE)
-	slider.add_theme_stylebox_override("grabber_area_highlight", TRACK_STYLE)
-	slider.add_theme_icon_override("grabber", _make_circle_icon(_palette.ink_soft))
-	slider.add_theme_icon_override("grabber_highlight", _make_circle_icon(_palette.gold_ink))
-	slider.add_theme_icon_override("grabber_disabled", _make_circle_icon(_palette.ink_soft))
+	slider.add_theme_stylebox_override("grabber_area", FILL_STYLE)
+	slider.add_theme_stylebox_override("grabber_area_highlight", FILL_STYLE)
+	slider.add_theme_icon_override(
+		"grabber", _make_grabber_icon(_palette.ink_soft, _palette.border)
+	)
+	slider.add_theme_icon_override(
+		"grabber_highlight", _make_grabber_icon(_palette.gold_ink, _palette.border)
+	)
+	slider.add_theme_icon_override(
+		"grabber_disabled", _make_grabber_icon(_palette.ink_soft, _palette.border)
+	)
 	slider.focus_mode = Control.FOCUS_NONE
 	slider.value = AudioDirector.get_bus_volume(bus)
 	value_label.text = "%d%%" % round(slider.value * 100)
@@ -134,33 +203,38 @@ func _build_slider_row(label_key: String, bus: StringName, top: float) -> Contro
 	return row
 
 
-## One flat-colour circle, self-modulate-free (a Slider's own self_modulate would tint its
-## track stylebox too, not just the grabber icon - confirmed by checking how Slider draws
-## before relying on it) - three separately-coloured textures instead, same ink-soft /
-## gold-ink / ink progression theme.tres already uses for the VScrollBar grabber.
-func _make_circle_icon(color: Color) -> ImageTexture:
-	const DIAMETER: int = 28
-	var img := Image.create(DIAMETER, DIAMETER, false, Image.FORMAT_RGBA8)
-	var center := Vector2(DIAMETER / 2.0, DIAMETER / 2.0)
-	var radius := DIAMETER / 2.0
-	for y in range(DIAMETER):
-		for x in range(DIAMETER):
+## Bordered grabber (mosa-ui-designer, DM-010 reopen item 7) - a navy `border` ring around
+## the flat fill colour, matching the chip family's own 2px-border convention rather than
+## an unbordered flat circle. Self-modulate-free, same reasoning as the original: a
+## Slider's own self_modulate would tint the track stylebox too, not just this icon.
+func _make_grabber_icon(fill: Color, border: Color) -> ImageTexture:
+	const BORDER_WIDTH: float = 2.0
+	var img := Image.create(GRABBER_DIAMETER, GRABBER_DIAMETER, false, Image.FORMAT_RGBA8)
+	var center := Vector2(GRABBER_DIAMETER / 2.0, GRABBER_DIAMETER / 2.0)
+	var outer_radius := GRABBER_DIAMETER / 2.0
+	var inner_radius := outer_radius - BORDER_WIDTH
+	for y in range(GRABBER_DIAMETER):
+		for x in range(GRABBER_DIAMETER):
 			var dist := Vector2(x + 0.5, y + 0.5).distance_to(center)
-			var alpha := clampf(radius - dist, 0.0, 1.0)
-			img.set_pixel(x, y, Color(color.r, color.g, color.b, color.a * alpha))
+			if dist <= inner_radius:
+				var alpha := clampf(inner_radius - dist, 0.0, 1.0)
+				img.set_pixel(x, y, Color(fill.r, fill.g, fill.b, fill.a * alpha))
+			elif dist <= outer_radius:
+				var alpha := clampf(outer_radius - dist, 0.0, 1.0)
+				img.set_pixel(x, y, Color(border.r, border.g, border.b, border.a * alpha))
 	return ImageTexture.create_from_image(img)
 
 
-func _build_back_button() -> void:
+func _build_back_button(panel: Control) -> void:
 	var back := ChromeButton.new(tr("ui.common.back"), false)
 	back.custom_minimum_size.x = 160
 	back.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-	back.offset_left = 16
-	back.offset_bottom = -32
+	back.offset_left = PANEL_PADDING
+	back.offset_bottom = -PANEL_PADDING
 	back.offset_top = back.offset_bottom - ChromeButton.HEIGHT_SECONDARY
 	back.offset_right = back.offset_left + 160
 	back.pressed.connect(_on_back_pressed)
-	add_child(back)
+	panel.add_child(back)
 
 
 ## Context-aware, not a single hardcoded destination (mosa-ui-designer, DM-051 consult -
