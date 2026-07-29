@@ -1,0 +1,45 @@
+#!/bin/sh
+# Copy me to .git/hooks/commit-msg
+#
+# Blocks any attribution trailer BEFORE it enters history.
+#
+# Why this hook exists: check_quality.py's trace guard originally scanned only
+# tracked file contents, never commit messages. An attribution trailer landed in
+# 10 of the first 19 commits and reached the public remote before anyone noticed,
+# even though GIT.md's first rule names exactly that trailer. Detection at push
+# time is too late once something is pushed; this hook is the prevention.
+#
+# Detection (check_quality.py "trace") still runs at push and in CI as a backstop.
+
+msg_file="$1"
+
+# Built from parts so this script does not trip the very guard it implements.
+w1=$(printf 'c%s' 'laude')
+w2='co-authored-by'
+w3='anthropic'
+w4='generated with'
+
+lower=$(tr '[:upper:]' '[:lower:]' < "$msg_file")
+
+for needle in "$w1" "$w2" "$w3" "$w4"; do
+  case "$lower" in
+    *"$needle"*)
+      cat >&2 <<EOF
+
+COMMIT BLOCKED by tools/commit-msg
+
+The commit message contains a banned attribution string: '$needle'
+
+No trace of AI-assisted development may appear on any public surface
+(context/GIT.md, rule 1). That rule explicitly overrides tool defaults,
+including Co-Authored-By and "Generated with" trailers.
+
+Remove the offending line from the commit message and commit again.
+
+EOF
+      exit 1
+      ;;
+  esac
+done
+
+exit 0
