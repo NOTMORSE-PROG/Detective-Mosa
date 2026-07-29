@@ -1,6 +1,10 @@
 [gd_scene format=3]
 
+[ext_resource type="Script" path="res://src/scenes/Boot.gd" id="1_wcbet"]
+[ext_resource type="FontVariation" path="res://art/ui/fonts/font_nunito.tres" id="2_xyeal"]
+
 [node name="Boot" type="Node2D"]
+script = ExtResource("1_wcbet")
 
 [node name="Background" type="ColorRect" parent="."]
 offset_right = 1024.0
@@ -15,4 +19,19 @@ offset_bottom = 404.0
 theme_override_font_sizes/font_size = 26
 horizontal_alignment = 1
 vertical_alignment = 1
-text = "DETECTIVE MOSA — grey-box boot"
+
+[node name="SampleLabel" type="Label" parent="."]
+offset_left = 40.0
+offset_top = 40.0
+offset_right = 400.0
+offset_bottom = 80.0
+theme_override_font_sizes/font_size = 26
+
+[node name="LongestLineLabel" type="Label" parent="."]
+offset_left = 40.0
+offset_top = 480.0
+offset_right = 984.0
+offset_bottom = 720.0
+theme_override_fonts/font = ExtResource("2_xyeal")
+theme_override_font_sizes/font_size = 34
+autowrap_mode = 3
