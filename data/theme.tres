@@ -1,0 +1,8 @@
+[gd_resource type="Theme" format=3]
+
+[ext_resource type="FontVariation" path="res://art/ui/fonts/font_nunito.tres" id="1_siivo"]
+
+[resource]
+default_font = ExtResource("1_siivo")
+default_font_size = 26
+Label/colors/font_color = Color(0.11764706, 0.09019608, 0.07058824, 1)

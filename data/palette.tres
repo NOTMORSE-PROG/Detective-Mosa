@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="Palette" format=3]
+
+[ext_resource type="Script" path="res://data/Palette.gd" id="1_org2t"]
+
+[resource]
+script = ExtResource("1_org2t")
+bg_deep = Color(0.078431375, 0.0627451, 0.05490196, 1)
+bg_base = Color(0.14117648, 0.10980392, 0.09411765, 1)
+surface = Color(0.9490196, 0.89411765, 0.80784315, 1)
+surface_alt = Color(0.8901961, 0.8156863, 0.7058824, 1)
+border = Color(0.16862746, 0.22745098, 0.2901961, 1)
+ink = Color(0.11764706, 0.09019608, 0.07058824, 1)
+ink_soft = Color(0.3529412, 0.29411766, 0.24313726, 1)
+gold = Color(0.9098039, 0.6392157, 0.23921569, 1)
+gold_ink = Color(0.5372549, 0.34901962, 0.0627451, 1)
+gold_deep = Color(0.7254902, 0.4627451, 0.12941177, 0.4392157)
+sky = Color(0.56078434, 0.72156864, 0.8392157, 1)
+chip_fill = Color(0.8117647, 0.89411765, 0.9490196, 1)
+chip_border = Color(0.16862746, 0.22745098, 0.2901961, 1)
+chip_ink = Color(0.08627451, 0.13333334, 0.18039216, 1)
+trust_trusted = Color(0.24313726, 0.42745098, 0.25490198, 1)
+trust_uncertain = Color(0.5372549, 0.34901962, 0.0627451, 1)
+trust_doubted = Color(0.6392157, 0.2784314, 0.20392157, 1)
+lives_full = Color(0.9490196, 0.89411765, 0.80784315, 1)
+lives_spent = Color(0.6509804, 0.5686275, 0.49411765, 1)
