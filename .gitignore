@@ -35,6 +35,9 @@
 # --- Build output — regenerable, and APKs are large binaries ---
 /build/
 
+# --- tools/capture_screens.gd scratch output — iterate-and-look, not evidence ---
+/tools/.captures/
+
 # --- Godot: generated/derived, safe to rebuild ---
 *.translation
 *.tmp

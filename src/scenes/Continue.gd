@@ -4,6 +4,7 @@ extends Control
 
 const PROLOGUE_SCENE_PATH: String = "res://src/scenes/Prologue.tscn"
 const MOSA_THINKING: Texture2D = preload("res://art/characters/mosa/MOSA-ThinkingFront.png")
+const SALA_BACKDROP_SCENE: PackedScene = preload("res://src/scenes/parts/SalaBackdrop.tscn")
 const EMPTY_MOSA_HEIGHT: float = 320.0
 
 const CARD_SIZE: float = 320.0
@@ -25,6 +26,30 @@ var _palette: Palette = load("res://data/palette.tres")
 
 
 func _ready() -> void:
+	# S2 was the only screen with no backdrop at all - Mosa floated in a flat void while
+	# S1/S3 both sat in the sala. Same depth stack, same world (2026-07-29, owner review).
+	# show_character = false: S2 draws its own Mosa (Thinking pose), so the backdrop must
+	# not draw a second one.
+	var backdrop := SALA_BACKDROP_SCENE.instantiate() as SalaBackdrop
+	# No left band: this screen's content is centred/right, so the band would only hide
+	# the sala it was added to reveal.
+	backdrop.show_left_band = false
+	add_child(backdrop)
+
+	# Scrim over the sala. Without it every label on this screen sits straight on painted
+	# wood - a direct DESIGN.md 0.6 violation ("text always on a solid or high-opacity
+	# plate, never straight onto a busy backdrop"). S1 solves the same problem with the
+	# left band; S3 with its panel. This is S2's equivalent, and it keeps the sala present
+	# as atmosphere rather than sealing it off - the deference pole (REFERENCES.md).
+	# 0.62, not the scrim token's 0.85: this is a browsing screen, not a modal, so the room
+	# should still read behind it.
+	var scrim := ColorRect.new()
+	scrim.name = "Scrim"
+	scrim.color = Color(_palette.bg_deep, 0.62)
+	scrim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	scrim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(scrim)
+
 	var slots: Array[Dictionary] = [
 		SaveManager.peek_slot(0), SaveManager.peek_slot(1), SaveManager.peek_slot(2)
 	]
@@ -359,6 +384,13 @@ func _build_empty_state() -> Control:
 	mosa.offset_right = 160 + mosa_width
 	mosa.offset_top = -EMPTY_MOSA_HEIGHT / 2.0
 	mosa.offset_bottom = EMPTY_MOSA_HEIGHT / 2.0
+	# Same fix as S1 (`Title.gd::_build_mosa()`), never applied here (mosa-critic, DM-067
+	# pass): a Control on the default canvas layer never receives `SalaBackdrop`'s
+	# CanvasModulate grade (scoped to its own CanvasLayer, verified engine fact). Without
+	# this her source art's cool greys read at full strength against the warm graded room -
+	# 0.440 relLum measured, ~10x the couch behind her - a sticker pasted on the scene, not
+	# standing in it.
+	mosa.modulate = _palette.grade_sala_amber
 	wrapper.add_child(mosa)
 
 	var text_block := VBoxContainer.new()

@@ -5,7 +5,17 @@ extends Control
 # same convention as Title.gd/Continue.gd.
 
 const SALA_BACKDROP_SCENE: PackedScene = preload("res://src/scenes/parts/SalaBackdrop.tscn")
-const PANEL_STYLE: StyleBoxFlat = preload("res://data/stylebox/surface_panel.tres")
+# Fully-opaque variant, not the shared `surface_panel.tres` (2026-07-30, visual quality pass):
+# that resource's 0.82 alpha let S3's sofa/pillow shapes ghost visibly through the "opaque
+# plate" this screen's own comments already claim to be ("kills the debug-menu read
+# entirely"), against `DESIGN.md §0.6`. Originally a Settings-only fix (`settings_panel.tres`)
+# scoped narrowly because no evidence existed PauseMenu/ConfirmDialog needed it too - that
+# evidence arrived the same day: the first real, router-driven device capture of
+# `ConfirmDialog` (previously unreachable by the desktop capture tool, which bypasses
+# `SceneRouter`) showed the identical ghosting against a real backdrop. Consolidated into one
+# shared `surface_panel_opaque.tres` for every screen `DESIGN.md §2` calls "opaque": S3, S19,
+# ConfirmDialog. Composes only `surface`/`border`/8px radius - no new hex.
+const PANEL_STYLE: StyleBoxFlat = preload("res://data/stylebox/surface_panel_opaque.tres")
 const TRACK_STYLE: StyleBoxFlat = preload("res://data/stylebox/slider_track.tres")
 # Visible-value fix (mosa-ui-designer, DM-010 reopen item 7): the old build used the same
 # neutral track style for both the background AND the filled/progress portion, so a
@@ -15,7 +25,12 @@ const FILL_STYLE: StyleBoxFlat = preload("res://data/stylebox/slider_fill.tres")
 # 864x560 (DM-010 reopen item 5) - "kills the debug-menu read entirely": everything,
 # including Back, now sits inside one opaque plate over the scrim'd sala rather than
 # floating directly on a flat background colour.
-const PANEL_SIZE: Vector2 = Vector2(864, 560)
+# 560 -> 424 (2026-07-29, owner review). Three slider rows plus a Back button genuinely
+# do not fill 560px; the panel read ~35% empty, which is the "debug menu" tell all over
+# again in a nicer colour. Sized to its real content instead of padding it out with
+# placeholder rows - the accessibility controls that WILL fill it belong to DM-053 (M7),
+# and shipping disabled rows that do nothing is worse than a correctly-sized panel.
+const PANEL_SIZE: Vector2 = Vector2(864, 584)
 const PANEL_PADDING: float = 32.0
 const CONTENT_WIDTH: float = PANEL_SIZE.x - 2 * PANEL_PADDING
 
@@ -48,6 +63,8 @@ var _rows: Array[Array] = [
 
 func _ready() -> void:
 	_sala_backdrop = SALA_BACKDROP_SCENE.instantiate()
+	# Centred panel, so the left band would only hide the sala behind it.
+	_sala_backdrop.show_left_band = false
 	add_child(_sala_backdrop)
 	_sala_backdrop.hide_ground_shadow()  # S3 never shows Mosa - explicit, not relied on default.
 

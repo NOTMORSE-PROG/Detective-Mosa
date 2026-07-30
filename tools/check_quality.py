@@ -109,6 +109,12 @@ def _autoload_check_only_false_positive(output: str, autoloads: set[str]) -> boo
             continue
         if "Failed to load script" in text and "Compilation failed" in text:
             continue
+        # Cascade line emitted when the checked script DEPENDS on another script that
+        # hit the autoload false positive (e.g. SalaBackdrop -> Juice -> AudioDirector).
+        # Purely a symptom: every "Identifier not found" above has already been
+        # validated as a real autoload, so this line carries no independent signal.
+        if "Failed to compile depended scripts" in text:
+            continue
         return False
     return True
 

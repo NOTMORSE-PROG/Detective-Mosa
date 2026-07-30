@@ -20,12 +20,20 @@ func test_set_enabled_sets_disabled_flag_and_visual_together() -> void:
 	# 4.5:1 WCAG floor) - self_modulate stays MODULATE_DEFAULT in both states.
 	button.set_enabled(false)
 	assert_true(button.disabled)
-	assert_not_null(button.icon, "disabled state must show the dash glyph")
+	# The dash glyph was removed 2026-07-29 (owner visual review): it rendered either
+	# detached at the button edge or striking THROUGH the label. The disabled state is now
+	# carried by a distinct stylebox - a LUMINANCE difference, which survives colourblind
+	# simulation and greyscale, so DESIGN.md 0.7 is satisfied without a glyph.
+	assert_ne(
+		button.get_theme_stylebox("disabled"),
+		button.get_theme_stylebox("normal"),
+		"disabled must use a visibly different stylebox, not just muted text"
+	)
 	assert_eq(button.self_modulate, ChromeButton.MODULATE_DEFAULT)
 
 	button.set_enabled(true)
 	assert_false(button.disabled)
-	assert_null(button.icon, "enabled state must clear the dash glyph")
+	assert_null(button.icon, "no icon is used in either state")
 	assert_eq(button.self_modulate, ChromeButton.MODULATE_DEFAULT)
 
 

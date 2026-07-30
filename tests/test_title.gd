@@ -33,7 +33,13 @@ func test_continue_is_disabled_on_a_fresh_install() -> void:
 	_screen = TITLE_SCENE.instantiate()
 	add_child_autofree(_screen)
 	assert_true(_screen._continue_button.disabled)
-	assert_not_null(_screen._continue_button.icon, "disabled state must show the dash glyph")
+	# Dash glyph removed 2026-07-29 - disabled is now a distinct stylebox (luminance
+	# difference), see test_chrome_button.gd for the full reasoning.
+	assert_ne(
+		_screen._continue_button.get_theme_stylebox("disabled"),
+		_screen._continue_button.get_theme_stylebox("normal"),
+		"disabled Continue must be visibly a different material"
+	)
 
 
 func test_continue_is_enabled_when_any_slot_has_a_save() -> void:
@@ -41,7 +47,7 @@ func test_continue_is_enabled_when_any_slot_has_a_save() -> void:
 	_screen = TITLE_SCENE.instantiate()
 	add_child_autofree(_screen)
 	assert_false(_screen._continue_button.disabled)
-	assert_null(_screen._continue_button.icon, "enabled state must clear the dash glyph")
+	assert_null(_screen._continue_button.icon, "no icon is used in either state")
 
 
 func test_new_game_resets_game_state() -> void:

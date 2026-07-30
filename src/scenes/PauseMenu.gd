@@ -8,11 +8,15 @@ extends CanvasLayer
 # process_mode pick it up automatically.
 
 const PANEL_WIDTH: float = 384.0
-# 376, not 344: recomputed after the title moved from 26px to 48px (mosa-critic finding
-# #1) - 32(top margin) + 66(48px "Paused", measured via Font.get_string_size, not
-# guessed) + 16(gap) + 224(3 buttons + 2 gaps) + 32(bottom margin) = 370, rounded up to
-# the next 8px-grid step so nothing overflows the panel's bottom edge.
-const PANEL_HEIGHT: float = 376.0
+# 544, not 376 (mosa-critic, DM-067 pass): the 376 value's own math (224 for "3 buttons +
+# 2 gaps") was computed against ChromeButton's OLD 64px primary height and never
+# recomputed after the touch-target P0 fix bumped primary to 120px (DESIGN.md 0.8, the
+# 96-logical-px floor). The stale constant clipped the third button (Quit to Title) almost
+# entirely off the bottom of frame - present in the tree, invisible in the render, exactly
+# the class of bug the value/squint discipline exists to catch and a raw number never
+# would. Recomputed: 32(top margin) + 66(48px "Paused") + 16(gap) + 392(3x120px buttons +
+# 2x16px gaps) + 32(bottom margin) = 538, rounded up to the next 8px-grid step.
+const PANEL_HEIGHT: float = 544.0
 const PANEL_BOTTOM_MARGIN: float = 32.0
 const BUTTON_GAP: float = 16.0
 
@@ -26,10 +30,28 @@ func _ready() -> void:
 	scrim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	scrim.mouse_filter = Control.MOUSE_FILTER_STOP
 	scrim.color = _palette.scrim
+	# light_mask = 0 (2026-07-30, visual quality pass): `PointLight2D` crosses `CanvasLayer`
+	# boundaries (verified engine fact, `SalaBackdrop.gd`), so an overlay opened on top of a
+	# lit scene is exposed to that scene's lights unless explicitly excluded. Confirmed as a
+	# real, reproducible bug on `ConfirmDialog`'s identically-built panel (a visible warm
+	# gradient survived even after fixing its stylebox alpha - the true cause was
+	# `LampLight` bleeding across the panel unevenly, not translucency). Applied here
+	# pre-emptively: this menu hasn't been caught failing yet only because no gameplay scene
+	# exists to open it over yet, not because the risk isn't identical.
+	scrim.light_mask = 0
 	add_child(scrim)
 
 	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", load("res://data/stylebox/surface_panel.tres"))
+	panel.light_mask = 0
+	# surface_panel_opaque.tres, not surface_panel.tres (2026-07-30, visual quality pass):
+	# the 0.82-alpha shared resource let a real backdrop ghost through ConfirmDialog's
+	# identically-built panel once it was reached by real navigation - this panel sits over
+	# the same "unknown, arbitrary" frozen-gameplay case and carries the same risk, even
+	# though it hasn't been observed failing yet (no live gameplay scene exists to test
+	# against). Fixed pre-emptively rather than waiting for the same bug to be found twice.
+	panel.add_theme_stylebox_override(
+		"panel", load("res://data/stylebox/surface_panel_opaque.tres")
+	)
 	# Bottom-anchored, not centered like ConfirmDialog's panel (mosa-critic, DM-051
 	# review, finding #3 - the two disagreeing with no stated reason read as accidental,
 	# not a real defect in either one alone): this is a persistent, thumb-navigated menu
@@ -80,6 +102,7 @@ func _ready() -> void:
 	title.text = tr("ui.pause.title")
 	title.add_theme_font_size_override("font_size", 48)
 	title.add_theme_color_override("font_color", _palette.ink)
+	title.light_mask = 0  # same light-bleed reasoning as scrim/panel above.
 	vbox.add_child(title)
 
 	var resume := ChromeButton.new(tr("ui.pause.resume"), true)

@@ -1,7 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://src/scenes/ConfirmDialog.gd" id="1_ujjmc"]
-[ext_resource type="StyleBox" path="res://data/stylebox/surface_panel.tres" id="2_l8yqw"]
+[ext_resource type="StyleBox" path="res://data/stylebox/surface_panel_opaque.tres" id="2_l8yqw"]
 
 [node name="ConfirmDialog" type="CanvasLayer" unique_id=1344574078]
 script = ExtResource("1_ujjmc")

@@ -16,8 +16,21 @@ const MOSA_SPRITE: Texture2D = preload("res://art/characters/mosa/MOSA-IdleFront
 # wordmark and lit backdrop give Mosa more visual competition than the original flat
 # ColorRect background did; a slightly smaller figure reads as grounded in the scene rather
 # than pasted in front of it.
-const MOSA_HEIGHT: float = 496.0
+# 496 -> 400 (2026-07-29, owner visual review). Scaling the wordmark up to actually
+# dominate the frame pushed the subtitle down to y~310; at 496 tall Mosa's head started
+# at y~264 and physically overlapped it. She also reads better smaller now that the
+# title, not the character, is the focal point.
+const MOSA_HEIGHT: float = 470.0
 const GROUND_SHADOW_SIZE: Vector2 = Vector2(240, 72)
+
+## Mosa's inset from the left safe-area margin. Was an inline `440.0` literal repeated in
+## `_build_mosa()` and re-derived (WRONGLY) in `_update_ground_shadow()`, which is how her
+## contact shadow ended up 440px to her left, underneath the wordmark, on the dark band
+## where nothing could ever be seen of it. Three separate review rounds recorded "no visible
+## contact shadow" against this; the geometry fix each time was applied to the shadow's
+## *height*, never to the fact that it was under the wrong object entirely. One constant,
+## used by both, so they cannot disagree again.
+const MOSA_INSET_X: float = 440.0
 
 const BUTTON_COLUMN_WIDTH: float = 320.0
 # 16 -> 24 (DESIGN.md §5, 2026-07-29 reopen) - part of the same touch-correction pass as
@@ -57,6 +70,31 @@ func _on_back_pressed() -> void:
 ## deleted outright - `mosa-critic`'s finding #3 (no focal point) is now solved by the
 ## backdrop's own KeyLight sitting behind this lockup instead of a flat coloured chip, which
 ## also removes the "reads as a debug chip" complaint the panel never fully escaped.
+## Text over ARTWORK cannot rely on a single computed contrast ratio, because the thing
+## behind it is not one colour. The subtitle proved this on device: its contrast was
+## verified as `surface` on `bg-deep` (15.10:1, passes easily) but it physically spans the
+## dark band AND the lit backdrop, so the right half rendered unreadable while the check
+## reported green. A ratio measured against one background is the wrong measurement for
+## text that crosses two.
+##
+## An outline fixes it structurally rather than per-screen: the glyph carries its own
+## contrast everywhere it goes, so legibility stops depending on what happens to be behind
+## it. Standard practice for UI over art, and it is why this is a helper rather than four
+## copies of the same override.
+func _apply_text_legibility(label: Label, font_size: int) -> void:
+	# Outline scales with type size: heavy enough to separate the glyph from a busy
+	# backdrop, light enough not to thicken the letterform into a blob.
+	var outline := maxi(4, int(round(font_size * 0.14)))
+	label.add_theme_color_override("font_outline_color", _palette.bg_deep)
+	label.add_theme_constant_override("outline_size", outline)
+	# A soft drop shadow underneath adds separation on light backdrops, where an outline
+	# alone can still read as flat.
+	label.add_theme_color_override("font_shadow_color", Color(_palette.bg_deep, 0.55))
+	label.add_theme_constant_override("shadow_offset_x", 0)
+	label.add_theme_constant_override("shadow_offset_y", 3)
+	label.add_theme_constant_override("shadow_outline_size", 2)
+
+
 func _build_wordmark() -> void:
 	var margins := SafeAreaInsets.get_edge_margins(get_viewport_rect().size)
 	var left: float = margins["left"]
@@ -67,7 +105,7 @@ func _build_wordmark() -> void:
 	detective.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
 	detective.offset_left = left
 	detective.offset_top = top
-	detective.add_theme_font_size_override("font_size", 48)
+	detective.add_theme_font_size_override("font_size", 64)
 	detective.add_theme_color_override("font_color", _palette.gold)
 	# KeyLight sits directly behind this lockup (SalaBackdrop.gd) to give it real visual
 	# weight - but a `PointLight2D` crosses CanvasLayer boundaries (verified), so without
@@ -75,6 +113,7 @@ func _build_wordmark() -> void:
 	# own contrast against the backdrop instead of adding to it. `light_mask = 0` keeps the
 	# glow ambient - visible bleeding in from behind the letterforms, never on top of them.
 	detective.light_mask = 0
+	_apply_text_legibility(detective, 64)
 	add_child(detective)
 
 	var mosa_word := Label.new()
@@ -83,17 +122,18 @@ func _build_wordmark() -> void:
 	mosa_word.offset_left = left
 	# Tight lockup, not two independent lines (mosa-critic's own vocabulary for this kind
 	# of pairing) - the two tiers sit close enough to read as one mark.
-	mosa_word.offset_top = top + 40.0
-	mosa_word.add_theme_font_size_override("font_size", 96)
+	mosa_word.offset_top = top + 56.0
+	mosa_word.add_theme_font_size_override("font_size", 168)
 	mosa_word.add_theme_color_override("font_color", _palette.gold)
 	mosa_word.light_mask = 0  # same KeyLight-contrast reasoning as `detective` above.
+	_apply_text_legibility(mosa_word, 168)
 	add_child(mosa_word)
 
 	var font := get_theme_default_font()
-	var detective_width := font.get_string_size(detective.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 48).x
-	var mosa_width := font.get_string_size(mosa_word.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 96).x
+	var detective_width := font.get_string_size(detective.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 64).x
+	var mosa_width := font.get_string_size(mosa_word.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 168).x
 	var rule_width := maxf(detective_width, mosa_width)
-	var rule_top := top + 40.0 + 112.0
+	var rule_top := top + 56.0 + 190.0
 
 	var rule := ColorRect.new()
 	rule.color = _palette.gold
@@ -113,10 +153,27 @@ func _build_wordmark() -> void:
 	subtitle.offset_top = rule_top + 16.0
 	subtitle.offset_right = left + maxf(rule_width, 320.0)
 	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	subtitle.add_theme_font_size_override("font_size", 26)
+	subtitle.add_theme_font_size_override("font_size", 30)
 	subtitle.add_theme_color_override("font_color", _palette.surface)
 	subtitle.light_mask = 0  # same KeyLight-contrast reasoning as the wordmark labels above.
+	# The worst offender on device - it spans the band edge, so it needs this most.
+	_apply_text_legibility(subtitle, 30)
 	add_child(subtitle)
+
+
+## Her left edge, resolved against the two things she actually has to sit between: the
+## title lockup on her left and the button column on her right. `MOSA_INSET_X` alone is a
+## bare offset-from-edge - it happens to work at 1706x768 and crowds the menu at 1024x768,
+## where the same 320px column starts 682px further left and her hand ends up all but
+## touching `New Game`. Clamping to a named clearance keeps one rule working at both
+## aspects instead of one number that is only correct at one of them.
+func _mosa_left_edge(margins: Dictionary, width: float) -> float:
+	const CLEARANCE: float = 24.0
+	var right_margin: float = margins["right"]
+	var left_margin: float = margins["left"]
+	var column_left: float = get_viewport_rect().size.x - right_margin - BUTTON_COLUMN_WIDTH
+	var latest: float = column_left - width - CLEARANCE
+	return minf(left_margin + MOSA_INSET_X, latest)
 
 
 func _build_mosa() -> void:
@@ -138,11 +195,20 @@ func _build_mosa() -> void:
 	# off against the true viewport edge. 8px is the grid's own step. This offset matches
 	# the sala backdrop's own COVER-transform floor line (bottom-anchored, DM-010 reopen
 	# item 1), so Mosa's feet and the painted floor agree.
+	var left := _mosa_left_edge(margins, width)
 	_mosa_rect.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-	_mosa_rect.offset_left = margins["left"]
+	_mosa_rect.offset_left = left
 	_mosa_rect.offset_bottom = -8
-	_mosa_rect.offset_right = margins["left"] + width
+	_mosa_rect.offset_right = left + width
 	_mosa_rect.offset_top = -8 - MOSA_HEIGHT
+	# She is a Control on the DEFAULT canvas layer, so `SalaBackdrop`'s `CanvasModulate` -
+	# which is scoped to its own layer (verified engine fact, DM-010) - never reaches her.
+	# That is the whole of "Mosa is ungraded": her source art's own cool greys sat at full
+	# strength against a warm amber room and read as a sticker pasted onto the scene.
+	# Multiplying by the location's own `grade-sala-amber` token puts her in the same light
+	# as everything behind her. `light_mask` stays at its default 1 so the sala's three
+	# lights also play across her - graded AND lit, the same treatment the room gets.
+	_mosa_rect.modulate = _palette.grade_sala_amber
 	add_child(_mosa_rect)
 
 
@@ -165,7 +231,12 @@ func _update_ground_shadow() -> void:
 	# invisible, leaving only a thin unrecognisable arc. The ellipse's BOTTOM edge belongs
 	# on the floor line (a shadow sits on the ground, it isn't bisected by it).
 	var floor_y := vp_height - 8.0
-	var center := Vector2(margins["left"] + width / 2.0, floor_y - GROUND_SHADOW_SIZE.y / 2.0)
+	# Shares `_mosa_left_edge()` with `_build_mosa()` - the shadow must be centred on HER,
+	# not on the safe-area margin, and the two must resolve her position the same way or the
+	# 440px split re-opens the moment either side is touched again.
+	var center := Vector2(
+		_mosa_left_edge(margins, width) + width / 2.0, floor_y - GROUND_SHADOW_SIZE.y / 2.0
+	)
 	_sala_backdrop.show_ground_shadow(center, GROUND_SHADOW_SIZE)
 
 
