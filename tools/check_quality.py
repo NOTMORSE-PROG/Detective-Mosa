@@ -130,13 +130,6 @@ def gd_files() -> list[Path]:
     return sorted(files)
 
 
-def tracked_files() -> list[str]:
-    result = subprocess.run(
-        ["git", "ls-files"], capture_output=True, text=True, cwd=REPO_ROOT, check=True,
-    )
-    return [line.strip() for line in result.stdout.splitlines() if line.strip()]
-
-
 def run_tool(label: str, cmd: list[str]) -> bool:
     exe = shutil.which(cmd[0])
     if exe is None:
@@ -210,9 +203,15 @@ def check_trace_guard() -> list[str]:
     """
     hits: list[str] = []
 
-    # Scope 1 - tracked file contents (the original check).
+    # Scope 1 - tracked file contents (the original check). No explicit file-list argument:
+    # `git grep` with no pathspec already searches every tracked file by default, and this
+    # project passed 1534 tracked files (DM-012's vendored Dialogic addon), well past
+    # Windows' ~32K command-line length limit - the explicit list crashed the subprocess
+    # call outright (FileNotFoundError: "The filename or extension is too long") rather than
+    # giving a false pass, but a guard that can't run at all is still a guard nobody can
+    # trust once the file count crosses whatever threshold trips it next.
     result = subprocess.run(
-        ["git", "grep", "-il", _TRACE_WORD, "--"] + tracked_files(),
+        ["git", "grep", "-il", _TRACE_WORD],
         capture_output=True, text=True, cwd=REPO_ROOT,
     )
     hits += [f"file: {ln.strip()}" for ln in result.stdout.splitlines() if ln.strip()]

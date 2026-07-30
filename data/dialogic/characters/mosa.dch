@@ -1,0 +1,88 @@
+{
+"@path": "res://addons/dialogic/Resources/character.gd",
+"@subpath": NodePath(""),
+&"_translation_id": "",
+&"color": Color(0, 0, 0, 1),
+&"custom_info": {},
+&"default_portrait": "Idle",
+&"description": "",
+&"display_name": "Mosa",
+&"mirror": false,
+&"nicknames": [],
+&"offset": Vector2(0, 0),
+&"portraits": {
+"Disappointed": {
+"export_overrides": {
+"image": "res://art/characters/mosa/MOSA-DisappointedFront.png"
+},
+"scene": ""
+},
+"Disappointed-Left": {
+"export_overrides": {
+"image": "res://art/characters/mosa/MOSA-DisappointedLeft.png"
+},
+"scene": ""
+},
+"Disappointed-Right": {
+"export_overrides": {
+"image": "res://art/characters/mosa/MOSA-DisappointedRight.png"
+},
+"scene": ""
+},
+"Idle": {
+"export_overrides": {
+"image": "res://art/characters/mosa/MOSA-IdleFront.png"
+},
+"scene": ""
+},
+"Idle-Left": {
+"export_overrides": {
+"image": "res://art/characters/mosa/MOSA-IdleLeft.png"
+},
+"scene": ""
+},
+"Idle-Right": {
+"export_overrides": {
+"image": "res://art/characters/mosa/MOSA-IdleRight.png"
+},
+"scene": ""
+},
+"Shocked": {
+"export_overrides": {
+"image": "res://art/characters/mosa/MOSA-ShockedFront.png"
+},
+"scene": ""
+},
+"Shocked-Left": {
+"export_overrides": {
+"image": "res://art/characters/mosa/MOSA-ShockedLeft.png"
+},
+"scene": ""
+},
+"Shocked-Right": {
+"export_overrides": {
+"image": "res://art/characters/mosa/MOSA-ShockedRight.png"
+},
+"scene": ""
+},
+"Thinking": {
+"export_overrides": {
+"image": "res://art/characters/mosa/MOSA-ThinkingFront.png"
+},
+"scene": ""
+},
+"Thinking-Left": {
+"export_overrides": {
+"image": "res://art/characters/mosa/MOSA-ThinkingLeft.png"
+},
+"scene": ""
+},
+"Thinking-Right": {
+"export_overrides": {
+"image": "res://art/characters/mosa/MOSA-ThinkingRight.png"
+},
+"scene": ""
+}
+},
+&"scale": 1.0
+}

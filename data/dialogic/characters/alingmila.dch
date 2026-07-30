@@ -1,0 +1,70 @@
+{
+"@path": "res://addons/dialogic/Resources/character.gd",
+"@subpath": NodePath(""),
+&"_translation_id": "",
+&"color": Color(0, 0, 0, 1),
+&"custom_info": {},
+&"default_portrait": "Idle",
+&"description": "",
+&"display_name": "Aling Mila",
+&"mirror": false,
+&"nicknames": [],
+&"offset": Vector2(0, 0),
+&"portraits": {
+"Idle": {
+"export_overrides": {
+"image": "res://art/characters/alingmila/ALINGMILA-IdleFront.png"
+},
+"scene": ""
+},
+"Idle-Left": {
+"export_overrides": {
+"image": "res://art/characters/alingmila/ALINGMILA-IdleLeft.png"
+},
+"scene": ""
+},
+"Idle-Right": {
+"export_overrides": {
+"image": "res://art/characters/alingmila/ALINGMILA-IdleRight.png"
+},
+"scene": ""
+},
+"Relieved": {
+"export_overrides": {
+"image": "res://art/characters/alingmila/ALINGMILA-RelievedFront.png"
+},
+"scene": ""
+},
+"Relieved-Left": {
+"export_overrides": {
+"image": "res://art/characters/alingmila/ALINGMILA-RelievedLeft.png"
+},
+"scene": ""
+},
+"Relieved-Right": {
+"export_overrides": {
+"image": "res://art/characters/alingmila/ALINGMILA-RelievedRight.png"
+},
+"scene": ""
+},
+"Worried": {
+"export_overrides": {
+"image": "res://art/characters/alingmila/ALINGMILA-WorriedFront.png"
+},
+"scene": ""
+},
+"Worried-Left": {
+"export_overrides": {
+"image": "res://art/characters/alingmila/ALINGMILA-WorriedLeft.png"
+},
+"scene": ""
+},
+"Worried-Right": {
+"export_overrides": {
+"image": "res://art/characters/alingmila/ALINGMILA-WorriedRight.png"
+},
+"scene": ""
+}
+},
+&"scale": 1.0
+}

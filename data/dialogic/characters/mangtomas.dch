@@ -1,0 +1,52 @@
+{
+"@path": "res://addons/dialogic/Resources/character.gd",
+"@subpath": NodePath(""),
+&"_translation_id": "",
+&"color": Color(0, 0, 0, 1),
+&"custom_info": {},
+&"default_portrait": "Idle",
+&"description": "",
+&"display_name": "Mang Tomas",
+&"mirror": false,
+&"nicknames": [],
+&"offset": Vector2(0, 0),
+&"portraits": {
+"Idle": {
+"export_overrides": {
+"image": "res://art/characters/mangtomas/MANGTOMAS-IdleFront.png"
+},
+"scene": ""
+},
+"Idle-Left": {
+"export_overrides": {
+"image": "res://art/characters/mangtomas/MANGTOMAS-IdleLeft.png"
+},
+"scene": ""
+},
+"Idle-Right": {
+"export_overrides": {
+"image": "res://art/characters/mangtomas/MANGTOMAS-IdleRight.png"
+},
+"scene": ""
+},
+"Thinking": {
+"export_overrides": {
+"image": "res://art/characters/mangtomas/MANGTOMAS-ThinkingFront.png"
+},
+"scene": ""
+},
+"Thinking-Left": {
+"export_overrides": {
+"image": "res://art/characters/mangtomas/MANGTOMAS-ThinkingLeft.png"
+},
+"scene": ""
+},
+"Thinking-Right": {
+"export_overrides": {
+"image": "res://art/characters/mangtomas/MANGTOMAS-ThinkingRight.png"
+},
+"scene": ""
+}
+},
+&"scale": 1.0
+}

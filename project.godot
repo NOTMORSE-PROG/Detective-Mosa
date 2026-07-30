@@ -28,6 +28,23 @@ GameState="*res://src/autoload/GameState.gd"
 SaveManager="*res://src/autoload/SaveManager.gd"
 AudioDirector="*res://src/autoload/AudioDirector.tscn"
 SceneRouter="*res://src/autoload/SceneRouter.gd"
+Dialogic="*uid://ds2q0uclmolvu"
+
+[dialogic]
+
+directories/dch_directory={
+"alingmila": "res://data/dialogic/characters/alingmila.dch",
+"alingvilma": "res://data/dialogic/characters/alingvilma.dch",
+"bugoy": "res://data/dialogic/characters/bugoy.dch",
+"jorge": "res://data/dialogic/characters/jorge.dch",
+"mangtomas": "res://data/dialogic/characters/mangtomas.dch",
+"mangver": "res://data/dialogic/characters/mangver.dch",
+"mosa": "res://data/dialogic/characters/mosa.dch"
+}
+directories/dtl_directory={
+"dm012_smoke": "res://data/dialogic/timelines/dm012_smoke.dtl"
+}
+layout/style_directory={}
 
 [display]
 
@@ -35,6 +52,18 @@ window/size/viewport_width=1024
 window/size/viewport_height=768
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/dialogic/plugin.cfg")
+
+[input]
+
+dialogic_default_action={
+"deadzone": 0.5,
+"events": [Object(InputEventMouseButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"double_click":false,"script":null,"button_mask":1,"position":Vector2(0, 0),"global_position":Vector2(0, 0),"factor":1.0,"button_index":1,"canceled":false)
+]
+}
 
 [gui]
 
