@@ -76,8 +76,21 @@ func _ready() -> void:
 	panel.anchor_right = 0.5
 	panel.anchor_top = 1.0
 	panel.anchor_bottom = 1.0
-	panel.offset_left = -PANEL_WIDTH / 2.0
-	panel.offset_right = PANEL_WIDTH / 2.0
+	# Widens with the viewport past the 1024px base canvas (2026-07-30, owner review: "so
+	# wide and so out" - PANEL_WIDTH alone is a base-canvas constant, correct at 1024x768 but
+	# static against a wide device, so a 384px card sits adrift in a much wider frame with no
+	# real content behind it yet to balance against. Clamped at 560px so the button column
+	# doesn't stretch absurdly thin-and-wide; zero effect at 1024 base.
+	const PANEL_WIDTH_MAX: float = 560.0
+	const PANEL_WIDTH_WIDE_BONUS: float = 0.35
+	# get_viewport().get_visible_rect(), not get_viewport_rect() - this extends CanvasLayer,
+	# not Control, and get_viewport_rect() is a Control-only method.
+	var extra_width := maxf(0.0, get_viewport().get_visible_rect().size.x - 1024.0)
+	var panel_width := clampf(
+		PANEL_WIDTH + extra_width * PANEL_WIDTH_WIDE_BONUS, PANEL_WIDTH, PANEL_WIDTH_MAX
+	)
+	panel.offset_left = -panel_width / 2.0
+	panel.offset_right = panel_width / 2.0
 	panel.offset_bottom = -PANEL_BOTTOM_MARGIN
 	panel.offset_top = panel.offset_bottom - PANEL_HEIGHT
 	scrim.add_child(panel)

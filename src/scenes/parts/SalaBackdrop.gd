@@ -55,14 +55,19 @@ func _ready() -> void:
 	_build_framing()
 	_build_vignette()
 	_build_lights()
-	# Tied to `show_left_band`, not built unconditionally (2026-07-29, visual quality pass
-	# regression caught by re-capturing S2/S3 after adding this): the glow exists to give
-	# S1's wordmark lockup real value-mass and has no target on screens without that lockup -
-	# unconditional, it appeared as an unexplained warm patch over "Logged Cases" (S2) and
-	# behind S3's own scrim, neither of which asked for it. Same per-screen convention
-	# `_build_left_band()` already established for exactly this reason.
-	if show_left_band:
-		_build_key_glow()
+	# `_build_key_glow()` deliberately NOT called (2026-07-30, owner review): the owner
+	# looked at the real device render and called the glow "inconsistent" - independent
+	# confirmation of `mosa-critic`'s own AMBITION finding the same day ("reads as a generic
+	# radial vignette with no relationship to the game's own chismis premise... a missed
+	# chance"). It has no source in the room (no lamp, no window at that position - Reference
+	# A's own rule is a TRIANGLE of motivated lights, and this was a fourth, unmotivated one)
+	# and its measured contribution to the wordmark's focal-point win was negligible anyway
+	# (DESIGN.md §5's own log: pushing plateau/alpha harder moved the block-peak by <0.01;
+	# the real fix was the Black-weight font, untouched by this removal). `_build_left_band()`
+	# already provides Reference A's mandatory near-black framing silhouette behind the
+	# wordmark - removing KeyGlow stops layering a generic shape on top of a technique that
+	# already does this job correctly. Function kept, just unused - cheap to revive if a
+	# later pass wants a shape actually motivated by the room or the chismis motif instead.
 	_build_ground_shadow()
 	_layout_for_viewport()
 	_start_idle_drift()
@@ -682,6 +687,18 @@ func _layout_for_viewport() -> void:
 ## Called by S1 (the only screen showing Mosa full-body) once it knows her true
 ## edge-anchored position - this can't be computed generically here since that position
 ## depends on the caller's own edge-anchoring math (mosa-ui-designer consult).
+## Called by S1 once it knows Mosa's true edge-anchored x position, same pattern as
+## `show_ground_shadow()` below (this screen is the only one that knows her real position;
+## SalaBackdrop can't derive it generically). 2026-07-30: `RimLight` was hard-coded at a
+## fixed x=610, tuned to her OLD silhouette edge - moving her (the wide-aspect dead-zone fix,
+## `Title.gd::_mosa_left_edge()`) without also moving this would detach the rim light from
+## her body into empty air, backlighting nothing. Overrides the default `_layout_for_viewport()`
+## sets; call this AFTER that has run (Title.gd's `_update_ground_shadow()` already does,
+## via the same `size_changed` connection `show_ground_shadow()` relies on).
+func set_rim_light_x(x: float) -> void:
+	_rim_light.position.x = x
+
+
 func show_ground_shadow(center: Vector2, size: Vector2) -> void:
 	_ground_shadow.position = center
 	_ground_shadow.scale = size / float(SHADOW_TEXTURE_SIZE)

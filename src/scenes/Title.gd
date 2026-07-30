@@ -24,7 +24,14 @@ const MOSA_SPRITE: Texture2D = preload("res://art/characters/mosa/MOSA-IdleFront
 # dominate the frame pushed the subtitle down to y~310; at 496 tall Mosa's head started
 # at y~264 and physically overlapped it. She also reads better smaller now that the
 # title, not the character, is the focal point.
-const MOSA_HEIGHT: float = 470.0
+# 470 -> 440 (2026-07-30, mosa-critic): at the 4:3 base canvas her hair spike touched the
+# gold rule line with effectively zero clearance (her computed top edge, 290px, landed just
+# 4px above the rule at 294px) - not caused by today's horizontal repositioning (the rule and
+# her vertical placement are both height-only, unaffected by the wide-aspect fix), a latent
+# gap this project's own "guaranteed-safe 4:3 rect" promise (DESIGN.md §6) never actually
+# held. 440 gives a real 24px (an 8px-grid multiple) of clearance between the rule and her
+# top edge at 768px height.
+const MOSA_HEIGHT: float = 440.0
 const GROUND_SHADOW_SIZE: Vector2 = Vector2(240, 72)
 
 ## Mosa's inset from the left safe-area margin. Was an inline `440.0` literal repeated in
@@ -35,6 +42,15 @@ const GROUND_SHADOW_SIZE: Vector2 = Vector2(240, 72)
 ## *height*, never to the fact that it was under the wrong object entirely. One constant,
 ## used by both, so they cannot disagree again.
 const MOSA_INSET_X: float = 440.0
+## Widens Mosa's inset as the viewport reveals more than the 1024px base canvas (2026-07-30,
+## owner review: "the character feels so out of touch... the placement is inconsistent").
+## `MOSA_INSET_X` alone is a flat base-canvas number - correct at 1024x768 (confirmed: the
+## 4:3 capture already has the intended clearance to the button column), but static against
+## a wide device, so the right-anchored button column drifts further away while she stays
+## put. Measured on the real device capture: ~40% of frame width was empty between her and
+## the column. Zero-effect at 1024 base (`extra_width` is 0 there), so the already-reviewed
+## narrow layout is untouched.
+const MOSA_WIDE_BONUS: float = 0.28
 
 const BUTTON_COLUMN_WIDTH: float = 320.0
 # 16 -> 24 (DESIGN.md §5, 2026-07-29 reopen) - part of the same touch-correction pass as
@@ -186,17 +202,21 @@ func _build_wordmark() -> void:
 
 ## Her left edge, resolved against the two things she actually has to sit between: the
 ## title lockup on her left and the button column on her right. `MOSA_INSET_X` alone is a
-## bare offset-from-edge - it happens to work at 1706x768 and crowds the menu at 1024x768,
-## where the same 320px column starts 682px further left and her hand ends up all but
-## touching `New Game`. Clamping to a named clearance keeps one rule working at both
-## aspects instead of one number that is only correct at one of them.
+## bare offset-from-edge - correct at the 1024x768 base canvas, but static against a wider
+## device, so the right-anchored button column drifts further away while she stays put
+## (owner review, 2026-07-30: "the character feels out of touch... placement inconsistent").
+## `MOSA_WIDE_BONUS` widens the inset by a fraction of whatever width the viewport reveals
+## past 1024 - zero effect at the base canvas (already correct, already reviewed), real
+## effect on a wide device, still clamped against the column so she can never crowd it.
 func _mosa_left_edge(margins: Dictionary, width: float) -> float:
 	const CLEARANCE: float = 24.0
 	var right_margin: float = margins["right"]
 	var left_margin: float = margins["left"]
 	var column_left: float = get_viewport_rect().size.x - right_margin - BUTTON_COLUMN_WIDTH
 	var latest: float = column_left - width - CLEARANCE
-	return minf(left_margin + MOSA_INSET_X, latest)
+	var extra_width: float = maxf(0.0, get_viewport_rect().size.x - 1024.0)
+	var inset: float = MOSA_INSET_X + extra_width * MOSA_WIDE_BONUS
+	return minf(left_margin + inset, latest)
 
 
 func _build_mosa() -> void:
@@ -261,6 +281,10 @@ func _update_ground_shadow() -> void:
 		_mosa_left_edge(margins, width) + width / 2.0, floor_y - GROUND_SHADOW_SIZE.y / 2.0
 	)
 	_sala_backdrop.show_ground_shadow(center, GROUND_SHADOW_SIZE)
+	# Keeps RimLight aimed at her actual silhouette (2026-07-30 wide-aspect placement fix) -
+	# same reasoning as the shadow above: computed here, not re-derived inside SalaBackdrop,
+	# because only this screen knows her true edge-anchored position.
+	_sala_backdrop.set_rim_light_x(center.x)
 
 
 func _build_buttons() -> void:
