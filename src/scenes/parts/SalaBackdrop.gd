@@ -36,6 +36,8 @@ var _far_plane: Parallax2D
 var _backdrop_sprite: Sprite2D
 var _grade: CanvasModulate
 var _framing: Parallax2D
+var _right_scrim: Polygon2D
+var _right_scrim_falloff: Polygon2D
 var _key_light: PointLight2D
 var _rim_light: PointLight2D
 var _lamp_light: PointLight2D
@@ -49,6 +51,7 @@ func _ready() -> void:
 	_build_far_plane()
 	if show_left_band:
 		_build_left_band()
+	_build_right_scrim()
 	_build_framing()
 	_build_vignette()
 	_build_lights()
@@ -200,6 +203,40 @@ func _build_left_band() -> void:
 	)
 	falloff.vertex_colors = PackedColorArray([dark, clear, clear, dark])
 	add_child(falloff)
+
+
+## Soft dark scrim behind the right-anchored chrome column (2026-07-30, mosa-critic, DM-067
+## roll-up): `ChromeButton`'s 0.58-alpha fill was tuned in isolation against an assumed-neutral
+## backdrop and never checked against what's actually behind it - the sala's TV cabinet, whose
+## sharp rectilinear linework bleeds straight through both enabled buttons on S1 and S2's own
+## CTA, reading as visual noise/glitch rather than "the room showing through." Raising the
+## button's own alpha "fixed" the bleed but re-won the S1 focal-point contest for the buttons
+## (0.62 relLum block peak vs. the wordmark's hard-won 0.43) - the two problems share a lever
+## and can't both be solved by turning it. This decouples them: darken the BACKDROP behind the
+## column instead of brightening the BUTTON, so the linework's local contrast drops without the
+## button reading any brighter. Built unconditionally (not gated on `show_left_band` like the
+## wordmark-only `KeyGlow`) because the button column's screen position is common to every
+## screen this stack serves, not just S1's.
+func _build_right_scrim() -> void:
+	const CORE_ALPHA: float = 0.92
+	var dark := Color(_palette.bg_deep, CORE_ALPHA)
+	var clear := Color(_palette.bg_deep, 0.0)
+
+	_right_scrim = Polygon2D.new()
+	_right_scrim.name = "RightScrim"
+	# light_mask = 0, unlike LeftBand (which stays lit on purpose so KeyLight can pick out
+	# its edge): this scrim exists purely to flatten backdrop DETAIL behind the button
+	# column, and letting LampLight brighten it back up would defeat that job - the same
+	# "flat shape work, no relighting" rule `Framing`/`GroundShadow` already follow.
+	_right_scrim.light_mask = 0
+	_right_scrim.vertex_colors = PackedColorArray([dark, dark, dark, dark])
+	add_child(_right_scrim)
+
+	_right_scrim_falloff = Polygon2D.new()
+	_right_scrim_falloff.name = "RightScrimFalloff"
+	_right_scrim_falloff.light_mask = 0
+	_right_scrim_falloff.vertex_colors = PackedColorArray([clear, dark, dark, clear])
+	add_child(_right_scrim_falloff)
 
 
 ## Top-edge clutter (laundry line / tangled wire silhouette, per ASSET_SPEC.md) on its own
@@ -600,6 +637,32 @@ func _layout_for_viewport() -> void:
 	# darker, flatter room than the same code produced at 1706x768. Mixing a proportional and
 	# an absolute coordinate in one composition is what caused it; both are edge-relative now.
 	_lamp_light.position = Vector2(vp_size.x - 560.0, vp_size.y - 130)
+
+	# `RightScrim` - right-edge-relative like everything else on this true-edge side (the
+	# button column is right-anchored, not proportional), so it keeps covering the column
+	# regardless of viewport width. Core (420px, past the 320px button column's own width
+	# plus margin) sits flush with the true right edge; a 260px falloff softens the inner
+	# edge into the room rather than cutting a hard vertical line across the sofa.
+	const RIGHT_SCRIM_CORE: float = 420.0
+	const RIGHT_SCRIM_FALLOFF: float = 260.0
+	var core_left := vp_size.x - RIGHT_SCRIM_CORE
+	var falloff_left := core_left - RIGHT_SCRIM_FALLOFF
+	_right_scrim.polygon = PackedVector2Array(
+		[
+			Vector2(core_left, 0),
+			Vector2(vp_size.x, 0),
+			Vector2(vp_size.x, vp_size.y),
+			Vector2(core_left, vp_size.y),
+		]
+	)
+	_right_scrim_falloff.polygon = PackedVector2Array(
+		[
+			Vector2(falloff_left, 0),
+			Vector2(core_left, 0),
+			Vector2(core_left, vp_size.y),
+			Vector2(falloff_left, vp_size.y),
+		]
+	)
 
 	# mosa-critic (DM-010 reopen review): `TopClutter`'s polygon was authored fixed-width
 	# for the 1024px base canvas, so a wider-than-1024 real device showed zero framing

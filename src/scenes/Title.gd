@@ -10,6 +10,10 @@ extends Control
 ## STATE.md; DM-015 replaces this path outright, no change needed here when it does.
 const PROLOGUE_SCENE_PATH: String = "res://src/scenes/Prologue.tscn"
 const SALA_BACKDROP_SCENE: PackedScene = preload("res://src/scenes/parts/SalaBackdrop.tscn")
+# EXPERIMENT (DM-067, mosa-ui-designer proposal): a Black-weight (wght 900) variation of
+# the SAME Nunito variable font file, not a second font family. See _apply_text_legibility()
+# for why this is the fix, not another glow-tuning pass.
+const FONT_NUNITO_DISPLAY: FontVariation = preload("res://art/ui/fonts/font_nunito_display.tres")
 
 const MOSA_SPRITE: Texture2D = preload("res://art/characters/mosa/MOSA-IdleFront.png")
 # 496, down from 560 (mosa-ui-designer, DM-010 reopen item 6) - the redesigned two-tier
@@ -81,10 +85,14 @@ func _on_back_pressed() -> void:
 ## contrast everywhere it goes, so legibility stops depending on what happens to be behind
 ## it. Standard practice for UI over art, and it is why this is a helper rather than four
 ## copies of the same override.
-func _apply_text_legibility(label: Label, font_size: int) -> void:
+func _apply_text_legibility(label: Label, font_size: int, outline_scale: float = 0.14) -> void:
 	# Outline scales with type size: heavy enough to separate the glyph from a busy
 	# backdrop, light enough not to thicken the letterform into a blob.
-	var outline := maxi(4, int(round(font_size * 0.14)))
+	# `outline_scale` is smaller for a bold/Black-weight glyph (see MOSA below): a thick
+	# stroke already carries its own separation from the backdrop, so a full 0.14 outline
+	# would just add bulk without adding legibility - and it's the exact thing diluting the
+	# block-averaged luminance test today (EXPERIMENT, DM-067).
+	var outline := maxi(4, int(round(font_size * outline_scale)))
 	label.add_theme_color_override("font_outline_color", _palette.bg_deep)
 	label.add_theme_constant_override("outline_size", outline)
 	# A soft drop shadow underneath adds separation on light backdrops, where an outline
@@ -124,14 +132,29 @@ func _build_wordmark() -> void:
 	# of pairing) - the two tiers sit close enough to read as one mark.
 	mosa_word.offset_top = top + 56.0
 	mosa_word.add_theme_font_size_override("font_size", 168)
+	# EXPERIMENT (DM-067): Black weight (wght 900) of the SAME Nunito variable font file -
+	# not a second font family, §5's "one family only" rule stays satisfied. This is the
+	# structural fix for the focal-point contest: MOSA's thin regular-weight strokes left
+	# most of each 24x24 measurement block as near-black outline/gap, capping the block
+	# average regardless of how bright the KeyGlow behind it gets. A Black-weight stroke is
+	# roughly 3x wider at this size, so the SAME fixed-width outline becomes a much smaller
+	# fraction of each stroke's total width - more of every block is gold fill, not gap.
+	mosa_word.add_theme_font_override("font", FONT_NUNITO_DISPLAY)
 	mosa_word.add_theme_color_override("font_color", _palette.gold)
 	mosa_word.light_mask = 0  # same KeyLight-contrast reasoning as `detective` above.
-	_apply_text_legibility(mosa_word, 168)
+	# 0.08, not 0.14: a Black-weight glyph needs less relative outline to separate from the
+	# backdrop than a regular-weight one does (see _apply_text_legibility docstring).
+	_apply_text_legibility(mosa_word, 168, 0.08)
 	add_child(mosa_word)
 
 	var font := get_theme_default_font()
 	var detective_width := font.get_string_size(detective.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 64).x
-	var mosa_width := font.get_string_size(mosa_word.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 168).x
+	# EXPERIMENT (DM-067): measured against FONT_NUNITO_DISPLAY, not the regular-weight
+	# default font - a Black-weight "MOSA" is measurably wider than regular weight, and
+	# measuring against the wrong font under-sized the rule/subtitle width beneath it.
+	var mosa_width := (
+		FONT_NUNITO_DISPLAY.get_string_size(mosa_word.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 168).x
+	)
 	var rule_width := maxf(detective_width, mosa_width)
 	var rule_top := top + 56.0 + 190.0
 
