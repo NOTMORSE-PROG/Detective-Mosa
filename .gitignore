@@ -24,6 +24,13 @@
 .gitmessage
 *.pdf
 
+# Raw asset-delivery archives. Source material, large, local-only — same class as
+# the working-draft PDF above. The game-ready files extracted out of them belong in
+# /art/ and ARE committed; the archives themselves never are.
+*.zip
+*.rar
+*.7z
+
 # --- Godot: engine + import cache already covered by the dot-dir whitelist ---
 
 # --- Godot: Android export secrets — never committed ---
