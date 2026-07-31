@@ -11,9 +11,66 @@
 &"nicknames": [],
 &"offset": Vector2(0, 0),
 &"portraits": {
+"EyesFrown": {
+"export_overrides": {
+"image": "res://art/characters/bugoy/B-HalfBodyEyesFrown.png"
+},
+"scene": ""
+},
+"Frown": {
+"export_overrides": {
+"image": "res://art/characters/bugoy/B-HalfBodyFrown.png"
+},
+"scene": ""
+},
+"Happy": {
+"export_overrides": {
+"image": "res://art/characters/bugoy/B-HalfBodyHappy.png"
+},
+"scene": ""
+},
+"Happy2": {
+"export_overrides": {
+"image": "res://art/characters/bugoy/B-HalfBodyHappy2.png"
+},
+"scene": ""
+},
 "Idle": {
 "export_overrides": {
-"image": "res://art/characters/bugoy/BUGOY-IdleFront.png"
+"image": "res://art/characters/bugoy/B-HalfBodyIdle.png"
+},
+"scene": ""
+},
+"Sad": {
+"export_overrides": {
+"image": "res://art/characters/bugoy/B-HalfBodySad.png"
+},
+"scene": ""
+},
+"Sad2": {
+"export_overrides": {
+"image": "res://art/characters/bugoy/B-HalfBodySad2.png"
+},
+"scene": ""
+},
+"SadTears": {
+"export_overrides": {
+"image": "res://art/characters/bugoy/B-HalfBodySadTears.png"
+},
+"scene": ""
+},
+"Shocked": {
+"export_overrides": {
+"image": "res://art/characters/bugoy/B-HalfBodyShocked.png"
+},
+"scene": ""
+},
+"Waist": {
+"export_overrides": {
+"image": "res://art/characters/bugoy/B-HalfBodyWaist.png"
+},
+"scene": ""
+}
 },
 "scene": ""
 },

@@ -11,9 +11,54 @@
 &"nicknames": [],
 &"offset": Vector2(0, 0),
 &"portraits": {
+"Happy": {
+"export_overrides": {
+"image": "res://art/characters/mangver/MV-HalfBodyHappy.png"
+},
+"scene": ""
+},
+"HappyWink": {
+"export_overrides": {
+"image": "res://art/characters/mangver/MV-HalfBodyHappyWink.png"
+},
+"scene": ""
+},
 "Idle": {
 "export_overrides": {
-"image": "res://art/characters/mangver/MANGVER-IdleFront.png"
+"image": "res://art/characters/mangver/MV-HalfBodyIdle.png"
+},
+"scene": ""
+},
+"Sad": {
+"export_overrides": {
+"image": "res://art/characters/mangver/MV-HalfBodySad.png"
+},
+"scene": ""
+},
+"Sad2": {
+"export_overrides": {
+"image": "res://art/characters/mangver/MV-HalfBodySad2.png"
+},
+"scene": ""
+},
+"Thinking": {
+"export_overrides": {
+"image": "res://art/characters/mangver/MV-HalfBodyThinking.png"
+},
+"scene": ""
+},
+"ThinkingSad": {
+"export_overrides": {
+"image": "res://art/characters/mangver/MV-HalfBodyThinkingSad.png"
+},
+"scene": ""
+},
+"Tilt": {
+"export_overrides": {
+"image": "res://art/characters/mangver/MV-HalfBodyTilt.png"
+},
+"scene": ""
+}
 },
 "scene": ""
 },

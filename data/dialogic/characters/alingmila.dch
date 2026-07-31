@@ -11,9 +11,48 @@
 &"nicknames": [],
 &"offset": Vector2(0, 0),
 &"portraits": {
+"HandChest": {
+"export_overrides": {
+"image": "res://art/characters/alingmila/AM-HalfBodyHandChest.png"
+},
+"scene": ""
+},
 "Idle": {
 "export_overrides": {
-"image": "res://art/characters/alingmila/ALINGMILA-IdleFront.png"
+"image": "res://art/characters/alingmila/AM-HalfBodyIdle.png"
+},
+"scene": ""
+},
+"Panic": {
+"export_overrides": {
+"image": "res://art/characters/alingmila/AM-HalfBodyPanic.png"
+},
+"scene": ""
+},
+"Shocked": {
+"export_overrides": {
+"image": "res://art/characters/alingmila/AM-HalfBodyShocked.png"
+},
+"scene": ""
+},
+"Think": {
+"export_overrides": {
+"image": "res://art/characters/alingmila/AM-HalfBodyThink.png"
+},
+"scene": ""
+},
+"Waist": {
+"export_overrides": {
+"image": "res://art/characters/alingmila/AM-HalfBodyWaist.png"
+},
+"scene": ""
+},
+"Wallet": {
+"export_overrides": {
+"image": "res://art/characters/alingmila/AM-HalfBodyWallet.png"
+},
+"scene": ""
+}
 },
 "scene": ""
 },

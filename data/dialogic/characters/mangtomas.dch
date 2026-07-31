@@ -11,9 +11,60 @@
 &"nicknames": [],
 &"offset": Vector2(0, 0),
 &"portraits": {
+"ArmsChest": {
+"export_overrides": {
+"image": "res://art/characters/mangtomas/MT-HalfBodyArmsChest.png"
+},
+"scene": ""
+},
+"EyesClose": {
+"export_overrides": {
+"image": "res://art/characters/mangtomas/MT-HalfBodyEyesClose.png"
+},
+"scene": ""
+},
+"Frown": {
+"export_overrides": {
+"image": "res://art/characters/mangtomas/MT-HalfBodyFrown.png"
+},
+"scene": ""
+},
+"Grin": {
+"export_overrides": {
+"image": "res://art/characters/mangtomas/MT-HalfBodyGrin.png"
+},
+"scene": ""
+},
+"Happy": {
+"export_overrides": {
+"image": "res://art/characters/mangtomas/MT-HalfBodyHappy.png"
+},
+"scene": ""
+},
 "Idle": {
 "export_overrides": {
-"image": "res://art/characters/mangtomas/MANGTOMAS-IdleFront.png"
+"image": "res://art/characters/mangtomas/MT-HalfBodyIdle.png"
+},
+"scene": ""
+},
+"Sad": {
+"export_overrides": {
+"image": "res://art/characters/mangtomas/MT-HalfBodySad.png"
+},
+"scene": ""
+},
+"Sad2": {
+"export_overrides": {
+"image": "res://art/characters/mangtomas/MT-HalfBodySad2.png"
+},
+"scene": ""
+},
+"Side": {
+"export_overrides": {
+"image": "res://art/characters/mangtomas/MT-HalfBodySide.png"
+},
+"scene": ""
+}
 },
 "scene": ""
 },

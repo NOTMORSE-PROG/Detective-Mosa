@@ -11,9 +11,48 @@
 &"nicknames": [],
 &"offset": Vector2(0, 0),
 &"portraits": {
+"HandChest": {
+"export_overrides": {
+"image": "res://art/characters/alingvilma/AV-HalfBodyHandChest.png"
+},
+"scene": ""
+},
+"Happy": {
+"export_overrides": {
+"image": "res://art/characters/alingvilma/AV-HalfBodyHappy.png"
+},
+"scene": ""
+},
 "Idle": {
 "export_overrides": {
-"image": "res://art/characters/alingvilma/ALINGVILMA-IdleFront.png"
+"image": "res://art/characters/alingvilma/AV-HalfBodyIdle.png"
+},
+"scene": ""
+},
+"Sad": {
+"export_overrides": {
+"image": "res://art/characters/alingvilma/AV-HalfBodySad.png"
+},
+"scene": ""
+},
+"Shocked": {
+"export_overrides": {
+"image": "res://art/characters/alingvilma/AV-HalfBodyShocked.png"
+},
+"scene": ""
+},
+"Tilt": {
+"export_overrides": {
+"image": "res://art/characters/alingvilma/AV-HalfBodyTilt.png"
+},
+"scene": ""
+},
+"Waist": {
+"export_overrides": {
+"image": "res://art/characters/alingvilma/AV-HalfBodyWaist.png"
+},
+"scene": ""
+}
 },
 "scene": ""
 },

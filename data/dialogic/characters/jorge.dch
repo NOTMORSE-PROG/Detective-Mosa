@@ -11,9 +11,36 @@
 &"nicknames": [],
 &"offset": Vector2(0, 0),
 &"portraits": {
-"Angry": {
+"Close": {
 "export_overrides": {
-"image": "res://art/characters/jorge/JORGE-AngryFront.png"
+"image": "res://art/characters/jorge/J-HalfBodyClose.png"
+},
+"scene": ""
+},
+"HandChest": {
+"export_overrides": {
+"image": "res://art/characters/jorge/J-HalfBodyHandChest.png"
+},
+"scene": ""
+},
+"Happy": {
+"export_overrides": {
+"image": "res://art/characters/jorge/J-HalfBodyHappy.png"
+},
+"scene": ""
+},
+"Idle": {
+"export_overrides": {
+"image": "res://art/characters/jorge/J-HalfBodyIdle.png"
+},
+"scene": ""
+},
+"Waist": {
+"export_overrides": {
+"image": "res://art/characters/jorge/J-HalfBodyWaist.png"
+},
+"scene": ""
+}
 },
 "scene": ""
 },

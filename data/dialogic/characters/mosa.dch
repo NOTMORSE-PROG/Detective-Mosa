@@ -11,9 +11,54 @@
 &"nicknames": [],
 &"offset": Vector2(0, 0),
 &"portraits": {
-"Disappointed": {
+"Idle": {
 "export_overrides": {
-"image": "res://art/characters/mosa/MOSA-DisappointedFront.png"
+"image": "res://art/characters/mosa/M-HalfBodyIdle.png"
+},
+"scene": ""
+},
+"IdleWaist": {
+"export_overrides": {
+"image": "res://art/characters/mosa/M-HalfBodyIdleWaist.png"
+},
+"scene": ""
+},
+"Sad1": {
+"export_overrides": {
+"image": "res://art/characters/mosa/M-HalfBodySad1.png"
+},
+"scene": ""
+},
+"Sad2": {
+"export_overrides": {
+"image": "res://art/characters/mosa/M-HalfBodySad2.png"
+},
+"scene": ""
+},
+"Sad3": {
+"export_overrides": {
+"image": "res://art/characters/mosa/M-HalfBodySad3.png"
+},
+"scene": ""
+},
+"Shocked": {
+"export_overrides": {
+"image": "res://art/characters/mosa/M-HalfBodyShocked.png"
+},
+"scene": ""
+},
+"Smirk1": {
+"export_overrides": {
+"image": "res://art/characters/mosa/M-HalfBodySmirk1.png"
+},
+"scene": ""
+},
+"Smirk3": {
+"export_overrides": {
+"image": "res://art/characters/mosa/M-HalfBodySmirk3.png"
+},
+"scene": ""
+}
 },
 "scene": ""
 },

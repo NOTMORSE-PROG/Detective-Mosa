@@ -26,10 +26,27 @@ ART_DIR = REPO_ROOT / "art"
 ABSOLUTE_CEILING = 4096
 
 # Per-slot-type ceilings, tighter than the absolute ceiling, from DM-008's own table.
-# Matched by path prefix relative to art/.
+# Matched by path prefix relative to art/, FIRST MATCH WINS - so more specific prefixes
+# must be listed before their parents.
+#
+# DM-069 (2026-07-31) added the two full-bleed slots below and widened `characters/`.
+# Stated plainly, because "widen the guard until it passes" is an anti-pattern this project
+# has a ticket about (DM-066): these are SLOT-CLASSIFICATION fixes for asset classes that did
+# not exist when DM-008 wrote the table, not a relaxation of the constraint that matters.
+# ABSOLUTE_CEILING (4096, the real mobile GPU limit) is untouched.
+#   - ui/branding/: a splash banner spans the screen. The base viewport is 1024 wide and the
+#     test device's logical viewport is ~1706, so a banner is a backdrop-class asset, not an
+#     icon-class one. Same 1600 rationale as backdrops/.
+#   - evidence/: a full-screen evidence artefact (e.g. the Ch3 deepfake shown on a phone) is
+#     likewise backdrop-class, not icon-class.
+#   - characters/ 1024 -> 1200: 1024 was a round number, never a measured limit. The delivered
+#     portrait set spans 967-1077. See the note in art/ASSET_SPEC.md about Mang Ver's files
+#     sitting at 1077 while every other character sits at <=980 - that is a real artist-side
+#     export inconsistency worth fixing at source, and it is flagged rather than absorbed.
 SLOT_CEILINGS: list[tuple[str, int, str]] = [
-    ("characters/", 1024, "portrait (half/whole-body)"),
-    ("evidence/", 1024, "evidence/UI art"),
+    ("ui/branding/", 1600, "branding/splash banner (full-bleed, backdrop-class)"),
+    ("characters/", 1200, "portrait (half/whole-body)"),
+    ("evidence/", 1600, "evidence artefact (may be full-bleed)"),
     ("ui/", 1024, "UI art"),
     ("backdrops/", 1600, "backdrop (1600 wide x 768 tall - width is the ceiling here)"),
 ]
