@@ -42,56 +42,5 @@
 "scene": ""
 }
 },
-"scene": ""
-},
-"Angry-Left": {
-"export_overrides": {
-"image": "res://art/characters/jorge/JORGE-AngryLeft.png"
-},
-"scene": ""
-},
-"Angry-Right": {
-"export_overrides": {
-"image": "res://art/characters/jorge/JORGE-AngryRight.png"
-},
-"scene": ""
-},
-"Idle": {
-"export_overrides": {
-"image": "res://art/characters/jorge/JORGE-IdleFront.png"
-},
-"scene": ""
-},
-"Idle-Left": {
-"export_overrides": {
-"image": "res://art/characters/jorge/JORGE-IdleLeft.png"
-},
-"scene": ""
-},
-"Idle-Right": {
-"export_overrides": {
-"image": "res://art/characters/jorge/JORGE-IdleRight.png"
-},
-"scene": ""
-},
-"Shy": {
-"export_overrides": {
-"image": "res://art/characters/jorge/JORGE-ShyFront.png"
-},
-"scene": ""
-},
-"Shy-Left": {
-"export_overrides": {
-"image": "res://art/characters/jorge/JORGE-ShyLeft.png"
-},
-"scene": ""
-},
-"Shy-Right": {
-"export_overrides": {
-"image": "res://art/characters/jorge/JORGE-ShyRight.png"
-},
-"scene": ""
-}
-},
 &"scale": 1.0
 }

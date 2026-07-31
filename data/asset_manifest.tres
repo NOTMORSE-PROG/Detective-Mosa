@@ -6,34 +6,94 @@
 [sub_resource type="Resource" id="Resource_xbg2r"]
 script = ExtResource("2_wkqbc")
 id = &"mosa_idle_front"
-path = "res://art/characters/mosa/MOSA-IdleFront.png"
+path = "res://art/characters/mosa/M-IdleFront.png"
 kind = &"character"
-canvas_size = Vector2i(285, 812)
+canvas_size = Vector2i(302, 812)
 anchor = "bottom-center"
 owner = "Lana"
 screens = Array[StringName]([&"S4", &"S5", &"S7"])
 
 [sub_resource type="Resource" id="Resource_h08rm"]
 script = ExtResource("2_wkqbc")
-id = &"mosa_thinking_front"
-path = "res://art/characters/mosa/MOSA-ThinkingFront.png"
+id = &"mosa_idle_left"
+path = "res://art/characters/mosa/M-IdleLeft.png"
 kind = &"character"
-canvas_size = Vector2i(256, 812)
+canvas_size = Vector2i(223, 812)
+anchor = "bottom-center"
+owner = "Lana"
+screens = Array[StringName]([&"S4", &"S5", &"S7"])
+
+[sub_resource type="Resource" id="Resource_nnreu"]
+script = ExtResource("2_wkqbc")
+id = &"mosa_idle_right"
+path = "res://art/characters/mosa/M-IdleRight.png"
+kind = &"character"
+canvas_size = Vector2i(208, 812)
+anchor = "bottom-center"
+owner = "Lana"
+screens = Array[StringName]([&"S4", &"S5", &"S7"])
+
+[sub_resource type="Resource" id="Resource_lgf0g"]
+script = ExtResource("2_wkqbc")
+id = &"mosa_thinking_front"
+path = "res://art/characters/mosa/M-ThinkingFront.png"
+kind = &"character"
+canvas_size = Vector2i(303, 812)
 anchor = "bottom-center"
 owner = "Lana"
 screens = Array[StringName]([&"S7"])
 
-[sub_resource type="Resource" id="Resource_nnreu"]
+[sub_resource type="Resource" id="Resource_3kf68"]
+script = ExtResource("2_wkqbc")
+id = &"mosa_thinking_left"
+path = "res://art/characters/mosa/M-ThinkingLeft.png"
+kind = &"character"
+canvas_size = Vector2i(199, 812)
+anchor = "bottom-center"
+owner = "Lana"
+screens = Array[StringName]([&"S7"])
+
+[sub_resource type="Resource" id="Resource_ck73i"]
+script = ExtResource("2_wkqbc")
+id = &"mosa_thinking_right"
+path = "res://art/characters/mosa/M-ThinkingRight.png"
+kind = &"character"
+canvas_size = Vector2i(206, 812)
+anchor = "bottom-center"
+owner = "Lana"
+screens = Array[StringName]([&"S7"])
+
+[sub_resource type="Resource" id="Resource_nrcbk"]
 script = ExtResource("2_wkqbc")
 id = &"mosa_shocked_front"
-path = "res://art/characters/mosa/MOSA-ShockedFront.png"
+path = "res://art/characters/mosa/M-ShockedFront.png"
 kind = &"character"
-canvas_size = Vector2i(370, 811)
+canvas_size = Vector2i(273, 812)
 anchor = "bottom-center"
 owner = "Lana"
 screens = Array[StringName]([&"S4"])
 
-[sub_resource type="Resource" id="Resource_lgf0g"]
+[sub_resource type="Resource" id="Resource_uog4r"]
+script = ExtResource("2_wkqbc")
+id = &"mosa_shocked_left"
+path = "res://art/characters/mosa/M-ShockedLeft.png"
+kind = &"character"
+canvas_size = Vector2i(199, 812)
+anchor = "bottom-center"
+owner = "Lana"
+screens = Array[StringName]([&"S4"])
+
+[sub_resource type="Resource" id="Resource_77b8b"]
+script = ExtResource("2_wkqbc")
+id = &"mosa_shocked_right"
+path = "res://art/characters/mosa/M-ShockedRight.png"
+kind = &"character"
+canvas_size = Vector2i(203, 812)
+anchor = "bottom-center"
+owner = "Lana"
+screens = Array[StringName]([&"S4"])
+
+[sub_resource type="Resource" id="Resource_qg1f5"]
 script = ExtResource("2_wkqbc")
 id = &"mosa_disappointed_front"
 path = "res://art/characters/mosa/MOSA-DisappointedFront.png"
@@ -43,107 +103,7 @@ anchor = "bottom-center"
 owner = "Lana"
 screens = Array[StringName]([&"S4"])
 
-[sub_resource type="Resource" id="Resource_3kf68"]
-script = ExtResource("2_wkqbc")
-id = &"mangver_idle_front"
-path = "res://art/characters/mangver/MANGVER-IdleFront.png"
-kind = &"character"
-canvas_size = Vector2i(275, 823)
-anchor = "bottom-center"
-owner = "Lana"
-screens = Array[StringName]([&"S4", &"S5"])
-
-[sub_resource type="Resource" id="Resource_ck73i"]
-script = ExtResource("2_wkqbc")
-id = &"jorge_idle_front"
-path = "res://art/characters/jorge/JORGE-IdleFront.png"
-kind = &"character"
-canvas_size = Vector2i(322, 811)
-anchor = "bottom-center"
-owner = "Francis"
-screens = Array[StringName]([&"S7"])
-
-[sub_resource type="Resource" id="Resource_nrcbk"]
-script = ExtResource("2_wkqbc")
-id = &"jorge_angry_front"
-path = "res://art/characters/jorge/JORGE-AngryFront.png"
-kind = &"character"
-canvas_size = Vector2i(317, 811)
-anchor = "bottom-center"
-owner = "Francis"
-screens = Array[StringName]([&"S4"])
-
-[sub_resource type="Resource" id="Resource_uog4r"]
-script = ExtResource("2_wkqbc")
-id = &"bugoy_idle_front"
-path = "res://art/characters/bugoy/BUGOY-IdleFront.png"
-kind = &"character"
-canvas_size = Vector2i(308, 811)
-anchor = "bottom-center"
-owner = "Francis"
-screens = Array[StringName]([&"S7"])
-
-[sub_resource type="Resource" id="Resource_77b8b"]
-script = ExtResource("2_wkqbc")
-id = &"bugoy_phone_front"
-path = "res://art/characters/bugoy/BUGOY-PhoneFront.png"
-kind = &"character"
-canvas_size = Vector2i(288, 811)
-anchor = "bottom-center"
-owner = "Francis"
-screens = Array[StringName]([&"S4"])
-
-[sub_resource type="Resource" id="Resource_qg1f5"]
-script = ExtResource("2_wkqbc")
-id = &"alingvilma_idle_front"
-path = "res://art/characters/alingvilma/ALINGVILMA-IdleFront.png"
-kind = &"character"
-canvas_size = Vector2i(291, 811)
-anchor = "bottom-center"
-owner = "Francis"
-screens = Array[StringName]([&"S4", &"S5"])
-
 [sub_resource type="Resource" id="Resource_eix0a"]
-script = ExtResource("2_wkqbc")
-id = &"alingvilma_shocked_front"
-path = "res://art/characters/alingvilma/ALINGVILMA-ShockedFront.png"
-kind = &"character"
-canvas_size = Vector2i(293, 811)
-anchor = "bottom-center"
-owner = "Francis"
-screens = Array[StringName]([&"S4"])
-
-[sub_resource type="Resource" id="Resource_opc83"]
-script = ExtResource("2_wkqbc")
-id = &"mosa_idle_left"
-path = "res://art/characters/mosa/MOSA-IdleLeft.png"
-kind = &"character"
-canvas_size = Vector2i(196, 812)
-anchor = "bottom-center"
-owner = "Lana"
-screens = Array[StringName]([&"S4", &"S5", &"S7"])
-
-[sub_resource type="Resource" id="Resource_7rxl5"]
-script = ExtResource("2_wkqbc")
-id = &"mosa_thinking_left"
-path = "res://art/characters/mosa/MOSA-ThinkingLeft.png"
-kind = &"character"
-canvas_size = Vector2i(203, 812)
-anchor = "bottom-center"
-owner = "Lana"
-screens = Array[StringName]([&"S7"])
-
-[sub_resource type="Resource" id="Resource_2jetg"]
-script = ExtResource("2_wkqbc")
-id = &"mosa_shocked_left"
-path = "res://art/characters/mosa/MOSA-ShockedLeft.png"
-kind = &"character"
-canvas_size = Vector2i(197, 811)
-anchor = "bottom-center"
-owner = "Lana"
-screens = Array[StringName]([&"S4"])
-
-[sub_resource type="Resource" id="Resource_bdph5"]
 script = ExtResource("2_wkqbc")
 id = &"mosa_disappointed_left"
 path = "res://art/characters/mosa/MOSA-DisappointedLeft.png"
@@ -153,107 +113,7 @@ anchor = "bottom-center"
 owner = "Lana"
 screens = Array[StringName]([&"S4"])
 
-[sub_resource type="Resource" id="Resource_cqogc"]
-script = ExtResource("2_wkqbc")
-id = &"mangver_idle_left"
-path = "res://art/characters/mangver/MANGVER-IdleLeft.png"
-kind = &"character"
-canvas_size = Vector2i(240, 823)
-anchor = "bottom-center"
-owner = "Lana"
-screens = Array[StringName]([&"S4", &"S5"])
-
-[sub_resource type="Resource" id="Resource_7ke2p"]
-script = ExtResource("2_wkqbc")
-id = &"jorge_idle_left"
-path = "res://art/characters/jorge/JORGE-IdleLeft.png"
-kind = &"character"
-canvas_size = Vector2i(191, 811)
-anchor = "bottom-center"
-owner = "Francis"
-screens = Array[StringName]([&"S7"])
-
-[sub_resource type="Resource" id="Resource_mftse"]
-script = ExtResource("2_wkqbc")
-id = &"jorge_angry_left"
-path = "res://art/characters/jorge/JORGE-AngryLeft.png"
-kind = &"character"
-canvas_size = Vector2i(192, 811)
-anchor = "bottom-center"
-owner = "Francis"
-screens = Array[StringName]([&"S4"])
-
-[sub_resource type="Resource" id="Resource_yiy0u"]
-script = ExtResource("2_wkqbc")
-id = &"bugoy_idle_left"
-path = "res://art/characters/bugoy/BUGOY-IdleLeft.png"
-kind = &"character"
-canvas_size = Vector2i(180, 811)
-anchor = "bottom-center"
-owner = "Francis"
-screens = Array[StringName]([&"S7"])
-
-[sub_resource type="Resource" id="Resource_l2qek"]
-script = ExtResource("2_wkqbc")
-id = &"bugoy_phone_left"
-path = "res://art/characters/bugoy/BUGOY-PhoneLeft.png"
-kind = &"character"
-canvas_size = Vector2i(250, 811)
-anchor = "bottom-center"
-owner = "Francis"
-screens = Array[StringName]([&"S4"])
-
-[sub_resource type="Resource" id="Resource_p04iu"]
-script = ExtResource("2_wkqbc")
-id = &"alingvilma_idle_left"
-path = "res://art/characters/alingvilma/ALINGVILMA-IdleLeft.png"
-kind = &"character"
-canvas_size = Vector2i(301, 811)
-anchor = "bottom-center"
-owner = "Francis"
-screens = Array[StringName]([&"S4", &"S5"])
-
-[sub_resource type="Resource" id="Resource_nadx7"]
-script = ExtResource("2_wkqbc")
-id = &"alingvilma_shocked_left"
-path = "res://art/characters/alingvilma/ALINGVILMA-ShockedLeft.png"
-kind = &"character"
-canvas_size = Vector2i(250, 811)
-anchor = "bottom-center"
-owner = "Francis"
-screens = Array[StringName]([&"S4"])
-
-[sub_resource type="Resource" id="Resource_yrtkj"]
-script = ExtResource("2_wkqbc")
-id = &"mosa_idle_right"
-path = "res://art/characters/mosa/MOSA-IdleRight.png"
-kind = &"character"
-canvas_size = Vector2i(197, 812)
-anchor = "bottom-center"
-owner = "Lana"
-screens = Array[StringName]([&"S4", &"S5", &"S7"])
-
-[sub_resource type="Resource" id="Resource_ilfv1"]
-script = ExtResource("2_wkqbc")
-id = &"mosa_thinking_right"
-path = "res://art/characters/mosa/MOSA-ThinkingRight.png"
-kind = &"character"
-canvas_size = Vector2i(197, 812)
-anchor = "bottom-center"
-owner = "Lana"
-screens = Array[StringName]([&"S7"])
-
-[sub_resource type="Resource" id="Resource_nv3kh"]
-script = ExtResource("2_wkqbc")
-id = &"mosa_shocked_right"
-path = "res://art/characters/mosa/MOSA-ShockedRight.png"
-kind = &"character"
-canvas_size = Vector2i(197, 811)
-anchor = "bottom-center"
-owner = "Lana"
-screens = Array[StringName]([&"S4"])
-
-[sub_resource type="Resource" id="Resource_bbiin"]
+[sub_resource type="Resource" id="Resource_opc83"]
 script = ExtResource("2_wkqbc")
 id = &"mosa_disappointed_right"
 path = "res://art/characters/mosa/MOSA-DisappointedRight.png"
@@ -263,45 +123,185 @@ anchor = "bottom-center"
 owner = "Lana"
 screens = Array[StringName]([&"S4"])
 
-[sub_resource type="Resource" id="Resource_mirar"]
+[sub_resource type="Resource" id="Resource_7rxl5"]
 script = ExtResource("2_wkqbc")
-id = &"mangver_idle_right"
-path = "res://art/characters/mangver/MANGVER-IdleRight.png"
+id = &"mosa_movement_walkcycle"
+path = "res://art/characters/mosa/M-Sprites.png"
 kind = &"character"
-canvas_size = Vector2i(253, 823)
+canvas_size = Vector2i(256, 256)
+anchor = "top-left (frame grid)"
+owner = "Lana"
+screens = Array[StringName]([&"S7"])
+
+[sub_resource type="Resource" id="Resource_2jetg"]
+script = ExtResource("2_wkqbc")
+id = &"mangver_idle_front"
+path = "res://art/characters/mangver/MV-IdleFront.png"
+kind = &"character"
+canvas_size = Vector2i(384, 1077)
 anchor = "bottom-center"
 owner = "Lana"
 screens = Array[StringName]([&"S4", &"S5"])
 
-[sub_resource type="Resource" id="Resource_pxwbu"]
+[sub_resource type="Resource" id="Resource_bdph5"]
+script = ExtResource("2_wkqbc")
+id = &"mangver_idle_left"
+path = "res://art/characters/mangver/MV-IdleLeft.png"
+kind = &"character"
+canvas_size = Vector2i(309, 1077)
+anchor = "bottom-center"
+owner = "Lana"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_cqogc"]
+script = ExtResource("2_wkqbc")
+id = &"mangver_idle_right"
+path = "res://art/characters/mangver/MV-IdleRight.png"
+kind = &"character"
+canvas_size = Vector2i(308, 1077)
+anchor = "bottom-center"
+owner = "Lana"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_7ke2p"]
+script = ExtResource("2_wkqbc")
+id = &"jorge_idle_front"
+path = "res://art/characters/jorge/J-IdleFront.png"
+kind = &"character"
+canvas_size = Vector2i(288, 811)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S7"])
+
+[sub_resource type="Resource" id="Resource_mftse"]
+script = ExtResource("2_wkqbc")
+id = &"jorge_idle_left"
+path = "res://art/characters/jorge/J-IdleLeft.png"
+kind = &"character"
+canvas_size = Vector2i(198, 811)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S7"])
+
+[sub_resource type="Resource" id="Resource_yiy0u"]
 script = ExtResource("2_wkqbc")
 id = &"jorge_idle_right"
-path = "res://art/characters/jorge/JORGE-IdleRight.png"
+path = "res://art/characters/jorge/J-IdleRight.png"
 kind = &"character"
-canvas_size = Vector2i(229, 811)
+canvas_size = Vector2i(198, 811)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S7"])
+
+[sub_resource type="Resource" id="Resource_l2qek"]
+script = ExtResource("2_wkqbc")
+id = &"jorge_angry_front"
+path = "res://art/characters/jorge/J-AngryFront.png"
+kind = &"character"
+canvas_size = Vector2i(295, 811)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4"])
+
+[sub_resource type="Resource" id="Resource_p04iu"]
+script = ExtResource("2_wkqbc")
+id = &"jorge_angry_left"
+path = "res://art/characters/jorge/J-AngryLeft.png"
+kind = &"character"
+canvas_size = Vector2i(198, 811)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4"])
+
+[sub_resource type="Resource" id="Resource_nadx7"]
+script = ExtResource("2_wkqbc")
+id = &"jorge_angry_right"
+path = "res://art/characters/jorge/J-AngryRight.png"
+kind = &"character"
+canvas_size = Vector2i(198, 811)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4"])
+
+[sub_resource type="Resource" id="Resource_yrtkj"]
+script = ExtResource("2_wkqbc")
+id = &"jorge_shy_front"
+path = "res://art/characters/jorge/JORGE-ShyFront.png"
+kind = &"character"
+canvas_size = Vector2i(350, 811)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4"])
+
+[sub_resource type="Resource" id="Resource_ilfv1"]
+script = ExtResource("2_wkqbc")
+id = &"jorge_shy_left"
+path = "res://art/characters/jorge/JORGE-ShyLeft.png"
+kind = &"character"
+canvas_size = Vector2i(320, 820)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4"])
+
+[sub_resource type="Resource" id="Resource_nv3kh"]
+script = ExtResource("2_wkqbc")
+id = &"jorge_shy_right"
+path = "res://art/characters/jorge/JORGE-ShyRight.png"
+kind = &"character"
+canvas_size = Vector2i(320, 820)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4"])
+
+[sub_resource type="Resource" id="Resource_bbiin"]
+script = ExtResource("2_wkqbc")
+id = &"bugoy_idle_front"
+path = "res://art/characters/bugoy/B-IdleFront.png"
+kind = &"character"
+canvas_size = Vector2i(306, 811)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S7"])
+
+[sub_resource type="Resource" id="Resource_mirar"]
+script = ExtResource("2_wkqbc")
+id = &"bugoy_idle_left"
+path = "res://art/characters/bugoy/B-IdleLeft.png"
+kind = &"character"
+canvas_size = Vector2i(207, 811)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S7"])
+
+[sub_resource type="Resource" id="Resource_pxwbu"]
+script = ExtResource("2_wkqbc")
+id = &"bugoy_idle_right"
+path = "res://art/characters/bugoy/B-IdleRight.png"
+kind = &"character"
+canvas_size = Vector2i(239, 811)
 anchor = "bottom-center"
 owner = "Francis"
 screens = Array[StringName]([&"S7"])
 
 [sub_resource type="Resource" id="Resource_o0swn"]
 script = ExtResource("2_wkqbc")
-id = &"jorge_angry_right"
-path = "res://art/characters/jorge/JORGE-AngryRight.png"
+id = &"bugoy_phone_front"
+path = "res://art/characters/bugoy/BUGOY-PhoneFront.png"
 kind = &"character"
-canvas_size = Vector2i(231, 811)
+canvas_size = Vector2i(288, 811)
 anchor = "bottom-center"
 owner = "Francis"
 screens = Array[StringName]([&"S4"])
 
 [sub_resource type="Resource" id="Resource_mcfp0"]
 script = ExtResource("2_wkqbc")
-id = &"bugoy_idle_right"
-path = "res://art/characters/bugoy/BUGOY-IdleRight.png"
+id = &"bugoy_phone_left"
+path = "res://art/characters/bugoy/BUGOY-PhoneLeft.png"
 kind = &"character"
-canvas_size = Vector2i(220, 811)
+canvas_size = Vector2i(250, 811)
 anchor = "bottom-center"
 owner = "Francis"
-screens = Array[StringName]([&"S7"])
+screens = Array[StringName]([&"S4"])
 
 [sub_resource type="Resource" id="Resource_kig17"]
 script = ExtResource("2_wkqbc")
@@ -315,95 +315,230 @@ screens = Array[StringName]([&"S4"])
 
 [sub_resource type="Resource" id="Resource_n7h8h"]
 script = ExtResource("2_wkqbc")
+id = &"alingvilma_idle_front"
+path = "res://art/characters/alingvilma/ALINGVILMA-IdleFront.png"
+kind = &"character"
+canvas_size = Vector2i(291, 811)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4", &"S5", &"S7"])
+
+[sub_resource type="Resource" id="Resource_h3n5f"]
+script = ExtResource("2_wkqbc")
+id = &"alingvilma_idle_left"
+path = "res://art/characters/alingvilma/ALINGVILMA-IdleLeft.png"
+kind = &"character"
+canvas_size = Vector2i(301, 811)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4", &"S5", &"S7"])
+
+[sub_resource type="Resource" id="Resource_a05yr"]
+script = ExtResource("2_wkqbc")
 id = &"alingvilma_idle_right"
 path = "res://art/characters/alingvilma/ALINGVILMA-IdleRight.png"
 kind = &"character"
 canvas_size = Vector2i(345, 811)
 anchor = "bottom-center"
 owner = "Francis"
-screens = Array[StringName]([&"S4", &"S5"])
-
-[sub_resource type="Resource" id="Resource_h3n5f"]
-script = ExtResource("2_wkqbc")
-id = &"alingvilma_shocked_right"
-path = "res://art/characters/alingvilma/ALINGVILMA-ShockedRight.png"
-kind = &"character"
-canvas_size = Vector2i(315, 811)
-anchor = "bottom-center"
-owner = "Francis"
-screens = Array[StringName]([&"S4"])
-
-[sub_resource type="Resource" id="Resource_a05yr"]
-script = ExtResource("2_wkqbc")
-id = &"jorge_shy_front"
-path = "res://art/characters/jorge/JORGE-ShyFront.png"
-kind = &"character"
-canvas_size = Vector2i(350, 811)
-anchor = "bottom-center"
-owner = "Francis"
-screens = Array[StringName]([&"S4"])
+screens = Array[StringName]([&"S4", &"S5", &"S7"])
 
 [sub_resource type="Resource" id="Resource_egmxo"]
 script = ExtResource("2_wkqbc")
-id = &"jorge_shy_left"
-path = "res://art/characters/jorge/JORGE-ShyLeft.png"
+id = &"alingvilma_shocked_front"
+path = "res://art/characters/alingvilma/AV-ShockedFront.png"
 kind = &"character"
-canvas_size = Vector2i(320, 820)
+canvas_size = Vector2i(284, 811)
 anchor = "bottom-center"
 owner = "Francis"
 screens = Array[StringName]([&"S4"])
 
 [sub_resource type="Resource" id="Resource_m2rap"]
 script = ExtResource("2_wkqbc")
-id = &"jorge_shy_right"
-path = "res://art/characters/jorge/JORGE-ShyRight.png"
+id = &"alingvilma_shocked_left"
+path = "res://art/characters/alingvilma/AV-ShockedLeft.png"
 kind = &"character"
-canvas_size = Vector2i(320, 820)
+canvas_size = Vector2i(321, 811)
 anchor = "bottom-center"
 owner = "Francis"
 screens = Array[StringName]([&"S4"])
 
 [sub_resource type="Resource" id="Resource_sh0g4"]
 script = ExtResource("2_wkqbc")
-id = &"alingvilma_smile_front"
-path = "res://art/characters/alingvilma/ALINGVILMA-SmileFront.png"
+id = &"alingvilma_shocked_right"
+path = "res://art/characters/alingvilma/AV-ShockedRight.png"
 kind = &"character"
-canvas_size = Vector2i(303, 811)
+canvas_size = Vector2i(260, 811)
 anchor = "bottom-center"
 owner = "Francis"
 screens = Array[StringName]([&"S4"])
 
 [sub_resource type="Resource" id="Resource_4sckm"]
 script = ExtResource("2_wkqbc")
-id = &"alingvilma_smile_left"
-path = "res://art/characters/alingvilma/ALINGVILMA-SmileLeft.png"
+id = &"alingvilma_smile_front"
+path = "res://art/characters/alingvilma/AV-HappyFront.png"
 kind = &"character"
-canvas_size = Vector2i(320, 820)
+canvas_size = Vector2i(312, 811)
 anchor = "bottom-center"
 owner = "Francis"
 screens = Array[StringName]([&"S4"])
 
 [sub_resource type="Resource" id="Resource_gatu4"]
 script = ExtResource("2_wkqbc")
-id = &"alingvilma_smile_right"
-path = "res://art/characters/alingvilma/ALINGVILMA-SmileRight.png"
+id = &"alingvilma_smile_left"
+path = "res://art/characters/alingvilma/AV-HappyLeft.png"
 kind = &"character"
-canvas_size = Vector2i(320, 820)
+canvas_size = Vector2i(349, 811)
 anchor = "bottom-center"
 owner = "Francis"
 screens = Array[StringName]([&"S4"])
 
 [sub_resource type="Resource" id="Resource_rt838"]
 script = ExtResource("2_wkqbc")
-id = &"mosa_movement_walkcycle"
-path = "res://art/characters/mosa/movement/MOSA-All-Sprites.png"
+id = &"alingvilma_smile_right"
+path = "res://art/characters/alingvilma/AV-HappyRight.png"
 kind = &"character"
-canvas_size = Vector2i(256, 256)
-anchor = "top-left (frame grid)"
-owner = "Lana"
-screens = Array[StringName]([&"S7"])
+canvas_size = Vector2i(306, 811)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4"])
 
 [sub_resource type="Resource" id="Resource_1t36s"]
+script = ExtResource("2_wkqbc")
+id = &"alingmila_idle_front"
+path = "res://art/characters/alingmila/AM-IdleFront.png"
+kind = &"character"
+canvas_size = Vector2i(324, 749)
+anchor = "bottom-center"
+screens = Array[StringName]([&"S16"])
+
+[sub_resource type="Resource" id="Resource_rerq1"]
+script = ExtResource("2_wkqbc")
+id = &"alingmila_idle_left"
+path = "res://art/characters/alingmila/AM-IdleLeft.png"
+kind = &"character"
+canvas_size = Vector2i(352, 749)
+anchor = "bottom-center"
+screens = Array[StringName]([&"S16"])
+
+[sub_resource type="Resource" id="Resource_wm7e5"]
+script = ExtResource("2_wkqbc")
+id = &"alingmila_idle_right"
+path = "res://art/characters/alingmila/AM-IdleRight.png"
+kind = &"character"
+canvas_size = Vector2i(330, 749)
+anchor = "bottom-center"
+screens = Array[StringName]([&"S16"])
+
+[sub_resource type="Resource" id="Resource_vf7qs"]
+script = ExtResource("2_wkqbc")
+id = &"alingmila_relieved_front"
+path = "res://art/characters/alingmila/ALINGMILA-RelievedFront.png"
+kind = &"character"
+canvas_size = Vector2i(398, 811)
+anchor = "bottom-center"
+screens = Array[StringName]([&"S16"])
+
+[sub_resource type="Resource" id="Resource_8crka"]
+script = ExtResource("2_wkqbc")
+id = &"alingmila_relieved_left"
+path = "res://art/characters/alingmila/ALINGMILA-RelievedLeft.png"
+kind = &"character"
+canvas_size = Vector2i(262, 811)
+anchor = "bottom-center"
+screens = Array[StringName]([&"S16"])
+
+[sub_resource type="Resource" id="Resource_3tx5f"]
+script = ExtResource("2_wkqbc")
+id = &"alingmila_relieved_right"
+path = "res://art/characters/alingmila/ALINGMILA-RelievedRight.png"
+kind = &"character"
+canvas_size = Vector2i(310, 811)
+anchor = "bottom-center"
+screens = Array[StringName]([&"S16"])
+
+[sub_resource type="Resource" id="Resource_7hycg"]
+script = ExtResource("2_wkqbc")
+id = &"alingmila_worried_front"
+path = "res://art/characters/alingmila/ALINGMILA-WorriedFront.png"
+kind = &"character"
+canvas_size = Vector2i(386, 811)
+anchor = "bottom-center"
+screens = Array[StringName]([&"S16"])
+
+[sub_resource type="Resource" id="Resource_bpfrh"]
+script = ExtResource("2_wkqbc")
+id = &"alingmila_worried_left"
+path = "res://art/characters/alingmila/ALINGMILA-WorriedLeft.png"
+kind = &"character"
+canvas_size = Vector2i(260, 811)
+anchor = "bottom-center"
+screens = Array[StringName]([&"S16"])
+
+[sub_resource type="Resource" id="Resource_07o3u"]
+script = ExtResource("2_wkqbc")
+id = &"alingmila_worried_right"
+path = "res://art/characters/alingmila/ALINGMILA-WorriedRight.png"
+kind = &"character"
+canvas_size = Vector2i(303, 811)
+anchor = "bottom-center"
+screens = Array[StringName]([&"S16"])
+
+[sub_resource type="Resource" id="Resource_wt31p"]
+script = ExtResource("2_wkqbc")
+id = &"mangtomas_idle_front"
+path = "res://art/characters/mangtomas/MT-IdleFront.png"
+kind = &"character"
+canvas_size = Vector2i(344, 812)
+anchor = "bottom-center"
+screens = Array[StringName]([&"S16"])
+
+[sub_resource type="Resource" id="Resource_w8hni"]
+script = ExtResource("2_wkqbc")
+id = &"mangtomas_idle_left"
+path = "res://art/characters/mangtomas/MT-IdleLeft.png"
+kind = &"character"
+canvas_size = Vector2i(335, 812)
+anchor = "bottom-center"
+screens = Array[StringName]([&"S16"])
+
+[sub_resource type="Resource" id="Resource_7em2f"]
+script = ExtResource("2_wkqbc")
+id = &"mangtomas_idle_right"
+path = "res://art/characters/mangtomas/MT-IdleRight.png"
+kind = &"character"
+canvas_size = Vector2i(343, 812)
+anchor = "bottom-center"
+screens = Array[StringName]([&"S16"])
+
+[sub_resource type="Resource" id="Resource_7i51x"]
+script = ExtResource("2_wkqbc")
+id = &"mangtomas_thinking_front"
+path = "res://art/characters/mangtomas/MANGTOMAS-ThinkingFront.png"
+kind = &"character"
+canvas_size = Vector2i(334, 811)
+anchor = "bottom-center"
+screens = Array[StringName]([&"S16"])
+
+[sub_resource type="Resource" id="Resource_rf6rm"]
+script = ExtResource("2_wkqbc")
+id = &"mangtomas_thinking_left"
+path = "res://art/characters/mangtomas/MANGTOMAS-ThinkingLeft.png"
+kind = &"character"
+canvas_size = Vector2i(292, 811)
+anchor = "bottom-center"
+screens = Array[StringName]([&"S16"])
+
+[sub_resource type="Resource" id="Resource_bgol8"]
+script = ExtResource("2_wkqbc")
+id = &"mangtomas_thinking_right"
+path = "res://art/characters/mangtomas/MANGTOMAS-ThinkingRight.png"
+kind = &"character"
+canvas_size = Vector2i(324, 811)
+anchor = "bottom-center"
+screens = Array[StringName]([&"S16"])
+
+[sub_resource type="Resource" id="Resource_nfl8b"]
 script = ExtResource("2_wkqbc")
 id = &"sala_amber_backdrop"
 path = "res://art/backdrops/sala-amber_backdrop.png"
@@ -413,7 +548,7 @@ anchor = "top-left"
 owner = "Lana"
 screens = Array[StringName]([&"S4", &"S5"])
 
-[sub_resource type="Resource" id="Resource_rerq1"]
+[sub_resource type="Resource" id="Resource_vos4k"]
 script = ExtResource("2_wkqbc")
 id = &"sala_amber_framing"
 path = "res://art/backdrops/sala-amber_framing.png"
@@ -423,7 +558,7 @@ anchor = "top-left"
 owner = "Lana"
 screens = Array[StringName]([&"S4", &"S5"])
 
-[sub_resource type="Resource" id="Resource_wm7e5"]
+[sub_resource type="Resource" id="Resource_sfhmy"]
 script = ExtResource("2_wkqbc")
 id = &"court_gold_backdrop"
 path = "res://art/backdrops/court-gold_backdrop.png"
@@ -433,7 +568,7 @@ anchor = "top-left"
 owner = "Lana"
 screens = Array[StringName]([&"S7"])
 
-[sub_resource type="Resource" id="Resource_vf7qs"]
+[sub_resource type="Resource" id="Resource_pv8gx"]
 script = ExtResource("2_wkqbc")
 id = &"court_gold_framing"
 path = "res://art/backdrops/court-gold_framing.png"
@@ -443,156 +578,680 @@ anchor = "top-left"
 owner = "Lana"
 screens = Array[StringName]([&"S7"])
 
-[sub_resource type="Resource" id="Resource_pzd1y"]
+[sub_resource type="Resource" id="Resource_2sbcl"]
 script = ExtResource("2_wkqbc")
-id = &"mangtomas_idle_front"
-path = "res://art/characters/mangtomas/MANGTOMAS-IdleFront.png"
+id = &"mosa_halfbody_idle"
+path = "res://art/characters/mosa/M-HalfBodyIdle.png"
 kind = &"character"
-canvas_size = Vector2i(347, 812)
+canvas_size = Vector2i(178, 317)
 anchor = "bottom-center"
-owner = ""
-screens = Array[StringName]([&"S16"])
+owner = "Lana"
+screens = Array[StringName]([&"S4", &"S5"])
 
-[sub_resource type="Resource" id="Resource_f66md"]
+[sub_resource type="Resource" id="Resource_bux0f"]
 script = ExtResource("2_wkqbc")
-id = &"mangtomas_idle_left"
-path = "res://art/characters/mangtomas/MANGTOMAS-IdleLeft.png"
+id = &"mosa_halfbody_idlewaist"
+path = "res://art/characters/mosa/M-HalfBodyIdleWaist.png"
 kind = &"character"
-canvas_size = Vector2i(292, 812)
+canvas_size = Vector2i(184, 328)
 anchor = "bottom-center"
-owner = ""
-screens = Array[StringName]([&"S16"])
+owner = "Lana"
+screens = Array[StringName]([&"S4", &"S5"])
 
-[sub_resource type="Resource" id="Resource_vmlq0"]
+[sub_resource type="Resource" id="Resource_6w1dp"]
 script = ExtResource("2_wkqbc")
-id = &"mangtomas_idle_right"
-path = "res://art/characters/mangtomas/MANGTOMAS-IdleRight.png"
+id = &"mosa_halfbody_sad1"
+path = "res://art/characters/mosa/M-HalfBodySad1.png"
 kind = &"character"
-canvas_size = Vector2i(335, 812)
+canvas_size = Vector2i(172, 323)
 anchor = "bottom-center"
-owner = ""
-screens = Array[StringName]([&"S16"])
+owner = "Lana"
+screens = Array[StringName]([&"S4", &"S5"])
 
-[sub_resource type="Resource" id="Resource_x5v76"]
+[sub_resource type="Resource" id="Resource_wawaa"]
 script = ExtResource("2_wkqbc")
-id = &"mangtomas_thinking_front"
-path = "res://art/characters/mangtomas/MANGTOMAS-ThinkingFront.png"
+id = &"mosa_halfbody_sad2"
+path = "res://art/characters/mosa/M-HalfBodySad2.png"
 kind = &"character"
-canvas_size = Vector2i(334, 811)
+canvas_size = Vector2i(169, 323)
 anchor = "bottom-center"
-owner = ""
-screens = Array[StringName]([&"S16"])
+owner = "Lana"
+screens = Array[StringName]([&"S4", &"S5"])
 
-[sub_resource type="Resource" id="Resource_gjjgs"]
+[sub_resource type="Resource" id="Resource_kr5vy"]
 script = ExtResource("2_wkqbc")
-id = &"mangtomas_thinking_left"
-path = "res://art/characters/mangtomas/MANGTOMAS-ThinkingLeft.png"
+id = &"mosa_halfbody_sad3"
+path = "res://art/characters/mosa/M-HalfBodySad3.png"
 kind = &"character"
-canvas_size = Vector2i(292, 811)
+canvas_size = Vector2i(158, 321)
 anchor = "bottom-center"
-owner = ""
-screens = Array[StringName]([&"S16"])
+owner = "Lana"
+screens = Array[StringName]([&"S4", &"S5"])
 
-[sub_resource type="Resource" id="Resource_ynv9f"]
+[sub_resource type="Resource" id="Resource_jdtmj"]
 script = ExtResource("2_wkqbc")
-id = &"mangtomas_thinking_right"
-path = "res://art/characters/mangtomas/MANGTOMAS-ThinkingRight.png"
+id = &"mosa_halfbody_shocked"
+path = "res://art/characters/mosa/M-HalfBodyShocked.png"
 kind = &"character"
-canvas_size = Vector2i(324, 811)
+canvas_size = Vector2i(158, 328)
 anchor = "bottom-center"
-owner = ""
-screens = Array[StringName]([&"S16"])
+owner = "Lana"
+screens = Array[StringName]([&"S4", &"S5"])
 
-[sub_resource type="Resource" id="Resource_sg5dp"]
+[sub_resource type="Resource" id="Resource_0emvy"]
 script = ExtResource("2_wkqbc")
-id = &"alingmila_idle_front"
-path = "res://art/characters/alingmila/ALINGMILA-IdleFront.png"
+id = &"mosa_halfbody_smirk1"
+path = "res://art/characters/mosa/M-HalfBodySmirk1.png"
 kind = &"character"
-canvas_size = Vector2i(300, 811)
+canvas_size = Vector2i(164, 322)
 anchor = "bottom-center"
-owner = ""
-screens = Array[StringName]([&"S16"])
+owner = "Lana"
+screens = Array[StringName]([&"S4", &"S5"])
 
-[sub_resource type="Resource" id="Resource_447kr"]
+[sub_resource type="Resource" id="Resource_wt57h"]
 script = ExtResource("2_wkqbc")
-id = &"alingmila_idle_left"
-path = "res://art/characters/alingmila/ALINGMILA-IdleLeft.png"
+id = &"mosa_halfbody_smirk3"
+path = "res://art/characters/mosa/M-HalfBodySmirk3.png"
 kind = &"character"
-canvas_size = Vector2i(260, 811)
+canvas_size = Vector2i(166, 317)
 anchor = "bottom-center"
-owner = ""
-screens = Array[StringName]([&"S16"])
+owner = "Lana"
+screens = Array[StringName]([&"S4", &"S5"])
 
-[sub_resource type="Resource" id="Resource_9ikac"]
+[sub_resource type="Resource" id="Resource_qdtuf"]
 script = ExtResource("2_wkqbc")
-id = &"alingmila_idle_right"
-path = "res://art/characters/alingmila/ALINGMILA-IdleRight.png"
+id = &"alingvilma_halfbody_handchest"
+path = "res://art/characters/alingvilma/AV-HalfBodyHandChest.png"
 kind = &"character"
-canvas_size = Vector2i(308, 811)
+canvas_size = Vector2i(162, 327)
 anchor = "bottom-center"
-owner = ""
-screens = Array[StringName]([&"S16"])
+owner = "Francis"
+screens = Array[StringName]([&"S4", &"S5"])
 
-[sub_resource type="Resource" id="Resource_f7syt"]
+[sub_resource type="Resource" id="Resource_qm3sy"]
 script = ExtResource("2_wkqbc")
-id = &"alingmila_relieved_front"
-path = "res://art/characters/alingmila/ALINGMILA-RelievedFront.png"
+id = &"alingvilma_halfbody_happy"
+path = "res://art/characters/alingvilma/AV-HalfBodyHappy.png"
 kind = &"character"
-canvas_size = Vector2i(398, 811)
+canvas_size = Vector2i(188, 318)
 anchor = "bottom-center"
-owner = ""
-screens = Array[StringName]([&"S16"])
+owner = "Francis"
+screens = Array[StringName]([&"S4", &"S5"])
 
-[sub_resource type="Resource" id="Resource_mc3qs"]
+[sub_resource type="Resource" id="Resource_6yb67"]
 script = ExtResource("2_wkqbc")
-id = &"alingmila_relieved_left"
-path = "res://art/characters/alingmila/ALINGMILA-RelievedLeft.png"
+id = &"alingvilma_halfbody_idle"
+path = "res://art/characters/alingvilma/AV-HalfBodyIdle.png"
 kind = &"character"
-canvas_size = Vector2i(262, 811)
+canvas_size = Vector2i(211, 323)
 anchor = "bottom-center"
-owner = ""
-screens = Array[StringName]([&"S16"])
+owner = "Francis"
+screens = Array[StringName]([&"S4", &"S5"])
 
-[sub_resource type="Resource" id="Resource_ffs2u"]
+[sub_resource type="Resource" id="Resource_g31ua"]
 script = ExtResource("2_wkqbc")
-id = &"alingmila_relieved_right"
-path = "res://art/characters/alingmila/ALINGMILA-RelievedRight.png"
+id = &"alingvilma_halfbody_sad"
+path = "res://art/characters/alingvilma/AV-HalfBodySad.png"
 kind = &"character"
-canvas_size = Vector2i(310, 811)
+canvas_size = Vector2i(182, 323)
 anchor = "bottom-center"
-owner = ""
-screens = Array[StringName]([&"S16"])
+owner = "Francis"
+screens = Array[StringName]([&"S4", &"S5"])
 
-[sub_resource type="Resource" id="Resource_luso0"]
+[sub_resource type="Resource" id="Resource_pa3c5"]
 script = ExtResource("2_wkqbc")
-id = &"alingmila_worried_front"
-path = "res://art/characters/alingmila/ALINGMILA-WorriedFront.png"
+id = &"alingvilma_halfbody_shocked"
+path = "res://art/characters/alingvilma/AV-HalfBodyShocked.png"
 kind = &"character"
-canvas_size = Vector2i(386, 811)
+canvas_size = Vector2i(169, 331)
 anchor = "bottom-center"
-owner = ""
-screens = Array[StringName]([&"S16"])
+owner = "Francis"
+screens = Array[StringName]([&"S4", &"S5"])
 
-[sub_resource type="Resource" id="Resource_vxclt"]
+[sub_resource type="Resource" id="Resource_sqcqg"]
 script = ExtResource("2_wkqbc")
-id = &"alingmila_worried_left"
-path = "res://art/characters/alingmila/ALINGMILA-WorriedLeft.png"
+id = &"alingvilma_halfbody_tilt"
+path = "res://art/characters/alingvilma/AV-HalfBodyTilt.png"
 kind = &"character"
-canvas_size = Vector2i(260, 811)
+canvas_size = Vector2i(179, 322)
 anchor = "bottom-center"
-owner = ""
-screens = Array[StringName]([&"S16"])
+owner = "Francis"
+screens = Array[StringName]([&"S4", &"S5"])
 
-[sub_resource type="Resource" id="Resource_joayr"]
+[sub_resource type="Resource" id="Resource_q85ox"]
 script = ExtResource("2_wkqbc")
-id = &"alingmila_worried_right"
-path = "res://art/characters/alingmila/ALINGMILA-WorriedRight.png"
+id = &"alingvilma_halfbody_waist"
+path = "res://art/characters/alingvilma/AV-HalfBodyWaist.png"
 kind = &"character"
-canvas_size = Vector2i(303, 811)
+canvas_size = Vector2i(209, 332)
 anchor = "bottom-center"
-owner = ""
-screens = Array[StringName]([&"S16"])
+owner = "Francis"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_5hlgk"]
+script = ExtResource("2_wkqbc")
+id = &"bugoy_halfbody_eyesfrown"
+path = "res://art/characters/bugoy/B-HalfBodyEyesFrown.png"
+kind = &"character"
+canvas_size = Vector2i(159, 313)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_n25xf"]
+script = ExtResource("2_wkqbc")
+id = &"bugoy_halfbody_frown"
+path = "res://art/characters/bugoy/B-HalfBodyFrown.png"
+kind = &"character"
+canvas_size = Vector2i(160, 321)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_oykfl"]
+script = ExtResource("2_wkqbc")
+id = &"bugoy_halfbody_happy"
+path = "res://art/characters/bugoy/B-HalfBodyHappy.png"
+kind = &"character"
+canvas_size = Vector2i(168, 307)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_1j5ls"]
+script = ExtResource("2_wkqbc")
+id = &"bugoy_halfbody_happy2"
+path = "res://art/characters/bugoy/B-HalfBodyHappy2.png"
+kind = &"character"
+canvas_size = Vector2i(162, 315)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_qa6n7"]
+script = ExtResource("2_wkqbc")
+id = &"bugoy_halfbody_idle"
+path = "res://art/characters/bugoy/B-HalfBodyIdle.png"
+kind = &"character"
+canvas_size = Vector2i(181, 311)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_x8ntl"]
+script = ExtResource("2_wkqbc")
+id = &"bugoy_halfbody_sad"
+path = "res://art/characters/bugoy/B-HalfBodySad.png"
+kind = &"character"
+canvas_size = Vector2i(175, 313)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_e7wij"]
+script = ExtResource("2_wkqbc")
+id = &"bugoy_halfbody_sad2"
+path = "res://art/characters/bugoy/B-HalfBodySad2.png"
+kind = &"character"
+canvas_size = Vector2i(163, 323)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_02l25"]
+script = ExtResource("2_wkqbc")
+id = &"bugoy_halfbody_sadtears"
+path = "res://art/characters/bugoy/B-HalfBodySadTears.png"
+kind = &"character"
+canvas_size = Vector2i(162, 318)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_yblle"]
+script = ExtResource("2_wkqbc")
+id = &"bugoy_halfbody_shocked"
+path = "res://art/characters/bugoy/B-HalfBodyShocked.png"
+kind = &"character"
+canvas_size = Vector2i(159, 310)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_5cwbk"]
+script = ExtResource("2_wkqbc")
+id = &"bugoy_halfbody_waist"
+path = "res://art/characters/bugoy/B-HalfBodyWaist.png"
+kind = &"character"
+canvas_size = Vector2i(182, 321)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_t24bq"]
+script = ExtResource("2_wkqbc")
+id = &"jorge_halfbody_close"
+path = "res://art/characters/jorge/J-HalfBodyClose.png"
+kind = &"character"
+canvas_size = Vector2i(159, 329)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_fp35g"]
+script = ExtResource("2_wkqbc")
+id = &"jorge_halfbody_handchest"
+path = "res://art/characters/jorge/J-HalfBodyHandChest.png"
+kind = &"character"
+canvas_size = Vector2i(177, 324)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_ffixg"]
+script = ExtResource("2_wkqbc")
+id = &"jorge_halfbody_happy"
+path = "res://art/characters/jorge/J-HalfBodyHappy.png"
+kind = &"character"
+canvas_size = Vector2i(158, 319)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_qhn6i"]
+script = ExtResource("2_wkqbc")
+id = &"jorge_halfbody_idle"
+path = "res://art/characters/jorge/J-HalfBodyIdle.png"
+kind = &"character"
+canvas_size = Vector2i(174, 325)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_qlybh"]
+script = ExtResource("2_wkqbc")
+id = &"jorge_halfbody_waist"
+path = "res://art/characters/jorge/J-HalfBodyWaist.png"
+kind = &"character"
+canvas_size = Vector2i(181, 327)
+anchor = "bottom-center"
+owner = "Francis"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_mg48w"]
+script = ExtResource("2_wkqbc")
+id = &"mangtomas_halfbody_armschest"
+path = "res://art/characters/mangtomas/MT-HalfBodyArmsChest.png"
+kind = &"character"
+canvas_size = Vector2i(159, 329)
+anchor = "bottom-center"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_6g8k7"]
+script = ExtResource("2_wkqbc")
+id = &"mangtomas_halfbody_eyesclose"
+path = "res://art/characters/mangtomas/MT-HalfBodyEyesClose.png"
+kind = &"character"
+canvas_size = Vector2i(170, 333)
+anchor = "bottom-center"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_5515o"]
+script = ExtResource("2_wkqbc")
+id = &"mangtomas_halfbody_frown"
+path = "res://art/characters/mangtomas/MT-HalfBodyFrown.png"
+kind = &"character"
+canvas_size = Vector2i(168, 333)
+anchor = "bottom-center"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_di5vf"]
+script = ExtResource("2_wkqbc")
+id = &"mangtomas_halfbody_grin"
+path = "res://art/characters/mangtomas/MT-HalfBodyGrin.png"
+kind = &"character"
+canvas_size = Vector2i(173, 330)
+anchor = "bottom-center"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_l46af"]
+script = ExtResource("2_wkqbc")
+id = &"mangtomas_halfbody_happy"
+path = "res://art/characters/mangtomas/MT-HalfBodyHappy.png"
+kind = &"character"
+canvas_size = Vector2i(166, 330)
+anchor = "bottom-center"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_wjexc"]
+script = ExtResource("2_wkqbc")
+id = &"mangtomas_halfbody_idle"
+path = "res://art/characters/mangtomas/MT-HalfBodyIdle.png"
+kind = &"character"
+canvas_size = Vector2i(177, 331)
+anchor = "bottom-center"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_4nul8"]
+script = ExtResource("2_wkqbc")
+id = &"mangtomas_halfbody_sad"
+path = "res://art/characters/mangtomas/MT-HalfBodySad.png"
+kind = &"character"
+canvas_size = Vector2i(174, 334)
+anchor = "bottom-center"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_0jb51"]
+script = ExtResource("2_wkqbc")
+id = &"mangtomas_halfbody_sad2"
+path = "res://art/characters/mangtomas/MT-HalfBodySad2.png"
+kind = &"character"
+canvas_size = Vector2i(174, 339)
+anchor = "bottom-center"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_jv8jv"]
+script = ExtResource("2_wkqbc")
+id = &"mangtomas_halfbody_side"
+path = "res://art/characters/mangtomas/MT-HalfBodySide.png"
+kind = &"character"
+canvas_size = Vector2i(167, 333)
+anchor = "bottom-center"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_jrgmj"]
+script = ExtResource("2_wkqbc")
+id = &"mangver_halfbody_happy"
+path = "res://art/characters/mangver/MV-HalfBodyHappy.png"
+kind = &"character"
+canvas_size = Vector2i(172, 328)
+anchor = "bottom-center"
+owner = "Lana"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_275pc"]
+script = ExtResource("2_wkqbc")
+id = &"mangver_halfbody_happywink"
+path = "res://art/characters/mangver/MV-HalfBodyHappyWink.png"
+kind = &"character"
+canvas_size = Vector2i(165, 330)
+anchor = "bottom-center"
+owner = "Lana"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_g0etx"]
+script = ExtResource("2_wkqbc")
+id = &"mangver_halfbody_idle"
+path = "res://art/characters/mangver/MV-HalfBodyIdle.png"
+kind = &"character"
+canvas_size = Vector2i(185, 331)
+anchor = "bottom-center"
+owner = "Lana"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_t18sv"]
+script = ExtResource("2_wkqbc")
+id = &"mangver_halfbody_sad"
+path = "res://art/characters/mangver/MV-HalfBodySad.png"
+kind = &"character"
+canvas_size = Vector2i(164, 320)
+anchor = "bottom-center"
+owner = "Lana"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_phsbk"]
+script = ExtResource("2_wkqbc")
+id = &"mangver_halfbody_sad2"
+path = "res://art/characters/mangver/MV-HalfBodySad2.png"
+kind = &"character"
+canvas_size = Vector2i(158, 323)
+anchor = "bottom-center"
+owner = "Lana"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_vlc4c"]
+script = ExtResource("2_wkqbc")
+id = &"mangver_halfbody_thinking"
+path = "res://art/characters/mangver/MV-HalfBodyThinking.png"
+kind = &"character"
+canvas_size = Vector2i(166, 328)
+anchor = "bottom-center"
+owner = "Lana"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_2w2c2"]
+script = ExtResource("2_wkqbc")
+id = &"mangver_halfbody_thinkingsad"
+path = "res://art/characters/mangver/MV-HalfBodyThinkingSad.png"
+kind = &"character"
+canvas_size = Vector2i(184, 320)
+anchor = "bottom-center"
+owner = "Lana"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_ehhav"]
+script = ExtResource("2_wkqbc")
+id = &"mangver_halfbody_tilt"
+path = "res://art/characters/mangver/MV-HalfBodyTilt.png"
+kind = &"character"
+canvas_size = Vector2i(171, 330)
+anchor = "bottom-center"
+owner = "Lana"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_dhlqk"]
+script = ExtResource("2_wkqbc")
+id = &"alingmila_halfbody_handchest"
+path = "res://art/characters/alingmila/AM-HalfBodyHandChest.png"
+kind = &"character"
+canvas_size = Vector2i(164, 328)
+anchor = "bottom-center"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_3k0jq"]
+script = ExtResource("2_wkqbc")
+id = &"alingmila_halfbody_idle"
+path = "res://art/characters/alingmila/AM-HalfBodyIdle.png"
+kind = &"character"
+canvas_size = Vector2i(173, 321)
+anchor = "bottom-center"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_nj4rv"]
+script = ExtResource("2_wkqbc")
+id = &"alingmila_halfbody_panic"
+path = "res://art/characters/alingmila/AM-HalfBodyPanic.png"
+kind = &"character"
+canvas_size = Vector2i(167, 334)
+anchor = "bottom-center"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_rcgne"]
+script = ExtResource("2_wkqbc")
+id = &"alingmila_halfbody_shocked"
+path = "res://art/characters/alingmila/AM-HalfBodyShocked.png"
+kind = &"character"
+canvas_size = Vector2i(143, 330)
+anchor = "bottom-center"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_hr6vv"]
+script = ExtResource("2_wkqbc")
+id = &"alingmila_halfbody_think"
+path = "res://art/characters/alingmila/AM-HalfBodyThink.png"
+kind = &"character"
+canvas_size = Vector2i(161, 325)
+anchor = "bottom-center"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_1fpag"]
+script = ExtResource("2_wkqbc")
+id = &"alingmila_halfbody_waist"
+path = "res://art/characters/alingmila/AM-HalfBodyWaist.png"
+kind = &"character"
+canvas_size = Vector2i(193, 334)
+anchor = "bottom-center"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_6mjur"]
+script = ExtResource("2_wkqbc")
+id = &"alingmila_halfbody_wallet"
+path = "res://art/characters/alingmila/AM-HalfBodyWallet.png"
+kind = &"character"
+canvas_size = Vector2i(171, 320)
+anchor = "bottom-center"
+screens = Array[StringName]([&"S4", &"S5"])
+
+[sub_resource type="Resource" id="Resource_f2ydf"]
+script = ExtResource("2_wkqbc")
+id = &"props_exclamation"
+path = "res://art/props/EXCLAMATION.png"
+kind = &"prop"
+canvas_size = Vector2i(580, 387)
+anchor = "center"
+screens = Array[StringName]([&"S7", &"S16", &"S17"])
+
+[sub_resource type="Resource" id="Resource_nvet7"]
+script = ExtResource("2_wkqbc")
+id = &"props_exclamationbub"
+path = "res://art/props/EXCLAMATIONBUB.png"
+kind = &"prop"
+canvas_size = Vector2i(580, 387)
+anchor = "center"
+screens = Array[StringName]([&"S7", &"S16", &"S17"])
+
+[sub_resource type="Resource" id="Resource_8ho4v"]
+script = ExtResource("2_wkqbc")
+id = &"props_question"
+path = "res://art/props/QUESTION.png"
+kind = &"prop"
+canvas_size = Vector2i(580, 387)
+anchor = "center"
+screens = Array[StringName]([&"S7", &"S16", &"S17"])
+
+[sub_resource type="Resource" id="Resource_s5hg8"]
+script = ExtResource("2_wkqbc")
+id = &"props_questionbub"
+path = "res://art/props/QUESTIONBUB.png"
+kind = &"prop"
+canvas_size = Vector2i(580, 387)
+anchor = "center"
+screens = Array[StringName]([&"S7", &"S16", &"S17"])
+
+[sub_resource type="Resource" id="Resource_ur00p"]
+script = ExtResource("2_wkqbc")
+id = &"props_pinboard"
+path = "res://art/props/PINBOARD.png"
+kind = &"prop"
+canvas_size = Vector2i(1600, 768)
+anchor = "top-left"
+screens = Array[StringName]([&"S22"])
+
+[sub_resource type="Resource" id="Resource_de1gh"]
+script = ExtResource("2_wkqbc")
+id = &"props_fakenews"
+path = "res://art/props/FAKENEWS.png"
+kind = &"prop"
+canvas_size = Vector2i(1600, 768)
+anchor = "top-left"
+screens = Array[StringName]([&"S20", &"S27"])
+
+[sub_resource type="Resource" id="Resource_na0p0"]
+script = ExtResource("2_wkqbc")
+id = &"props_files"
+path = "res://art/props/FILES.png"
+kind = &"prop"
+canvas_size = Vector2i(405, 370)
+anchor = "center"
+screens = Array[StringName]([&"S24", &"S25"])
+
+[sub_resource type="Resource" id="Resource_d7y8u"]
+script = ExtResource("2_wkqbc")
+id = &"props_tv"
+path = "res://art/props/TV.png"
+kind = &"prop"
+canvas_size = Vector2i(1600, 768)
+anchor = "top-left"
+screens = Array[StringName]([&"S21", &"S27"])
+
+[sub_resource type="Resource" id="Resource_hglx3"]
+script = ExtResource("2_wkqbc")
+id = &"props_phone"
+path = "res://art/props/PHONE PNG.png"
+kind = &"prop"
+canvas_size = Vector2i(138, 205)
+anchor = "center"
+screens = Array[StringName]([&"S24", &"S25"])
+
+[sub_resource type="Resource" id="Resource_xdw8j"]
+script = ExtResource("2_wkqbc")
+id = &"branding_groupbanner"
+path = "res://art/ui/branding/GROUPBANNER.png"
+kind = &"branding"
+canvas_size = Vector2i(1463, 641)
+anchor = "center"
+
+[sub_resource type="Resource" id="Resource_xl6m7"]
+script = ExtResource("2_wkqbc")
+id = &"branding_icarus2"
+path = "res://art/ui/branding/ICARUS2.png"
+kind = &"branding"
+canvas_size = Vector2i(612, 612)
+anchor = "center"
+
+[sub_resource type="Resource" id="Resource_n06hk"]
+script = ExtResource("2_wkqbc")
+id = &"branding_icrus"
+path = "res://art/ui/branding/ICRUS.png"
+kind = &"branding"
+canvas_size = Vector2i(504, 529)
+anchor = "center"
+
+[sub_resource type="Resource" id="Resource_djocf"]
+script = ExtResource("2_wkqbc")
+id = &"evidence_kap_dfphone1"
+path = "res://art/evidence/KAP-DFPhone1.png"
+kind = &"evidence"
+canvas_size = Vector2i(1220, 967)
+anchor = "center"
+screens = Array[StringName]([&"S21"])
+
+[sub_resource type="Resource" id="Resource_8hvol"]
+script = ExtResource("2_wkqbc")
+id = &"evidence_kap_dfphone2"
+path = "res://art/evidence/KAP-DFPhone2.png"
+kind = &"evidence"
+canvas_size = Vector2i(1220, 967)
+anchor = "center"
+screens = Array[StringName]([&"S21"])
+
+[sub_resource type="Resource" id="Resource_emv6w"]
+script = ExtResource("2_wkqbc")
+id = &"chap1_intro_backdrop"
+path = "res://art/backdrops/chap1 1.png"
+kind = &"backdrop_content"
+canvas_size = Vector2i(1600, 768)
+anchor = "top-left"
+screens = Array[StringName]([&"S27"])
+
+[sub_resource type="Resource" id="Resource_t0xhr"]
+script = ExtResource("2_wkqbc")
+id = &"chap2_intro_backdrop"
+path = "res://art/backdrops/chap2 1.png"
+kind = &"backdrop_content"
+canvas_size = Vector2i(1600, 768)
+anchor = "top-left"
+screens = Array[StringName]([&"S27"])
+
+[sub_resource type="Resource" id="Resource_htsxr"]
+script = ExtResource("2_wkqbc")
+id = &"chap3_intro_backdrop"
+path = "res://art/backdrops/chap3 1.png"
+kind = &"backdrop_content"
+canvas_size = Vector2i(1600, 768)
+anchor = "top-left"
+screens = Array[StringName]([&"S27"])
 
 [resource]
 script = ExtResource("1_g181h")
-slots = Array[ExtResource("2_wkqbc")]([SubResource("Resource_xbg2r"), SubResource("Resource_h08rm"), SubResource("Resource_nnreu"), SubResource("Resource_lgf0g"), SubResource("Resource_3kf68"), SubResource("Resource_ck73i"), SubResource("Resource_nrcbk"), SubResource("Resource_uog4r"), SubResource("Resource_77b8b"), SubResource("Resource_qg1f5"), SubResource("Resource_eix0a"), SubResource("Resource_opc83"), SubResource("Resource_7rxl5"), SubResource("Resource_2jetg"), SubResource("Resource_bdph5"), SubResource("Resource_cqogc"), SubResource("Resource_7ke2p"), SubResource("Resource_mftse"), SubResource("Resource_yiy0u"), SubResource("Resource_l2qek"), SubResource("Resource_p04iu"), SubResource("Resource_nadx7"), SubResource("Resource_yrtkj"), SubResource("Resource_ilfv1"), SubResource("Resource_nv3kh"), SubResource("Resource_bbiin"), SubResource("Resource_mirar"), SubResource("Resource_pxwbu"), SubResource("Resource_o0swn"), SubResource("Resource_mcfp0"), SubResource("Resource_kig17"), SubResource("Resource_n7h8h"), SubResource("Resource_h3n5f"), SubResource("Resource_a05yr"), SubResource("Resource_egmxo"), SubResource("Resource_m2rap"), SubResource("Resource_sh0g4"), SubResource("Resource_4sckm"), SubResource("Resource_gatu4"), SubResource("Resource_rt838"), SubResource("Resource_1t36s"), SubResource("Resource_rerq1"), SubResource("Resource_wm7e5"), SubResource("Resource_vf7qs"), SubResource("Resource_pzd1y"), SubResource("Resource_f66md"), SubResource("Resource_vmlq0"), SubResource("Resource_x5v76"), SubResource("Resource_gjjgs"), SubResource("Resource_ynv9f"), SubResource("Resource_sg5dp"), SubResource("Resource_447kr"), SubResource("Resource_9ikac"), SubResource("Resource_f7syt"), SubResource("Resource_mc3qs"), SubResource("Resource_ffs2u"), SubResource("Resource_luso0"), SubResource("Resource_vxclt"), SubResource("Resource_joayr")])
+slots = Array[ExtResource("2_wkqbc")]([SubResource("Resource_xbg2r"), SubResource("Resource_h08rm"), SubResource("Resource_nnreu"), SubResource("Resource_lgf0g"), SubResource("Resource_3kf68"), SubResource("Resource_ck73i"), SubResource("Resource_nrcbk"), SubResource("Resource_uog4r"), SubResource("Resource_77b8b"), SubResource("Resource_qg1f5"), SubResource("Resource_eix0a"), SubResource("Resource_opc83"), SubResource("Resource_7rxl5"), SubResource("Resource_2jetg"), SubResource("Resource_bdph5"), SubResource("Resource_cqogc"), SubResource("Resource_7ke2p"), SubResource("Resource_mftse"), SubResource("Resource_yiy0u"), SubResource("Resource_l2qek"), SubResource("Resource_p04iu"), SubResource("Resource_nadx7"), SubResource("Resource_yrtkj"), SubResource("Resource_ilfv1"), SubResource("Resource_nv3kh"), SubResource("Resource_bbiin"), SubResource("Resource_mirar"), SubResource("Resource_pxwbu"), SubResource("Resource_o0swn"), SubResource("Resource_mcfp0"), SubResource("Resource_kig17"), SubResource("Resource_n7h8h"), SubResource("Resource_h3n5f"), SubResource("Resource_a05yr"), SubResource("Resource_egmxo"), SubResource("Resource_m2rap"), SubResource("Resource_sh0g4"), SubResource("Resource_4sckm"), SubResource("Resource_gatu4"), SubResource("Resource_rt838"), SubResource("Resource_1t36s"), SubResource("Resource_rerq1"), SubResource("Resource_wm7e5"), SubResource("Resource_vf7qs"), SubResource("Resource_8crka"), SubResource("Resource_3tx5f"), SubResource("Resource_7hycg"), SubResource("Resource_bpfrh"), SubResource("Resource_07o3u"), SubResource("Resource_wt31p"), SubResource("Resource_w8hni"), SubResource("Resource_7em2f"), SubResource("Resource_7i51x"), SubResource("Resource_rf6rm"), SubResource("Resource_bgol8"), SubResource("Resource_nfl8b"), SubResource("Resource_vos4k"), SubResource("Resource_sfhmy"), SubResource("Resource_pv8gx"), SubResource("Resource_2sbcl"), SubResource("Resource_bux0f"), SubResource("Resource_6w1dp"), SubResource("Resource_wawaa"), SubResource("Resource_kr5vy"), SubResource("Resource_jdtmj"), SubResource("Resource_0emvy"), SubResource("Resource_wt57h"), SubResource("Resource_qdtuf"), SubResource("Resource_qm3sy"), SubResource("Resource_6yb67"), SubResource("Resource_g31ua"), SubResource("Resource_pa3c5"), SubResource("Resource_sqcqg"), SubResource("Resource_q85ox"), SubResource("Resource_5hlgk"), SubResource("Resource_n25xf"), SubResource("Resource_oykfl"), SubResource("Resource_1j5ls"), SubResource("Resource_qa6n7"), SubResource("Resource_x8ntl"), SubResource("Resource_e7wij"), SubResource("Resource_02l25"), SubResource("Resource_yblle"), SubResource("Resource_5cwbk"), SubResource("Resource_t24bq"), SubResource("Resource_fp35g"), SubResource("Resource_ffixg"), SubResource("Resource_qhn6i"), SubResource("Resource_qlybh"), SubResource("Resource_mg48w"), SubResource("Resource_6g8k7"), SubResource("Resource_5515o"), SubResource("Resource_di5vf"), SubResource("Resource_l46af"), SubResource("Resource_wjexc"), SubResource("Resource_4nul8"), SubResource("Resource_0jb51"), SubResource("Resource_jv8jv"), SubResource("Resource_jrgmj"), SubResource("Resource_275pc"), SubResource("Resource_g0etx"), SubResource("Resource_t18sv"), SubResource("Resource_phsbk"), SubResource("Resource_vlc4c"), SubResource("Resource_2w2c2"), SubResource("Resource_ehhav"), SubResource("Resource_dhlqk"), SubResource("Resource_3k0jq"), SubResource("Resource_nj4rv"), SubResource("Resource_rcgne"), SubResource("Resource_hr6vv"), SubResource("Resource_1fpag"), SubResource("Resource_6mjur"), SubResource("Resource_f2ydf"), SubResource("Resource_nvet7"), SubResource("Resource_8ho4v"), SubResource("Resource_s5hg8"), SubResource("Resource_ur00p"), SubResource("Resource_de1gh"), SubResource("Resource_na0p0"), SubResource("Resource_d7y8u"), SubResource("Resource_hglx3"), SubResource("Resource_xdw8j"), SubResource("Resource_xl6m7"), SubResource("Resource_n06hk"), SubResource("Resource_djocf"), SubResource("Resource_8hvol"), SubResource("Resource_emv6w"), SubResource("Resource_t0xhr"), SubResource("Resource_htsxr")])

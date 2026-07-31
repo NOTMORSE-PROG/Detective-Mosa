@@ -66,38 +66,5 @@
 "scene": ""
 }
 },
-"scene": ""
-},
-"Idle-Left": {
-"export_overrides": {
-"image": "res://art/characters/mangtomas/MANGTOMAS-IdleLeft.png"
-},
-"scene": ""
-},
-"Idle-Right": {
-"export_overrides": {
-"image": "res://art/characters/mangtomas/MANGTOMAS-IdleRight.png"
-},
-"scene": ""
-},
-"Thinking": {
-"export_overrides": {
-"image": "res://art/characters/mangtomas/MANGTOMAS-ThinkingFront.png"
-},
-"scene": ""
-},
-"Thinking-Left": {
-"export_overrides": {
-"image": "res://art/characters/mangtomas/MANGTOMAS-ThinkingLeft.png"
-},
-"scene": ""
-},
-"Thinking-Right": {
-"export_overrides": {
-"image": "res://art/characters/mangtomas/MANGTOMAS-ThinkingRight.png"
-},
-"scene": ""
-}
-},
 &"scale": 1.0
 }

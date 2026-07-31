@@ -17,7 +17,9 @@ func test_mosa_real_sprites_load() -> void:
 
 
 func test_mosa_movement_sheet_loads_at_native_pixel_size() -> void:
-	_assert_loads_at("res://art/characters/mosa/movement/MOSA-All-Sprites.png", Vector2i(256, 256))
+	# DM-069: was art/characters/mosa/movement/MOSA-All-Sprites.png pre-remap - same
+	# 256x256 sheet, new short-prefix convention, top-level rather than a movement/ subdir.
+	_assert_loads_at("res://art/characters/mosa/M-Sprites.png", Vector2i(256, 256))
 
 
 func test_jorge_shy_directional_gap_is_filled() -> void:
@@ -26,10 +28,11 @@ func test_jorge_shy_directional_gap_is_filled() -> void:
 
 
 func test_alingvilma_smile_directional_gap_is_filled() -> void:
-	_assert_loads_at("res://art/characters/alingvilma/ALINGVILMA-SmileLeft.png", Vector2i(320, 820))
-	_assert_loads_at(
-		"res://art/characters/alingvilma/ALINGVILMA-SmileRight.png", Vector2i(320, 820)
-	)
+	# DM-069: was ALINGVILMA-SmileLeft/Right.png (placeholder-status) pre-remap. Confirmed
+	# visually identical pose to the new delivery's AV-Happy* (same expression/notebook
+	# pose, redrawn dress) - now final-status art, not a placeholder fill.
+	_assert_loads_at("res://art/characters/alingvilma/AV-HappyLeft.png", Vector2i(349, 811))
+	_assert_loads_at("res://art/characters/alingvilma/AV-HappyRight.png", Vector2i(306, 811))
 
 
 func test_sala_amber_backdrop_and_framing_load_at_spec_size() -> void:

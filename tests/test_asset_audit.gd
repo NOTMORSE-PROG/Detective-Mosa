@@ -52,7 +52,12 @@ func test_headline_shows_the_real_manifest_counts() -> void:
 ## the longest-slot-id render, not by inspection.
 func test_thumbnail_stays_within_its_frame_regardless_of_source_image_shape() -> void:
 	var tall_slot := AssetSlot.new()
-	tall_slot.path = "res://art/characters/alingvilma/ALINGVILMA-ShockedFront.png"
+	# DM-069: the tallest real character crop in the project (was ALINGVILMA-ShockedFront.png
+	# at 811px pre-remap; Mang Ver's new-convention delivery is taller still, 1077px, and
+	# already flagged in ASSET_SPEC.md as a real cross-artist export inconsistency worth
+	# fixing at source - good reason to keep exercising the extreme here rather than a
+	# middling one).
+	tall_slot.path = "res://art/characters/mangver/MV-IdleFront.png"
 	tall_slot.kind = &"character"
 	var thumb: Control = _screen._build_thumbnail(tall_slot)
 	var tex_rect: TextureRect = thumb.get_child(0)

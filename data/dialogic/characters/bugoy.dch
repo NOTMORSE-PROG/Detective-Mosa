@@ -72,38 +72,5 @@
 "scene": ""
 }
 },
-"scene": ""
-},
-"Idle-Left": {
-"export_overrides": {
-"image": "res://art/characters/bugoy/BUGOY-IdleLeft.png"
-},
-"scene": ""
-},
-"Idle-Right": {
-"export_overrides": {
-"image": "res://art/characters/bugoy/BUGOY-IdleRight.png"
-},
-"scene": ""
-},
-"Phone": {
-"export_overrides": {
-"image": "res://art/characters/bugoy/BUGOY-PhoneFront.png"
-},
-"scene": ""
-},
-"Phone-Left": {
-"export_overrides": {
-"image": "res://art/characters/bugoy/BUGOY-PhoneLeft.png"
-},
-"scene": ""
-},
-"Phone-Right": {
-"export_overrides": {
-"image": "res://art/characters/bugoy/BUGOY-PhoneRight.png"
-},
-"scene": ""
-}
-},
 &"scale": 1.0
 }

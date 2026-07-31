@@ -60,20 +60,5 @@
 "scene": ""
 }
 },
-"scene": ""
-},
-"Idle-Left": {
-"export_overrides": {
-"image": "res://art/characters/mangver/MANGVER-IdleLeft.png"
-},
-"scene": ""
-},
-"Idle-Right": {
-"export_overrides": {
-"image": "res://art/characters/mangver/MANGVER-IdleRight.png"
-},
-"scene": ""
-}
-},
 &"scale": 1.0
 }

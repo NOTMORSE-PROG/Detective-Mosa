@@ -54,56 +54,5 @@
 "scene": ""
 }
 },
-"scene": ""
-},
-"Idle-Left": {
-"export_overrides": {
-"image": "res://art/characters/alingvilma/ALINGVILMA-IdleLeft.png"
-},
-"scene": ""
-},
-"Idle-Right": {
-"export_overrides": {
-"image": "res://art/characters/alingvilma/ALINGVILMA-IdleRight.png"
-},
-"scene": ""
-},
-"Shocked": {
-"export_overrides": {
-"image": "res://art/characters/alingvilma/ALINGVILMA-ShockedFront.png"
-},
-"scene": ""
-},
-"Shocked-Left": {
-"export_overrides": {
-"image": "res://art/characters/alingvilma/ALINGVILMA-ShockedLeft.png"
-},
-"scene": ""
-},
-"Shocked-Right": {
-"export_overrides": {
-"image": "res://art/characters/alingvilma/ALINGVILMA-ShockedRight.png"
-},
-"scene": ""
-},
-"Smile": {
-"export_overrides": {
-"image": "res://art/characters/alingvilma/ALINGVILMA-SmileFront.png"
-},
-"scene": ""
-},
-"Smile-Left": {
-"export_overrides": {
-"image": "res://art/characters/alingvilma/ALINGVILMA-SmileLeft.png"
-},
-"scene": ""
-},
-"Smile-Right": {
-"export_overrides": {
-"image": "res://art/characters/alingvilma/ALINGVILMA-SmileRight.png"
-},
-"scene": ""
-}
-},
 &"scale": 1.0
 }

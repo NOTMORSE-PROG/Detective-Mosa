@@ -104,6 +104,32 @@ func _backdrop_table(manifest: AssetManifest) -> String:
 	return "\n".join(lines)
 
 
+## Flat id/status/size table for any slot kind that isn't "character" or a "backdrop*"
+## variant - DM-069 added prop/branding/evidence kinds this generator didn't know about
+## yet. Same fix shape as check_asset_sizes.py's SLOT_CEILINGS widening: a generator
+## that can't see a real asset class silently under-reports it, which is worse than an
+## ugly table.
+func _flat_table(manifest: AssetManifest, kind: StringName) -> String:
+	var lines: Array[String] = [
+		"| Slot | Status | Size |", "|---|---|---|"
+	]
+	for slot: AssetSlot in manifest.slots:
+		if slot.kind != kind:
+			continue
+		lines.append(
+			(
+				"| %s | %s | %dx%d |"
+				% [
+					slot.id,
+					_status_label(AssetManifest.slot_status(slot)),
+					slot.canvas_size.x,
+					slot.canvas_size.y,
+				]
+			)
+		)
+	return "\n".join(lines)
+
+
 func _init() -> void:
 	var manifest: AssetManifest = load("res://data/asset_manifest.tres")
 	var counts := manifest.count_by_status()
@@ -123,6 +149,18 @@ placeholder, %d missing, %d total._
 
 %s
 
+### Props
+
+%s
+
+### Branding
+
+%s
+
+### Evidence
+
+%s
+
 """
 		% [
 			START_MARKER,
@@ -132,6 +170,9 @@ placeholder, %d missing, %d total._
 			manifest.slots.size(),
 			_character_table(manifest),
 			_backdrop_table(manifest),
+			_flat_table(manifest, &"prop"),
+			_flat_table(manifest, &"branding"),
+			_flat_table(manifest, &"evidence"),
 		]
 	)
 
