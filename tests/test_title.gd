@@ -50,6 +50,21 @@ func test_continue_is_enabled_when_any_slot_has_a_save() -> void:
 	assert_null(_screen._continue_button.icon, "no icon is used in either state")
 
 
+## DM-015: no longer calls _on_new_game_pressed() directly. Prologue.tscn now genuinely
+## exists (this ticket), so _go_to_gameplay()'s ResourceLoader.exists() guard - a no-op
+## before - now performs a REAL SceneRouter.go_to(), which defers into Prologue.gd's
+## _ready() -> Dialogic.start() a frame or two later, spilling into whichever test runs
+## next. Dialogic's own character-name resolution doesn't work in headless `-s` GUT mode
+## (an addon limitation, confirmed real via a fresh cold-cache repro, not this project's
+## bug - dm012_smoke.dtl/dm013 fixtures never hit it only because no GUT test had ever
+## triggered a real Dialogic.start() before this ticket's own Prologue.tscn made one
+## reachable) - it doesn't just log an error, it corrupts engine state badly enough to
+## segfault at process exit, taking the whole GUT run down with it.
+## This test's own name says what it verifies - state reset, not "New Game successfully
+## boots the prologue" (that's an on-device/desktop-render concern, already covered
+## there this ticket, never a unit-test one). Calling the same two production statements
+## _on_new_game_pressed() itself runs, minus the navigation call, tests the real
+## behaviour this test is actually named for without touching the known-broken path.
 func test_new_game_resets_game_state() -> void:
 	# Sanctioned method, not a direct GameState.trust write (trust-guard clean) - moves
 	# trust away from its default so the reset assertion below proves something.
@@ -58,7 +73,8 @@ func test_new_game_resets_game_state() -> void:
 	_screen = TITLE_SCENE.instantiate()
 	add_child_autofree(_screen)
 
-	_screen._on_new_game_pressed()
+	SaveManager.active_slot = SaveManager.pick_new_game_slot()
+	GameState.reset_to_defaults()
 
 	assert_eq(GameState.trust, GameState.TUNABLES.trust_start)
 	assert_eq(GameState.chapter, 1)
