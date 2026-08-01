@@ -26,6 +26,27 @@ mangver (Thinking): Ikaw pa, na sanay na sanay sa chismis dito —
 mangver (Thinking): dapat alam mo agad na hindi yan credible..
 join mangver (ThinkingSad) center
 mangver (ThinkingSad): Hindi man lang nila pinakinggan ang side ni Delfin.
+# DM-058: the tutorial's do-then-label beat (mosa-minigame-designer spec,
+# mosa-narrative voice pass). "Do" already happened above: the player had to tap
+# all 4 message bubbles in the phone-visual to dismiss it (PhoneScreenshotOverlay).
+# "Label" happens now, naming what that tap-through actually revealed - not one of
+# the 4 messages was a firsthand account, Aling Vilma included. Foreshadows MIL5
+# (CH2.2, Trace the Chat Source) in miniature; does not claim to teach it in full.
+mangver (ThinkingSad): Tiningnan mo nang mabuti ang bawat
+mangver (ThinkingSad): mensahe kanina, di ba? Mabuti.
+mangver (ThinkingSad): Pero may napansin ka ba—
+mangver (ThinkingSad): wala sa kanila ang nakakita
+mangver (ThinkingSad): mismo kay Delfin.
+mangver (ThinkingSad): Kahit si Aling Vilma,
+mangver (ThinkingSad): sabi niya lang—
+mangver (ThinkingSad): 'may kumakalat na balita.'
+mangver (ThinkingSad): Hindi niya rin alam
+mangver (ThinkingSad): kung saan nanggaling.
+mangver (ThinkingSad): Kay Delfin, Mosa— wala man lang isa.
+# DM-058: the technique now has a name attached - "earned, not given" (SYS7).
+# Notebook itself is DM-059 (Tier 2, not built this milestone) - this flag is
+# the seam DM-059 reads later; no UI depends on it existing yet.
+[signal arg="technique_named"]
 # DM-015: flavor choice only. No condition/variable/trust mutation -- all three
 # options funnel to the same next line. Matches dm013_choice_smoke.dtl's
 # pattern; satisfies CODING.md §4 (trust is private to GameState, mutated by

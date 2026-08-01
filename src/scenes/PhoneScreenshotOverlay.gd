@@ -14,10 +14,18 @@ extends CanvasLayer
 # a flush bg-deep header band reading the group name as the cheap phone signifier (no
 # bezel art - a later DM-016/DM-064 build is the placeholder-to-final swap point, per
 # the charter's "art never blocks code" rule), whole-screen tap-to-dismiss (ChapterIntro's
-# exact gui_input pattern
-# - Fitts's Law, not a small button). Messages use chat_bubble.tres (borderless,
-# surface-alt), never dialogue_chip.tres (bordered) - a player must never confuse phone
-# content with the game's own spoken dialogue.
+# exact gui_input pattern - Fitts's Law, not a small button). Messages use chat_bubble.tres
+# (borderless, surface-alt), never dialogue_chip.tres (bordered) - a player must never
+# confuse phone content with the game's own spoken dialogue.
+#
+# DM-058 (mosa-minigame-designer spec): the tutorial's "do" half. Every message bubble is
+# now a tap target - tapping toggles a small "inspected" glyph, never dismisses. The
+# whole-screen dismiss (tap prompt + scrim tap) is withheld entirely until every bubble
+# has been tapped at least once. No wrong tap exists (CANON #17's marking-is-free half,
+# borrowed for a beat that predates MiniGame.gd/M4 - deliberately without the
+# submission/lives half, since nothing here can be answered wrong). Mang Ver names what
+# the tap-through revealed afterwards, in prologue.dtl - this scene only gates progress
+# on the doing, it carries no lesson text itself.
 
 signal dismissed
 
@@ -32,6 +40,14 @@ const ROW_GAP: float = 8.0
 const BUBBLE_MAX_WIDTH: float = 368.0
 const BUBBLE_PADDING_H: float = 16.0
 const BUBBLE_PADDING_V: float = 12.0
+const GLYPH_SIZE: float = 20.0
+## 96 logical px (= 48dp, DM-010's corrected floor, DESIGN.md §0.8) - applied directly to
+## the bubble's own custom_minimum_size (mosa-critic, real-render pass: an earlier version
+## padded a separate invisible wrapper instead, which read fine per-bubble but produced
+## wildly uneven gaps in the VBoxContainer list - short bubbles had a big empty gap after
+## them, tall ones didn't). A short message now reads as a slightly roomier bubble with
+## centred content, a real chat-UI pattern, not broken list rhythm.
+const BUBBLE_MIN_TAP_HEIGHT: float = 96.0
 
 
 ## One line inside the screenshot. sender_name is a literal display name (proper nouns
@@ -54,6 +70,17 @@ var _messages_box: VBoxContainer
 var _tap_prompt: Label
 var _is_closing: bool = false
 
+## DM-058: tap-to-inspect gate. Each bubble's hit-region Control maps to whether it's
+## been tapped yet; the whole-screen dismiss is withheld until every entry is true.
+var _inspected: Dictionary = {}
+var _glyphs: Dictionary = {}
+## mosa-critic finding, real-render pass: a tapped bubble's pulse never actually stopped
+## (set_loops() runs forever regardless of _inspected) - kept as a reference here purely
+## so it can be killed once its bubble is tapped, matching what the tap already means
+## ("nothing left to invite").
+var _pulse_tweens: Dictionary = {}
+var _bubbles: Dictionary = {}
+
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_WHEN_PAUSED
@@ -66,7 +93,13 @@ func _ready() -> void:
 func set_messages(entries: Array[MessageEntry]) -> void:
 	for child: Node in _messages_box.get_children():
 		child.queue_free()
-	for entry: MessageEntry in entries:
+	_inspected.clear()
+	_glyphs.clear()
+	_pulse_tweens.clear()
+	_bubbles.clear()
+
+	for i in entries.size():
+		var entry: MessageEntry = entries[i]
 		if not entry.sender_name.is_empty():
 			var sender := Label.new()
 			sender.text = entry.sender_name
@@ -76,8 +109,9 @@ func set_messages(entries: Array[MessageEntry]) -> void:
 			sender.add_theme_color_override("font_color", _palette.gold_ink)
 			sender.light_mask = 0
 			_messages_box.add_child(sender)
-		_messages_box.add_child(_build_bubble(entry.text_key))
-	_messages_box.add_child(_tap_prompt)
+		_messages_box.add_child(_build_bubble(entry.text_key, i))
+		_inspected[i] = false
+
 	await get_tree().process_frame
 	_recenter()
 
@@ -151,13 +185,26 @@ func _build_header() -> Control:
 	return header
 
 
-func _build_bubble(text_key: StringName) -> Control:
+## DM-058: the bubble itself is now the tap target (mouse_filter STOP + gui_input,
+## replacing the old always-IGNORE bubble).
+##
+## mosa-critic-equivalent finding, real-render pass: the first version of this wrapped
+## each bubble in a separate invisible Control padded to MIN_TAP_HEIGHT, keeping the
+## visual bubble text-sized - correct in isolation, but inside a VBoxContainer it made
+## the GAP after every short (1-line) bubble read as mysteriously, inconsistently large
+## (a short bubble's own empty hit-region padding stacking with ROW_GAP), while 2-line
+## bubbles sat close together. Fixed by applying the floor to the bubble itself instead
+## - a short message reads as a slightly roomier bubble (a real, common chat-UI pattern),
+## not as broken list rhythm. Content stays centred within it via `alignment` on `row`'s
+## parent margin, not by inflating the text itself.
+func _build_bubble(text_key: StringName, index: int) -> Control:
 	var bubble := PanelContainer.new()
 	bubble.add_theme_stylebox_override("panel", BUBBLE_STYLE)
-	bubble.custom_minimum_size = Vector2(0, 0)
+	bubble.custom_minimum_size = Vector2(0, BUBBLE_MIN_TAP_HEIGHT)
 	bubble.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	bubble.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bubble.mouse_filter = Control.MOUSE_FILTER_STOP
 	bubble.light_mask = 0
+	bubble.gui_input.connect(_on_bubble_gui_input.bind(index))
 
 	var margin := MarginContainer.new()
 	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -166,6 +213,15 @@ func _build_bubble(text_key: StringName) -> Control:
 	margin.add_theme_constant_override("margin_top", int(BUBBLE_PADDING_V))
 	margin.add_theme_constant_override("margin_bottom", int(BUBBLE_PADDING_V))
 	bubble.add_child(margin)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Vertically centres short single-line content within the taller floor-padded
+	# bubble, same technique DialogueBox._center_text_vertically() already established
+	# for exactly this "content shorter than its fixed budget" case.
+	row.set_anchors_and_offsets_preset(Control.PRESET_CENTER_LEFT)
+	margin.add_child(row)
 
 	var label := Label.new()
 	label.text = tr(text_key)
@@ -177,8 +233,59 @@ func _build_bubble(text_key: StringName) -> Control:
 	label.add_theme_font_size_override("font_size", 26)
 	label.add_theme_color_override("font_color", _palette.ink)
 	label.light_mask = 0
-	margin.add_child(label)
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(label)
+
+	var glyph := _build_inspected_glyph()
+	glyph.visible = false
+	row.add_child(glyph)
+	_glyphs[index] = glyph
+
+	# Gentle pulse invites the tap without a word of instruction (mosa-minigame-designer:
+	# the only affordance is the motion itself - nothing is told before it's done).
+	_bubbles[index] = bubble
+	_pulse_tweens[index] = _start_bubble_pulse(bubble)
+
 	return bubble
+
+
+## Echoes the Lives HUD/NameplateChip speech-bubble motif (DESIGN.md §0.5) rather than a
+## new icon - gold-ink, not chip-ink, since this marks "you looked at this," a different
+## role from NameplateChip's "who's speaking."
+func _build_inspected_glyph() -> Control:
+	var wrapper := Control.new()
+	wrapper.custom_minimum_size = Vector2(GLYPH_SIZE, GLYPH_SIZE)
+	wrapper.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var body := Panel.new()
+	body.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	body.offset_right = GLYPH_SIZE
+	body.offset_bottom = GLYPH_SIZE - 5.0
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = _palette.gold_ink
+	sb.set_corner_radius_all(5)
+	body.add_theme_stylebox_override("panel", sb)
+	wrapper.add_child(body)
+
+	var tail := ColorRect.new()
+	tail.color = _palette.gold_ink
+	tail.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	tail.offset_left = 3.0
+	tail.offset_top = GLYPH_SIZE - 6.0
+	tail.offset_right = 7.0
+	tail.offset_bottom = GLYPH_SIZE
+	wrapper.add_child(tail)
+
+	return wrapper
+
+
+func _start_bubble_pulse(bubble: Control) -> Tween:
+	if Juice.is_reduce_motion_enabled():
+		return null
+	var tw := bubble.create_tween().set_loops()
+	tw.tween_property(bubble, "modulate:a", 0.7, 1.1).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(bubble, "modulate:a", 1.0, 1.1).set_trans(Tween.TRANS_SINE)
+	return tw
 
 
 func _build_tap_prompt() -> Label:
@@ -203,16 +310,87 @@ func _start_prompt_pulse(prompt: Label) -> void:
 ## Re-centres the plate now that its real content height is known - same "await one
 ## frame, then measure and reposition" convention ChapterIntro.gd's bottom band already
 ## uses, since a PanelContainer's true height isn't available until after a layout pass.
-func _recenter() -> void:
+## `animate`: mosa-critic finding, real-render pass - the initial call (set_messages())
+## happens before the player has seen the plate at all (mid-entrance-tween), so an
+## instant snap there is invisible and correctly untweened; the DM-058 completion call
+## (_reveal_tap_prompt()) happens mid-interaction, where the same instant snap read as
+## the whole plate popping to a new position in one frame. Only that second call tweens.
+func _recenter(animate: bool = false) -> void:
 	var content_height: float = _panel.get_combined_minimum_size().y
+	_panel.pivot_offset = _panel.size / 2.0
+	if not animate or Juice.is_reduce_motion_enabled():
+		_panel.offset_left = -PLATE_WIDTH / 2.0
+		_panel.offset_right = PLATE_WIDTH / 2.0
+		_panel.offset_top = -content_height / 2.0
+		_panel.offset_bottom = content_height / 2.0
+		return
 	_panel.offset_left = -PLATE_WIDTH / 2.0
 	_panel.offset_right = PLATE_WIDTH / 2.0
-	_panel.offset_top = -content_height / 2.0
-	_panel.offset_bottom = content_height / 2.0
-	_panel.pivot_offset = _panel.size / 2.0
+	var tw := _panel.create_tween().set_parallel(true)
+	(
+		tw
+		. tween_property(_panel, "offset_top", -content_height / 2.0, 0.25)
+		. set_trans(Tween.TRANS_QUAD)
+		. set_ease(Tween.EASE_OUT)
+	)
+	(
+		tw
+		. tween_property(_panel, "offset_bottom", content_height / 2.0, 0.25)
+		. set_trans(Tween.TRANS_QUAD)
+		. set_ease(Tween.EASE_OUT)
+	)
+
+
+## DM-058: never dismisses. Toggles the inspected glyph and stops that bubble's pulse
+## once tapped (a tapped bubble has nothing left to invite); once every entry is true,
+## reveals the tap-to-continue prompt for the first time - it's never in the tree before
+## this, not just hidden, so there's no way to accidentally dismiss early.
+func _on_bubble_gui_input(event: InputEvent, index: int) -> void:
+	var tapped: bool = (
+		(event is InputEventScreenTouch and event.pressed)
+		or (
+			event is InputEventMouseButton
+			and event.pressed
+			and event.button_index == MOUSE_BUTTON_LEFT
+		)
+	)
+	if not tapped or _inspected.get(index, false):
+		return
+	_inspected[index] = true
+	var glyph: Control = _glyphs.get(index)
+	if glyph != null:
+		glyph.visible = true
+	# A tapped bubble has nothing left to invite - stop its pulse and settle it back to
+	# full opacity, rather than continuing to loop forever (mosa-critic finding: the
+	# tween's own set_loops() never respected _inspected before this fix).
+	var tw: Tween = _pulse_tweens.get(index)
+	if tw != null and tw.is_valid():
+		tw.kill()
+	var bubble: Control = _bubbles.get(index)
+	if bubble != null:
+		bubble.modulate.a = 1.0
+	AudioDirector.play_sfx(&"ui_tap")
+
+	if _inspected.values().all(func(v: bool) -> bool: return v):
+		_reveal_tap_prompt()
+
+
+func _reveal_tap_prompt() -> void:
+	if _tap_prompt.get_parent() != null:
+		return
+	_messages_box.add_child(_tap_prompt)
+	Juice.fade(_tap_prompt, true, 0.3, &"")
+	await get_tree().process_frame
+	_recenter(true)
 
 
 func _on_scrim_gui_input(event: InputEvent) -> void:
+	# DM-058: withheld entirely until every bubble has been tapped - the tap prompt's own
+	# absence from the tree before that point already prevents this visually, but the
+	# input guard has to hold independently in case a tap lands on the scrim itself
+	# rather than the (not yet shown) prompt.
+	if _tap_prompt.get_parent() == null:
+		return
 	if event is InputEventScreenTouch and event.pressed:
 		_dismiss()
 	elif (

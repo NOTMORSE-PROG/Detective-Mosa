@@ -1,8 +1,9 @@
 class_name Prologue
 extends Control
 # Screens S4/S5/S6 - CH1.1 prologue: Mang Ver's sala, Mang Delfin falsely accused, Mosa
-# recruited (DM-015). Narrative delivery only - the DM-058 tutorial mechanic (a performed
-# verification) is built ON TOP of this same timeline by that ticket, not this one.
+# recruited (DM-015), plus DM-058's onboarding-by-discovery beat built on the same
+# timeline: the phone-screenshot tap-through (PhoneScreenshotOverlay's own gate) is the
+# "do," Mang Ver's follow-up lines in prologue.dtl are the "label."
 #
 # Dialogic's own layout node (DM-013's Style) is added by Dialogic.start() as a sibling
 # of the tree root, not a child of this scene (mosa-godot-engineer, verified against
@@ -21,10 +22,17 @@ const CHAPTER_INTRO_SCENE_PATH: String = "res://src/scenes/ChapterIntro.tscn"
 ## other narrative-progress marker.
 const FLAG_PROLOGUE_SEEN: StringName = &"ch1_prologue_seen"
 
-## Signal argument constants - must match the exact strings prologue.dtl's two
-## `[signal arg="..."]` markers emit (mosa-narrative, DM-015).
+## DM-058: set once Mang Ver's naming lines finish - "earned, not given" (SYS7), the
+## label attaches to the technique only after it's actually been named, not at the
+## moment of tapping. DM-059 (Tier 2, not built this milestone) reads this later to seed
+## the notebook's first entry; no UI depends on it existing yet.
+const FLAG_TECHNIQUE_SOURCE_COUNT_SEEN: StringName = &"technique_source_count_seen"
+
+## Signal argument constants - must match the exact strings prologue.dtl's
+## `[signal arg="..."]` markers emit (mosa-narrative/mosa-minigame-designer, DM-015/058).
 const SIGNAL_PHONE_SCREENSHOT: String = "prologue_phone_screenshot"
 const SIGNAL_MOOD_TENSION: String = "mood_tension"
+const SIGNAL_TECHNIQUE_NAMED: String = "technique_named"
 
 
 func _ready() -> void:
@@ -49,6 +57,8 @@ func _on_dialogic_signal(arg: Variant) -> void:
 			_show_phone_screenshot()
 		SIGNAL_MOOD_TENSION:
 			AudioDirector.set_mood(&"tension")
+		SIGNAL_TECHNIQUE_NAMED:
+			GameState.flags[FLAG_TECHNIQUE_SOURCE_COUNT_SEEN] = true
 
 
 ## The overlay owns its own full open/dismiss/close_overlay lifecycle (mosa-ui-designer
