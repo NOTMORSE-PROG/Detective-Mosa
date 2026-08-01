@@ -22,6 +22,25 @@ const SETTINGS_PATH: String = "user://settings.json"
 var loaded_dialogic_timeline: String = ""
 var loaded_dialogic_event_idx: int = -1
 
+## Which of the 3 slots the current playthrough is bound to - -1 means nothing has been
+## loaded or started yet this process. DM-015: the first ticket with a real in-game
+## save_game() caller, so the first to need "which slot" tracked at all. Set by
+## Continue.gd on a successful load, or by pick_new_game_slot() on a fresh start; read by
+## whichever scene's timeline_ended handler calls save_game() at a real save point.
+var active_slot: int = -1
+
+
+## First empty slot (0, 1, 2 in order), or 0 if all three are occupied - no slot-picker
+## UI exists yet to let the player choose which save to overwrite (a real, small gap,
+## not silently pretended away: flagged in this ticket's own notes). CANON #15 fixes the
+## slot count at 3; it doesn't rule on overwrite behaviour, so this is the minimal honest
+## default until a real UI exists to make that a player decision instead of this one.
+func pick_new_game_slot() -> int:
+	for slot: int in range(3):
+		if not slot_exists(slot):
+			return slot
+	return 0
+
 
 func _ready() -> void:
 	DirAccess.make_dir_recursive_absolute(SAVE_DIR)

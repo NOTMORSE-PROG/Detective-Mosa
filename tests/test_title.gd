@@ -62,6 +62,9 @@ func test_new_game_resets_game_state() -> void:
 
 	assert_eq(GameState.trust, GameState.TUNABLES.trust_start)
 	assert_eq(GameState.chapter, 1)
+	# DM-015: the real seam Prologue.gd's timeline_ended handler depends on - without
+	# this, SaveManager.save_game(SaveManager.active_slot) would write to slot -1.
+	assert_ne(SaveManager.active_slot, -1, "New Game must pick a real slot before routing")
 
 
 ## DM-051 AC: "BACK at the title prompts before quitting, never quits silently."

@@ -526,6 +526,7 @@ func _build_back_button() -> void:
 
 func _on_slot_pressed(slot: int) -> void:
 	if SaveManager.load_game(slot):
+		SaveManager.active_slot = slot
 		AudioDirector.play_sfx(&"ui_select")
 		if ResourceLoader.exists(PROLOGUE_SCENE_PATH):
 			SceneRouter.go_to(PROLOGUE_SCENE_PATH)
@@ -535,6 +536,7 @@ func _on_slot_pressed(slot: int) -> void:
 
 
 func _on_new_game_pressed() -> void:
+	SaveManager.active_slot = SaveManager.pick_new_game_slot()
 	GameState.reset_to_defaults()
 	if ResourceLoader.exists(PROLOGUE_SCENE_PATH):
 		SceneRouter.go_to(PROLOGUE_SCENE_PATH)

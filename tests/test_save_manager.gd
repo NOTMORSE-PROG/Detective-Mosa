@@ -171,3 +171,47 @@ func test_record_completed_run_appends_to_meta() -> void:
 
 	assert_eq(runs.size(), before_count + 1)
 	assert_eq(runs[runs.size() - 1].get("ending"), "verified_chismosa")
+
+
+## DM-015: pick_new_game_slot() touches the real 0/1/2 slots by design (that's what it
+## picks between) - unlike every other test here, which stays on TEST_SLOT specifically
+## to avoid this. Snapshots and restores whatever was really there before/after, so this
+## test can't clobber a real local save.
+func test_pick_new_game_slot_prefers_first_empty() -> void:
+	var backups: Dictionary = _backup_real_slots()
+
+	for slot: int in range(3):
+		if FileAccess.file_exists(SaveManager.slot_path(slot)):
+			DirAccess.remove_absolute(SaveManager.slot_path(slot))
+	assert_eq(SaveManager.pick_new_game_slot(), 0, "all empty - first empty slot is 0")
+
+	SaveManager.save_game(0)
+	assert_eq(SaveManager.pick_new_game_slot(), 1, "slot 0 taken - next empty is 1")
+
+	SaveManager.save_game(1)
+	SaveManager.save_game(2)
+	assert_eq(
+		SaveManager.pick_new_game_slot(), 0, "all three full - falls back to 0, no picker UI yet"
+	)
+
+	_restore_real_slots(backups)
+
+
+func _backup_real_slots() -> Dictionary:
+	var backups: Dictionary = {}
+	for slot: int in range(3):
+		var path := SaveManager.slot_path(slot)
+		if FileAccess.file_exists(path):
+			backups[slot] = FileAccess.get_file_as_string(path)
+	return backups
+
+
+func _restore_real_slots(backups: Dictionary) -> void:
+	for slot: int in range(3):
+		var path := SaveManager.slot_path(slot)
+		if backups.has(slot):
+			var f := FileAccess.open(path, FileAccess.WRITE)
+			f.store_string(backups[slot])
+			f.close()
+		elif FileAccess.file_exists(path):
+			DirAccess.remove_absolute(path)

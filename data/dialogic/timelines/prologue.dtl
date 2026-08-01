@@ -1,0 +1,74 @@
+join mangver (Idle) center
+join mosa (Shocked) center
+mosa (Shocked): Mang Ver! Mang Ver! Totoo po ba na napa-baranggay si Mang Delfin?
+join mangver (Sad) center
+mangver (Sad): Oo, pinapunta sa baranggay hall si Delfin,
+mangver (Sad): sabi nila siya raw yung nagnakaw kila Vilma..
+mangver (Sad): pero wala naman talagang ebidensya.
+join mosa (Smirk1) center
+mosa (Smirk1): Huh? Pero meron pong ebidensya, Mang Ver!
+mosa (Smirk1): Narinig ko po nagsend ng warning si Aling Vilma sa GC.
+mosa (Smirk1): Ito po, oh!
+# DM-015: phone-visual handoff point. Aling Vilma's GC warning + the 3 NPC replies
+# (ch1.alingvilma.line_01/02, ch1.npc.line_01-03) render here, in a small
+# self-contained phone-visual scene owned by the implementer -- NOT the cut
+# DM-016 PhoneOverlay. This timeline does not render that content itself.
+[signal arg="prologue_phone_screenshot"]
+# DM-015: AudioDirector mood shift point -- calm to tension. The screenshot has
+# just resolved; Mang Ver looks up from it and confronts Mosa directly. Wire
+# AudioDirector's calm->tension call to this signal, not to a line inside the
+# confrontation itself, so the tension is already present under the beat
+# rather than stinging in partway through it.
+[signal arg="mood_tension"]
+join mangver (Thinking) center
+mangver (Thinking): Matatawag mo bang ebidensya yan, Mosa?
+mangver (Thinking): Ikaw pa, na sanay na sanay sa chismis dito —
+mangver (Thinking): dapat alam mo agad na hindi yan credible..
+join mangver (ThinkingSad) center
+mangver (ThinkingSad): Hindi man lang nila pinakinggan ang side ni Delfin.
+# DM-015: flavor choice only. No condition/variable/trust mutation -- all three
+# options funnel to the same next line. Matches dm013_choice_smoke.dtl's
+# pattern; satisfies CODING.md §4 (trust is private to GameState, mutated by
+# exactly two methods, neither of which applies here) and CANON #10/#11 (no
+# choice in this game silently branches state without being the one sanctioned
+# Chismis It decision, and this isn't it).
+- Ay, teka— may punto ka rin naman.
+- Pero sabay-sabay silang nag-post, e!
+- Kaya nga po tinakbo kita agad, di ba?
+mangver (ThinkingSad): Hindi ko na kaya palampasin ang mga tsismis
+mangver (ThinkingSad): na lalo lang kumakalat sa baranggay natin.
+mangver (ThinkingSad): Lalo na't may nasaktan na dahil dito.
+# DM-015 fix (real-render finding, DialogueBox's own dev-console safety net fired
+# here first: "beat exceeds 2 lines (got 3)"): split at the "..", per mosa-narrative's
+# own pre-flagged fallback for this exact line.
+join mangver (Sad2) center
+mangver (Sad2): Kung kaya ko lang, ako na ang nagresolba nito..
+mangver (Sad2): Pero hindi na kaya sa edad ko..
+join mosa (Sad1) center
+mosa (Sad1): ..Ako po, Mang Ver? P-Pero tsismosa lang naman ako--
+mosa (Sad1): at baka hindi po nila ako pakinggan..
+join mangver (Idle) center
+mangver (Idle): May tiwala ako sayo, Mosa. Kahit na kilala ka bilang isang tsismosa
+mangver (Idle): sa barangay Masipag, alam ko namang mga hindi nakasasama
+mangver (Idle): ang mga pinakakalat mo, hindi ba?
+# DM-015 fix (same real-render finding as the Sad2 split above): 75 chars overflowed
+# to 3 lines - split at the natural clause break.
+mangver (Idle): Ang misyon ko para sayo ay hanapin
+mangver (Idle): ang nagpapakalat ng mga tsismis na ito..
+mangver (Idle): "Ghost Chismosa," kung tawagin.
+join mosa (Sad2) center
+mosa (Sad2): "Ghost Chismosa"...?
+mosa (Sad2): So, may nagpapakalat po ng mga maling balita na sa barangay?..
+mosa (Sad2): Kung para sa ikabubuti ng barangay Masipag..
+join mosa (Idle) center
+mosa (Idle): Tatanggapin ko po ang misyon mo, Mang Ver.
+join mangver (Happy) center
+mangver (Happy): May tiwala ako sayo, Mosa. Marami pang darating na hamon,
+# DM-015 fix (same class of finding): 76 chars overflowed to 3 lines - split at the
+# natural clause break.
+mangver (Happy): pero alam kong hindi ka susuko
+mangver (Happy): hangga't hindi mo nakikita ang buong larawan.
+join mosa (Smirk3) center
+mosa (Smirk3): Sana nga po sapat ang tiwalang 'yan, Mang Ver.
+join mangver (HappyWink) center
+mangver (HappyWink): Sapat na 'yan. Tara na — maraming naghihintay na sagot diyan sa labas.

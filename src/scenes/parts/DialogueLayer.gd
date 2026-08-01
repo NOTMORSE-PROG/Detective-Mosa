@@ -78,7 +78,37 @@ func _ready() -> void:
 	_build_nameplate(box_rect)
 	_build_choice_stack(box_rect)
 
+	# mosa-godot-engineer root-cause fix (DM-015, real-render repro): `join <char> center`
+	# does NOT reuse the single "center"-tagged `DialogicNode_PortraitContainer` built
+	# above - `subsystem_portraits.gd::join_character()`'s "not yet joined" branch calls
+	# `PortraitContainers.add_container(character.get_character_name())`, which manufactures
+	# a NEW sibling container per character (under this same `clip` parent), only copying
+	# "center"'s transform onto it. A character who never gets an explicit `leave` keeps
+	# that sibling container mounted forever. Verified against a real capture
+	# (`tools/dm015_portrait_repro.gd`, reverted): once Mosa joins after Mang Ver, her
+	# container sits at a higher sibling index and paints on top of his for the REST of
+	# the timeline - every following Mang Ver line renders Mosa's portrait, nameplate text
+	# unaffected because that's driven by `dialogic.Text`, a wholly separate subsystem.
+	# `prologue.dtl` never issues `leave`, matching this project's own documented one-slot
+	# convention ("whichever character last joined it") - so THIS layer, which owns that
+	# convention, enforces it mechanically instead of trusting every future timeline author
+	# to remember a `leave` before each alternating `join ... center`.
+	Dialogic.Portraits.character_joined.connect(_on_portrait_character_joined)
+
 	super._ready()
+
+
+## Enforces this project's one-slot "center" convention: when a character joins, any
+## OTHER currently-joined character is made to leave. Dialogic's own `join_character()`
+## never does this itself (see the `_ready()` comment above) - it happily lets two
+## characters' portrait containers coexist, overlapping, forever.
+func _on_portrait_character_joined(info: Dictionary) -> void:
+	var joined_character: DialogicCharacter = info.get("character")
+	if joined_character == null:
+		return
+	for other_character: DialogicCharacter in Dialogic.Portraits.get_joined_characters():
+		if other_character != joined_character:
+			Dialogic.Portraits.leave_character(other_character)
 
 
 func _build_portrait_band() -> void:

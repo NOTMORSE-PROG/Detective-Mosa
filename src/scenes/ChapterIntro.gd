@@ -11,6 +11,15 @@ signal advanced
 
 const BACKDROP_SCENE: PackedScene = preload("res://src/scenes/parts/ChapterIntroBackdrop.tscn")
 
+## DM-015: the real chapter-transition wiring this screen's own header comment named as
+## this ticket's job. Chapter 2/3 have no destinations - both cut (D-013) - so only
+## chapter 1 has a real entry here; ResourceLoader.exists() guards chapter 1's own too,
+## since DM-017 (M3) hasn't built Explore.tscn yet either. Same honest-stub pattern as
+## Title.gd/Continue.gd/Prologue.gd's own New Game paths - never a fake destination.
+const NEXT_SCENE_PATHS: Dictionary = {
+	1: "res://src/scenes/Explore.tscn",
+}
+
 ## Sourced from SCRIPT.md, not invented (mosa-ui-designer consult) - Ch2 genuinely has no
 ## Filipino/English title pair in canon, only "Group Chat Gone Wild," so its gloss stays empty
 ## rather than inventing one.
@@ -45,6 +54,7 @@ func _ready() -> void:
 	# The entire safe rect is the tap target (mosa-ui-designer: Fitts's Law, avoid pixel-
 	# hunting a small prompt label), not just the prompt text itself.
 	gui_input.connect(_on_gui_input)
+	advanced.connect(_on_advanced)
 
 	# Curtain-opens beat, not scale_fade()'s dramatic pop-in (that's for interrupts appearing
 	# OVER other content - this screen has no "under" to interrupt).
@@ -156,3 +166,11 @@ func _advance() -> void:
 	AudioDirector.play_sfx(&"ui_tap")
 	var tw := Juice.fade(self, false)
 	tw.finished.connect(func() -> void: advanced.emit())
+
+
+func _on_advanced() -> void:
+	var next_path: String = NEXT_SCENE_PATHS.get(chapter, "")
+	if not next_path.is_empty() and ResourceLoader.exists(next_path):
+		SceneRouter.go_to(next_path)
+	# else: no-op. This chapter has no destination yet (cut, or not built this
+	# milestone) - correct, honest behaviour, not a fake one.

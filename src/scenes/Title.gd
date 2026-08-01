@@ -186,6 +186,7 @@ func _any_save_exists() -> bool:
 
 
 func _on_new_game_pressed() -> void:
+	SaveManager.active_slot = SaveManager.pick_new_game_slot()
 	GameState.reset_to_defaults()
 	_go_to_gameplay()
 
