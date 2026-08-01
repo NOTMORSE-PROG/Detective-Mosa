@@ -13,16 +13,31 @@ var _surface_alt_band: StyleBoxFlat = load("res://data/stylebox/surface_alt_band
 var _row_transparent: StyleBoxFlat = load("res://data/stylebox/row_transparent.tres")
 var _row_pressed: StyleBoxFlat = load("res://data/stylebox/row_pressed.tres")
 
+@onready var _background: ColorRect = $Background
 @onready var _release_blocked_label: Label = $ReleaseBlockedLabel
 @onready var _content_plate: Panel = $ContentPlate
 @onready var _eyebrow: Label = $ContentPlate/Margin/VBox/Eyebrow
 @onready var _headline: Label = $ContentPlate/Margin/VBox/Headline
 @onready var _subline: Label = $ContentPlate/Margin/VBox/Subline
 @onready var _legend: Label = $ContentPlate/Margin/VBox/Legend
+@onready var _separator: ColorRect = $ContentPlate/Margin/VBox/Separator
 @onready var _rows_container: VBoxContainer = $ContentPlate/Margin/VBox/Scroll/RowsContainer
 
 
 func _ready() -> void:
+	# These 7 nodes used to bake Color(...) literals straight into the .tscn (editor-set,
+	# never read from the palette) - invisible to the token guard because it only matched
+	# `#RRGGBB` hex, not Godot's own Color(r,g,b,a) float serialization (DM-066). Wiring
+	# them here, the same way every dynamically-built row below already does, removes the
+	# last raw colour literals left in this scene rather than allowlisting them.
+	_background.color = _palette.bg_base
+	_release_blocked_label.add_theme_color_override("font_color", _palette.ink_soft)
+	_eyebrow.add_theme_color_override("font_color", _palette.ink_soft)
+	_headline.add_theme_color_override("font_color", _palette.gold_ink)
+	_subline.add_theme_color_override("font_color", _palette.ink_soft)
+	_legend.add_theme_color_override("font_color", _palette.ink_soft)
+	_separator.color = _palette.border
+
 	if not OS.is_debug_build():
 		_content_plate.visible = false
 		_release_blocked_label.visible = true

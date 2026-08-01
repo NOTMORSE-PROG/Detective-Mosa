@@ -20,6 +20,7 @@ Checks (mirrors .github/workflows/ci.yml):
   parse       : godot --headless --check-only, per script, over src/ + tests/
   grep guards : trace · token · trust · audio
   asset sizes : tools/check_asset_sizes.py (DM-008) - the 4096px mobile ceiling
+  contrast    : tools/check_contrast.py (DM-007/DM-066) - WCAG AA against data/palette.tres
   GUT tests   : only once the GUT addon is actually installed (DM-047)
 
 Escape hatch: MOSA_SKIP_QUALITY=1 git push — for genuine emergencies only,
@@ -64,6 +65,61 @@ _IDENTIFIER_NOT_FOUND_RE = re.compile(r"Identifier not found: (\S+)")
 # source of truth, not a violation. Confirm this path when DM-007 lands.
 TOKEN_GUARD_EXCLUDES = {"data/palette.tres"}
 HEX_COLOR_RE = re.compile(r"#[0-9A-Fa-f]{6}\b")
+
+# `#RRGGBB` alone cannot see Godot's OWN colour serialization: every .tscn the editor
+# bakes, and every `Color(...)` constructor call in a .gd file, writes floats, never hex.
+# Known since DM-051, flagged twice, never fixed until DM-066 - this is the second half
+# of the same guard, not a separate one. Matches 3- or 4-argument numeric Color() forms
+# only (Color(_palette.bg_deep, 0.4) and Color(fill.r, fill.g, fill.b, a) are NOT raw
+# literals - deriving a colour from a token is exactly what this guard should allow).
+_COLOR_NUM = r"[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?"
+COLOR_LITERAL_RE = re.compile(
+    rf"Color\(\s*{_COLOR_NUM}\s*,\s*{_COLOR_NUM}\s*,\s*{_COLOR_NUM}\s*(?:,\s*{_COLOR_NUM}\s*)?\)"
+)
+
+
+def _normalize_color_literal(literal: str) -> str:
+    return re.sub(r"\s+", " ", literal)
+
+
+# Every pre-existing Color(...) float literal this half of the guard newly sees,
+# decided honestly per DM-066 rather than silently widened away until the guard passed.
+# Two categories, neither a "hardcoded design colour" in the sense DESIGN.md tokens exist
+# to prevent - both verified by reading the surrounding code, not assumed from the number:
+#   - a self_modulate/image-fill MULTIPLIER or MASK BASE applied on top of an
+#     already-tokenized texture - the rendered colour still traces back to the palette
+#   - a fully transparent (alpha 0) or test-only SENTINEL that never paints a pixel
+# Keyed by exact (normalized) matched text, not by file alone, so a genuinely new raw
+# colour added later to an already-allowlisted file still fails.
+COLOR_LITERAL_ALLOWLIST: dict[str, set[str]] = {
+    "src/lib/Juice.gd": {
+        "Color(1.4, 1.4, 1.4, 1.0)",  # POP_REDUCED_FLASH - overbright multiply, not a hue
+        "Color(0.75, 0.75, 0.75, 1.0)",  # SHAKE_REDUCED_DIM - darken multiply, not a hue
+        "Color(0, 0, 0, 0)",  # _BURST_COLOR_UNSET sentinel ("use Palette.gold"), alpha 0
+    },
+    "src/scenes/AssetAudit.gd": {
+        "Color(0, 0, 0, 0)",  # transparent stylebox fill; border colour carries the token
+    },
+    "src/scenes/Boot.tscn": {
+        "Color(0.2, 0.2, 0.2, 1)",  # throwaway grey-box scene (DM-002), never a real screen
+    },
+    "src/scenes/Continue.gd": {
+        "Color(0, 0, 0, 0)",  # transparent stylebox fill, outline-only components
+    },
+    "src/scenes/parts/SalaBackdrop.gd": {
+        "Color(1, 1, 1, 1)",  # white mask base for a procedural radial light texture, tinted after
+    },
+    "src/ui/ChromeButton.gd": {
+        "Color(1, 1, 1, 1)",  # MODULATE_DEFAULT - identity (no-op) self_modulate multiply
+        "Color(0.88, 0.88, 0.88, 1)",  # MODULATE_PRESSED - darken multiply, not a hue
+    },
+    "tests/test_design_tokens.gd": {
+        "Color(0, 0, 0, 1)",  # "field left at unset default" sentinel, never rendered
+    },
+    "tests/test_juice.gd": {
+        "Color(0, 0, 0, 0)",  # test fixture matching Juice's own unset-colour sentinel
+    },
+}
 
 # GameState.gd (DM-049) is the only file allowed to write `trust`.
 TRUST_GUARD_EXCLUDES = {"src/autoload/GameState.gd"}
@@ -266,9 +322,16 @@ def check_token_guard() -> list[str]:
             continue
         text = full.read_text(encoding="utf-8", errors="replace")
         if HEX_COLOR_RE.search(text):
-            hits.append(norm)
+            hits.append(f"{norm}: raw #RRGGBB hex")
+        allowed = COLOR_LITERAL_ALLOWLIST.get(norm, set())
+        for match in COLOR_LITERAL_RE.finditer(text):
+            literal = _normalize_color_literal(match.group(0))
+            if literal not in allowed:
+                hits.append(f"{norm}: {literal} (not allowlisted)")
     if hits:
-        sys.stderr.write("  ! token guard: FAILED (raw hex outside the palette resource)\n")
+        sys.stderr.write(
+            "  ! token guard: FAILED (raw colour literal outside the palette resource)\n"
+        )
         sys.stderr.write("".join(f"      {h}\n" for h in hits))
         return ["token guard"]
     sys.stderr.write("  · token guard ... ok\n")
@@ -326,6 +389,25 @@ def check_asset_sizes() -> list[str]:
     return ["asset sizes"]
 
 
+def check_contrast() -> list[str]:
+    # tools/check_contrast.py (DM-007, re-sourced DM-066) parses data/palette.tres
+    # directly - called here, not reimplemented, so there is exactly one place this
+    # logic lives. Previously a standalone script nobody ran automatically: fixed to
+    # read the real palette but never actually gated a push or CI run. Wired in now so
+    # a retoned token that fails WCAG is caught, not just theoretically catchable.
+    result = subprocess.run(
+        [sys.executable, str(REPO_ROOT / "tools" / "check_contrast.py")],
+        cwd=REPO_ROOT, capture_output=True, text=True,
+    )
+    if result.returncode == 0:
+        sys.stderr.write("  · contrast guard ... ok\n")
+        return []
+    sys.stderr.write("  ! contrast guard: FAILED\n")
+    tail = (result.stdout + result.stderr).strip().splitlines()[-20:]
+    sys.stderr.write("\n".join(f"      {line}" for line in tail) + "\n")
+    return ["contrast guard"]
+
+
 def check_gut() -> list[str]:
     if not GUT_ADDON.exists():
         sys.stderr.write("  ? GUT tests: addon not installed yet (DM-047) — cannot verify\n")
@@ -374,6 +456,7 @@ def main() -> int:
         "trust": check_trust_guard,
         "audio": check_audio_guard,
         "assets": check_asset_sizes,
+        "contrast": check_contrast,
         "gut": check_gut,
     }
     only = sys.argv[1] if len(sys.argv) > 1 else None

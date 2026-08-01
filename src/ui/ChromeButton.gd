@@ -42,11 +42,6 @@ const MODULATE_PRESSED := Color(0.88, 0.88, 0.88, 1)
 const HEIGHT_PRIMARY: float = 120.0
 const HEIGHT_SECONDARY: float = 96.0
 
-## Procedural dash glyph (same placeholder-first, no-new-art-asset technique as
-## Continue.gd's warning glyph) shown via `Button.icon` when disabled - `icon`, not a
-## `text` mutation, so the translated label string itself is never touched or re-prefixed.
-static var _dash_icon: ImageTexture
-
 
 func _init(label_text: String = "", primary: bool = true) -> void:
 	text = label_text
@@ -92,13 +87,3 @@ func set_enabled(enabled: bool) -> void:
 	# 0.7 exists to guarantee. The glyph was protecting against a hue-only distinction
 	# that no longer exists.
 	icon = null
-
-
-func _get_dash_icon() -> ImageTexture:
-	if _dash_icon == null:
-		const WIDTH: int = 20
-		const HEIGHT: int = 4
-		var img := Image.create(WIDTH, HEIGHT, false, Image.FORMAT_RGBA8)
-		img.fill(Color(1, 1, 1, 1))
-		_dash_icon = ImageTexture.create_from_image(img)
-	return _dash_icon

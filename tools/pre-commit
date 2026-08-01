@@ -1,3 +1,8 @@
 #!/bin/sh
-# Copy me to .git/hooks/pre-commit (see tools/check_changelog.py docstring)
-python "$(git rev-parse --show-toplevel)/tools/check_changelog.py"
+# Copy me to .git/hooks/pre-commit (see tools/check_changelog.py and
+# tools/check_board_vs_git.py docstrings).
+root="$(git rev-parse --show-toplevel)"
+status=0
+python "$root/tools/check_changelog.py" || status=1
+python "$root/tools/check_board_vs_git.py" --pre-commit || status=1
+exit $status

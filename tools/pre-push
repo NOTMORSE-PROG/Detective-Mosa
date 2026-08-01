@@ -1,4 +1,10 @@
 #!/bin/sh
-# Copy me to .git/hooks/pre-push (see tools/check_quality.py docstring).
-# Runs CI's own checks locally so a red push never leaves the machine.
-python "$(git rev-parse --show-toplevel)/tools/check_quality.py"
+# Copy me to .git/hooks/pre-push (see tools/check_quality.py and
+# tools/check_board_vs_git.py docstrings).
+# Runs CI's own checks locally so a red push never leaves the machine, plus the
+# board-vs-git guard CI structurally can never run (tickets/ is gitignored).
+root="$(git rev-parse --show-toplevel)"
+status=0
+python "$root/tools/check_quality.py" || status=1
+python "$root/tools/check_board_vs_git.py" || status=1
+exit $status
