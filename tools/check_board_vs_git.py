@@ -16,9 +16,17 @@ structured per-ticket file manifest to cross-reference — a ticket's own "Relev
 list is prose written before the work started, not a contract, and drifts from whatever a
 session actually touched. Rather than ship a guard that pretends to a precision it can't
 deliver, this checks the coarse signal that would have caught every real incident above:
-if ANY ticket on the board is marked DONE, the working tree must be clean AND the local
-branch must not be ahead of its upstream. A narrower, ticket-scoped guard is future work,
-honestly out of reach without a doc convention that doesn't exist today.
+if ANY ticket on the board is marked DONE, the working tree must be clean. A narrower,
+ticket-scoped guard is future work, honestly out of reach without a doc convention that
+doesn't exist today.
+
+"Commits not yet pushed" is reported but NOT blocking, and this is deliberate, not an
+oversight - caught by testing this guard against a real `git push` before shipping it:
+a pre-push hook runs BEFORE the push completes, so the very commit(s) about to be sent
+are, by definition, still "ahead of upstream" at the moment the hook runs. Blocking on
+that would fail every legitimate push. What actually matters — and what genuinely
+happened in both real incidents — is uncommitted work sitting in the tree; that check
+stays blocking.
 
 Structural limit, worth naming once rather than rediscovering: this can ONLY ever run
 locally. /tickets/ is gitignored, so CI's checkout never has BOARD.md at all — there is
@@ -115,9 +123,11 @@ def main() -> int:
             + "\n".join(f"      {line}" for line in dirty.splitlines())
         )
 
+    # Informational only, deliberately non-blocking - see the module docstring for why
+    # blocking on this would fail every legitimate push.
     ahead = unpushed_commit_count()
     if ahead:
-        problems.append(f"{ahead} local commit(s) not yet pushed to the upstream branch")
+        print(f"note: {ahead} local commit(s) not yet pushed to the upstream branch")
 
     if problems:
         sys.stderr.write(
@@ -131,10 +141,7 @@ def main() -> int:
         )
         return 1
 
-    print(
-        f"{len(done)} ticket(s) marked DONE on the board; "
-        "working tree clean, nothing unpushed."
-    )
+    print(f"{len(done)} ticket(s) marked DONE on the board; working tree clean.")
     return 0
 
 
