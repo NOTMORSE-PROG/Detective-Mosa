@@ -1,8 +1,12 @@
 class_name SalaBackdrop
 extends CanvasLayer
-# S1/S3 depth stack over Mang Ver's sala - mosa-ui-designer consult, DM-010 (2026-07-29
-# reopen). `layer = -1` so this whole stack renders behind the Control UI on the default
-# layer. Structure built in code, not the .tscn - same convention as Title.gd/Continue.gd.
+# S2/S3 depth stack over Mang Ver's sala - mosa-ui-designer consult, DM-010 (2026-07-29
+# reopen). NO LONGER S1 (DM-068, 2026-07-31): S1 moved to `StreetBackdrop.gd`/the street
+# exterior; this file's own header used to say "S1/S3" and would have kept lying about that
+# the moment S1 stopped using it if left unfixed - the doc-drift this project keeps finding
+# the expensive way. `layer = -1` so this whole stack renders behind
+# the Control UI on the default layer. Structure built in code, not the .tscn - same
+# convention as Title.gd/Continue.gd.
 #
 # Two engine facts this design depends on, verified against the real 4.7.1 build via a
 # throwaway scene before writing this (not assumed from docs - see DM-010 research notes):
@@ -11,9 +15,7 @@ extends CanvasLayer
 # 2. `PointLight2D` DOES cross CanvasLayer boundaries - a light parented here still
 #    illuminates a `TextureRect` (Mosa) sitting on the default layer.
 
-const BACKDROP_TEXTURE: Texture2D = preload("res://art/backdrops/sala-amber_backdrop.png")
 const PALETTE: Palette = preload("res://data/palette.tres")
-
 const LIGHT_TEXTURE_SIZE: int = 256
 const SHADOW_TEXTURE_SIZE: int = 256
 
@@ -24,12 +26,32 @@ const SHADOW_TEXTURE_SIZE: int = 256
 const LAYER_RANGE_MIN: int = -512
 const LAYER_RANGE_MAX: int = 512
 
+## Exported, not a const (DM-068, mosa-godot-engineer consult): S2's reconstruction is the
+## second real caller of this backdrop (S3 is the first, both need it simultaneously once
+## S3 is back in scope), and both want the new pixel-art `livingroom 1.png`, not the old
+## illustrated `sala-amber_backdrop.png` a hardcoded const would keep shipping to every
+## caller silently. Two legitimate callers wanting different values is the actual threshold
+## for parameterizing (this project's own no-premature-abstraction rule) - a single caller
+## (like `StreetBackdrop`, S1-only) stays a plain const.
+@export var backdrop_texture: Texture2D = preload("res://art/backdrops/livingroom 1.png")
+
 ## The left band exists to give S1's big left-aligned wordmark dark ground to sit on
 ## (Reference B's vertical band). It is 620px + a 280px falloff - sized for THAT lockup.
 ## On a screen without it (S2's centred empty-state, S3's centred panel) it just swallows
 ## most of the frame and hides the sala the backdrop was added to show. Per-screen, not
 ## global (2026-07-29, owner review).
 @export var show_left_band: bool = true
+
+## `RightScrim` exists to suppress backdrop linework bleeding through a right-anchored
+## button column (`DM-067`'s TV-cabinet finding) - it only does useful work when a screen
+## actually HAS one. Was built unconditionally until `mosa-critic`'s DM-068 S2 review found
+## it crushing real, delivered art (a TV-on-cabinet prop) to near-black on the new Case
+## Folder layout, which has no right-anchored column at all - violating DESIGN.md §6's own
+## "filled with more barangay, not black bars" rule. Per-screen now, same pattern as
+## `show_left_band`. Default false: as of DM-068 no confirmed caller needs it (S2's folder is
+## centred; S3's panel is centred per the baseline capture) - flip true only for a screen
+## whose own reconstruction actually places a right-anchored column here.
+@export var show_right_scrim: bool = false
 
 var _palette: Palette = PALETTE
 var _far_plane: Parallax2D
@@ -51,7 +73,8 @@ func _ready() -> void:
 	_build_far_plane()
 	if show_left_band:
 		_build_left_band()
-	_build_right_scrim()
+	if show_right_scrim:
+		_build_right_scrim()
 	_build_framing()
 	_build_vignette()
 	_build_lights()
@@ -92,7 +115,7 @@ func _build_far_plane() -> void:
 
 	_backdrop_sprite = Sprite2D.new()
 	_backdrop_sprite.name = "Backdrop"
-	_backdrop_sprite.texture = BACKDROP_TEXTURE
+	_backdrop_sprite.texture = backdrop_texture
 	_backdrop_sprite.centered = false
 	_far_plane.add_child(_backdrop_sprite)
 
@@ -431,6 +454,12 @@ func _build_lights() -> void:
 	_key_light = PointLight2D.new()
 	_key_light.name = "KeyLight"
 	_key_light.texture = light_texture
+	# Explicit, not inherited (DM-068, stepped-cookie hardening): `texture_filter` lives on the
+	# `CanvasItem` sampling the texture, not on `GradientTexture2D` itself - `mosa-godot-engineer`
+	# confirmed by probe that the project's global Nearest default (`DM-069`) already resolves
+	# here for free, so this is self-documenting rather than a functional fix, matching this
+	# file's existing convention of stating filtering intent outright.
+	_key_light.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_key_light.color = _palette.gold
 	# Energy is high relative to the other two because this light lands on the UPPER wall,
 	# the darkest part of the painted backdrop, and light here is multiplied by that surface's
@@ -448,6 +477,7 @@ func _build_lights() -> void:
 	_rim_light = PointLight2D.new()
 	_rim_light.name = "RimLight"
 	_rim_light.texture = light_texture
+	_rim_light.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_rim_light.color = _palette.sky
 	_rim_light.energy = 0.95
 	_rim_light.texture_scale = 2.4
@@ -460,6 +490,7 @@ func _build_lights() -> void:
 	_lamp_light = PointLight2D.new()
 	_lamp_light.name = "LampLight"
 	_lamp_light.texture = light_texture
+	_lamp_light.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_lamp_light.color = _palette.gold
 	# Pulled back from 1.0: with the vignette softened and the floor now lit, the sofa/table
 	# pool became the brightest mass in the frame and started out-massing the wordmark it is
@@ -577,10 +608,36 @@ func _build_ground_shadow() -> void:
 ## exactly `LampLight.position.x - (256 * texture_scale / 2)` - the texture's own left
 ## boundary, drawn as a hard cut because the falloff had already reached zero long before it.
 ## `_build_vignette()` sets both properties and always looked correct; these did not.
+##
+## STEPPED cookie, not a smooth analog ramp (DM-068, pixel-art reconstruction). A two-stop
+## `INTERPOLATE_LINEAR` gradient (the previous implementation) reads as a soft photographic
+## bloom - correct for the old painted backdrop, a confirmed style clash against the
+## 2026-07-31 delivery's flat-cel, hard-black-outline art (mosa-art-director verdict, real
+## A/B/C capture evidence in `tools/.captures/dm068-lighting-exp/`). `mosa-godot-engineer`
+## verified by direct probe against 4.7.1 that `Gradient.GRADIENT_INTERPOLATE_CONSTANT` bakes
+## genuine hard-edged plateaus into the generated texture (measured: three flat luminance
+## bands, single-pixel-wide transitions, unaffected by NEAREST vs LINEAR texture_filter - the
+## step survives either way because the texel DATA is already flat within each band, not
+## because of a filter setting) - so this is a texture change, not a filter change. Three
+## bands (1.0 / 0.6 / 0.0), not two, so the light still reads as a falloff rather than a flat
+## disc - the middle plateau is what makes it a "light" and not a "spotlight cutout."
 func _make_radial_texture(size: int, tint: Color) -> GradientTexture2D:
 	var gradient := Gradient.new()
-	gradient.set_color(0, Color(tint.r, tint.g, tint.b, tint.a))
-	gradient.set_color(1, Color(tint.r, tint.g, tint.b, 0.0))
+	gradient.interpolation_mode = Gradient.GRADIENT_INTERPOLATE_CONSTANT
+	gradient.set_offsets(PackedFloat32Array([0.0, 0.45, 0.8, 1.0]))
+	(
+		gradient
+		. set_colors(
+			PackedColorArray(
+				[
+					Color(tint.r, tint.g, tint.b, tint.a),
+					Color(tint.r, tint.g, tint.b, tint.a * 0.6),
+					Color(tint.r, tint.g, tint.b, tint.a * 0.22),
+					Color(tint.r, tint.g, tint.b, 0.0),
+				]
+			)
+		)
+	)
 	var tex := GradientTexture2D.new()
 	tex.gradient = gradient
 	tex.fill = GradientTexture2D.FILL_RADIAL
@@ -597,9 +654,27 @@ func _make_radial_texture(size: int, tint: Color) -> GradientTexture2D:
 ## only the ceiling crops) and horizontally centered, matching ASSET_SPEC.md's "compose
 ## the focal point in the center ~1024px column" rule. Re-run on `size_changed` rather than
 ## once, since `expand` recomputes the logical viewport size on rotation/resize.
+## Converts a point in the BACKDROP ART's own native pixel space (0,0 to 1600,768) to true
+## screen coordinates, using the exact same COVER-transform math `_layout_for_viewport()`
+## applies to the backdrop sprite itself. mosa-critic (DM-068 roll-up): `Continue.gd` anchored
+## Mosa with a bare `offset_left` constant, independent of the backdrop's own scale/position -
+## since the backdrop recenters per aspect ratio but her fixed-pixel anchor didn't move with
+## it, the two drifted apart and her feet landed on the bed's corner post at 4:3. Anchoring to
+## an ART-space point instead keeps her pinned to the same backdrop pixel at every aspect
+## ratio - the same discipline `StreetBackdrop`/`ChapterIntroBackdrop`'s prop-overlay fix
+## already applied to props on the street screens.
+func backdrop_point_to_screen(art_point: Vector2) -> Vector2:
+	var vp_size := get_viewport().get_visible_rect().size
+	var tex_size := Vector2(backdrop_texture.get_width(), backdrop_texture.get_height())
+	var scale_factor := maxf(vp_size.x / tex_size.x, vp_size.y / tex_size.y)
+	var scaled_size := tex_size * scale_factor
+	var backdrop_position := Vector2((vp_size.x - scaled_size.x) / 2.0, vp_size.y - scaled_size.y)
+	return backdrop_position + art_point * scale_factor
+
+
 func _layout_for_viewport() -> void:
 	var vp_size := get_viewport().get_visible_rect().size
-	var tex_size := Vector2(BACKDROP_TEXTURE.get_width(), BACKDROP_TEXTURE.get_height())
+	var tex_size := Vector2(backdrop_texture.get_width(), backdrop_texture.get_height())
 	var scale_factor := maxf(vp_size.x / tex_size.x, vp_size.y / tex_size.y)
 	_backdrop_sprite.scale = Vector2(scale_factor, scale_factor)
 	var scaled_size := tex_size * scale_factor
@@ -648,26 +723,27 @@ func _layout_for_viewport() -> void:
 	# regardless of viewport width. Core (420px, past the 320px button column's own width
 	# plus margin) sits flush with the true right edge; a 260px falloff softens the inner
 	# edge into the room rather than cutting a hard vertical line across the sofa.
-	const RIGHT_SCRIM_CORE: float = 420.0
-	const RIGHT_SCRIM_FALLOFF: float = 260.0
-	var core_left := vp_size.x - RIGHT_SCRIM_CORE
-	var falloff_left := core_left - RIGHT_SCRIM_FALLOFF
-	_right_scrim.polygon = PackedVector2Array(
-		[
-			Vector2(core_left, 0),
-			Vector2(vp_size.x, 0),
-			Vector2(vp_size.x, vp_size.y),
-			Vector2(core_left, vp_size.y),
-		]
-	)
-	_right_scrim_falloff.polygon = PackedVector2Array(
-		[
-			Vector2(falloff_left, 0),
-			Vector2(core_left, 0),
-			Vector2(core_left, vp_size.y),
-			Vector2(falloff_left, vp_size.y),
-		]
-	)
+	if _right_scrim != null:
+		const RIGHT_SCRIM_CORE: float = 420.0
+		const RIGHT_SCRIM_FALLOFF: float = 260.0
+		var core_left := vp_size.x - RIGHT_SCRIM_CORE
+		var falloff_left := core_left - RIGHT_SCRIM_FALLOFF
+		_right_scrim.polygon = PackedVector2Array(
+			[
+				Vector2(core_left, 0),
+				Vector2(vp_size.x, 0),
+				Vector2(vp_size.x, vp_size.y),
+				Vector2(core_left, vp_size.y),
+			]
+		)
+		_right_scrim_falloff.polygon = PackedVector2Array(
+			[
+				Vector2(falloff_left, 0),
+				Vector2(core_left, 0),
+				Vector2(core_left, vp_size.y),
+				Vector2(falloff_left, vp_size.y),
+			]
+		)
 
 	# mosa-critic (DM-010 reopen review): `TopClutter`'s polygon was authored fixed-width
 	# for the 1024px base canvas, so a wider-than-1024 real device showed zero framing

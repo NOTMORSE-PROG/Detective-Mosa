@@ -22,15 +22,16 @@ const TRACK_STYLE: StyleBoxFlat = preload("res://data/stylebox/slider_track.tres
 # slider's actual value was invisible without reading the "%" label next to it.
 const FILL_STYLE: StyleBoxFlat = preload("res://data/stylebox/slider_fill.tres")
 
-# 864x560 (DM-010 reopen item 5) - "kills the debug-menu read entirely": everything,
-# including Back, now sits inside one opaque plate over the scrim'd sala rather than
-# floating directly on a flat background colour.
-# 560 -> 424 (2026-07-29, owner review). Three slider rows plus a Back button genuinely
-# do not fill 560px; the panel read ~35% empty, which is the "debug menu" tell all over
-# again in a nicer colour. Sized to its real content instead of padding it out with
-# placeholder rows - the accessibility controls that WILL fill it belong to DM-053 (M7),
-# and shipping disabled rows that do nothing is worse than a correctly-sized panel.
-const PANEL_SIZE: Vector2 = Vector2(864, 584)
+# 864x584 -> 864x448 (DM-068, mosa-critic roll-up): Back MOVED OUT of the panel - see
+# `_build_back_button()`'s own docstring for why. Panel now sized to headline + 3 rows only:
+# 32(pad) + 48(headline) + 16(gap) + 320(3 rows: 3x96 + 2x16) + 32(pad) = 448, an 8px-grid
+# multiple. `DM-010`'s original "everything, including Back, sits inside one opaque plate"
+# reasoning predates S2's own DM-068 rebuild, which floats Back true-edge on the bare
+# backdrop - a choice that stopped being available to Settings only because Settings used
+# to sit over a flat scrim (DM-010) rather than the real graded room it shows now (DM-068
+# dropped that scrim). With the flat-background problem gone, the two screens' Back buttons
+# can (and now do) match.
+const PANEL_SIZE: Vector2 = Vector2(864, 448)
 const PANEL_PADDING: float = 32.0
 const CONTENT_WIDTH: float = PANEL_SIZE.x - 2 * PANEL_PADDING
 
@@ -39,7 +40,6 @@ const ROW_HEIGHT: float = 96.0
 const ROW_GAP: float = 16.0
 const HEADLINE_HEIGHT: float = 48.0
 const HEADLINE_TO_ROWS_GAP: float = 16.0
-const ROWS_TO_BACK_GAP: float = 16.0
 # 220 -> 288 (mosa-ui-designer, DM-010 reopen item 7): "Mga Tunog sa Interface" measured
 # wider than the old 220px column and `clip_text` would silently amputate it.
 const LABEL_WIDTH: float = 288.0
@@ -63,17 +63,22 @@ var _rows: Array[Array] = [
 
 func _ready() -> void:
 	_sala_backdrop = SALA_BACKDROP_SCENE.instantiate()
-	# Centred panel, so the left band would only hide the sala behind it.
+	# DM-068 reconstruction (mosa-ui-designer, Direction A - "Dock it to the room"): neither
+	# toggle applies to this layout. `show_left_band` was built for S1's wordmark geometry;
+	# `show_right_scrim` exists to suppress linework bleeding through a TRANSLUCENT
+	# right-anchored column, and this panel is fully opaque - nothing behind it to bleed
+	# through.
 	_sala_backdrop.show_left_band = false
 	add_child(_sala_backdrop)
 	_sala_backdrop.hide_ground_shadow()  # S3 never shows Mosa - explicit, not relied on default.
 
-	var scrim := ColorRect.new()
-	scrim.color = _palette.scrim
-	scrim.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	scrim.light_mask = 0  # uniform dim regardless of the sala's own lighting underneath.
-	scrim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(scrim)
+	# DM-068: the old full-screen `scrim` (bg-deep @ 85%) is GONE, reusing the exact
+	# precedent this same ticket already proved on S2 (`Continue.gd`'s own comment: "nothing
+	# else on this screen sits directly on the bare backdrop"). `scrim`'s documented role is
+	# dimming UNKNOWN, arbitrary frozen-gameplay brightness behind PauseMenu/ConfirmDialog
+	# (DESIGN.md §5) - Settings' backdrop is a KNOWN, already-graded location, so that
+	# justification never applied here. The opaque panel below is the only thing that needs
+	# to read as a solid plate, and `surface_panel_opaque.tres` already does that job alone.
 
 	# Plain `Panel`, not `PanelContainer` - a `Container` forcibly resizes/repositions
 	# every direct child to fill its own rect, which fights the hand-authored absolute-
@@ -88,11 +93,24 @@ func _ready() -> void:
 	# at some viewport sizes, splitting it into two visibly different brightness zones.
 	# Unlike S1's wordmark (which wants the KeyLight glow behind it), S3's panel is a flat
 	# utility dialog meant to read as one consistent plate regardless of what the sala's
-	# lighting is doing behind the scrim.
+	# lighting is doing behind it.
 	panel.light_mask = 0
-	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	panel.offset_left = -PANEL_SIZE.x / 2.0
-	panel.offset_right = PANEL_SIZE.x / 2.0
+	# DM-068 (mosa-ui-designer, Direction A): right-anchored, true-edge, NOT dead-center.
+	# The baseline's centered panel had no alignment relationship to anything, no asymmetric
+	# balance (Reference A's own rule - "neither side is empty, nothing is centred") - now
+	# the room's own KeyLight-lit capiz windows are the left-side visual mass and the panel
+	# is the right-side mass, same grammar S2 already uses (Mosa left / folder right). 64px
+	# margin (8px-grid multiple) from the true right edge, recomputed automatically on
+	# resize - PRESET_TOP_RIGHT is a point anchor, same mechanism the centered preset it
+	# replaces already used, no new resize-handling code needed.
+	panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	# Vertically centred within the viewport height, not pinned to the top - same visual
+	# weight as the old centered panel on the Y axis, only the X axis changes.
+	panel.anchor_top = 0.5
+	panel.anchor_bottom = 0.5
+	const RIGHT_MARGIN: float = 64.0
+	panel.offset_right = -RIGHT_MARGIN
+	panel.offset_left = -RIGHT_MARGIN - PANEL_SIZE.x
 	panel.offset_top = -PANEL_SIZE.y / 2.0
 	panel.offset_bottom = PANEL_SIZE.y / 2.0
 	add_child(panel)
@@ -125,7 +143,7 @@ func _ready() -> void:
 		var row_top := rows_top + i * (ROW_HEIGHT + ROW_GAP)
 		panel.add_child(_build_slider_row(label_key, bus, row_top))
 
-	_build_back_button(panel)
+	_build_back_button()
 	# Hardware BACK does exactly what the on-screen Back button does (DM-051) - one
 	# routing decision, not two behaviours to keep in sync.
 	SceneRouter.back_handler = _on_back_pressed
@@ -242,16 +260,22 @@ func _make_grabber_icon(fill: Color, border: Color) -> ImageTexture:
 	return ImageTexture.create_from_image(img)
 
 
-func _build_back_button(panel: Control) -> void:
+## Floats true-edge on the bare backdrop, NOT inside the panel (DM-068, mosa-critic roll-up:
+## S2's own DM-068 rebuild floats its Back the same way, and the two disagreeing with no
+## stated reason read as leftover, the same "accidental-looking disagreement" class
+## `DESIGN.md §2` already had to write down an explicit rule for once, for
+## PauseMenu/ConfirmDialog). Same true-edge bottom-left anchor and 160px width as
+## `Continue.gd::_build_back_button()`, so every screen's Back sits in the same place.
+func _build_back_button() -> void:
 	var back := ChromeButton.new(tr("ui.common.back"), false)
 	back.custom_minimum_size.x = 160
 	back.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-	back.offset_left = PANEL_PADDING
-	back.offset_bottom = -PANEL_PADDING
+	back.offset_left = 16
+	back.offset_bottom = -32
 	back.offset_top = back.offset_bottom - ChromeButton.HEIGHT_SECONDARY
 	back.offset_right = back.offset_left + 160
 	back.pressed.connect(_on_back_pressed)
-	panel.add_child(back)
+	add_child(back)
 
 
 ## Context-aware, not a single hardcoded destination (mosa-ui-designer, DM-051 consult -

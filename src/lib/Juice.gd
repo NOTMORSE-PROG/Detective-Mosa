@@ -91,6 +91,38 @@ const SFX_BURST_DEFAULT: StringName = &"ui_tap_alt"
 ## default is resolved in the function body instead of risking a parse error here.
 const _BURST_COLOR_UNSET: Color = Color(0, 0, 0, 0)
 
+# --- fade() tuning (DM-068) ---
+## Seconds - a plain opacity transition. This is also what slide()/scale_fade() fall back
+## to under reduce-motion, and the primitive PauseMenu/ConfirmDialog use directly for their
+## own scrims - a scrim dimming in/out carries no directional or spatial meaning of its own
+## (DESIGN.md §0.10), so it is safe as full, unconditional motion either way.
+const FADE_DURATION_DEFAULT: float = 0.20
+## Shorter, not skipped - DESIGN.md §0.10: motion is never the only carrier of meaning, so
+## the reduced path still gives a real, if snappier, response rather than an instant cut.
+const FADE_DURATION_REDUCED: float = 0.12
+## No default sfx: fade() backs a scrim opening (SceneRouter.open_overlay() already fires
+## "ui_open_menu" once per overlay open - a second concurrent sfx here would stack on top
+## of it) and is also the silent reduced-motion substitute for slide()/scale_fade(), which
+## must not invent a sound the full-motion version never had. Callers wanting an audible
+## close (SceneRouter.close_overlay() plays nothing today - a real, previously-silent gap)
+## pass one explicitly.
+const SFX_FADE_DEFAULT: StringName = &""
+
+# --- scale_fade() tuning (DM-068) ---
+## Starts at 85% scale + 0 alpha and overshoots past 1.0 on the way in (TRANS_BACK) - the
+## "materializes with a little life in it" read Game Feel's appeal-over-realism argument
+## backs for a one-shot interrupt meant to grab attention immediately (REFERENCES.md's
+## ConfirmDialog role - the opposite motion language from slide()'s edge-docked drawer, on
+## purpose).
+const SCALE_FADE_FROM_ENTER: float = 0.85
+## Exits by contracting toward 92%, not to 0 - shrinking all the way to a point reads as
+## being sucked away; a small, fast contraction reads as "dismissed" without pulling the
+## eye through a long shrink.
+const SCALE_FADE_TO_EXIT: float = 0.92
+const SCALE_FADE_DURATION_DEFAULT: float = 0.22
+## Same no-default-sfx reasoning as fade() above.
+const SFX_SCALE_FADE_DEFAULT: StringName = &""
+
 # ---------------------------------------------------------------------------
 # Reduce-motion - single accessor point (ticket's pre-implementation research note).
 # Defaults OFF. DM-053 replaces is_reduce_motion_enabled()'s body with a real read
@@ -377,3 +409,75 @@ class _BurstDot:
 
 	func _draw() -> void:
 		draw_circle(Vector2.ZERO, _radius, _color)
+
+
+# ---------------------------------------------------------------------------
+# fade() / scale_fade() - entrance/exit transitions (DM-068). Unlike pop()/shake(), these
+# are not emphasis-on-top-of-an-already-visible-object effects - they ARE the appear/
+# disappear itself, so both use PropertyTweener.from() to set the starting value as part of
+# the tween rather than pre-writing the property a frame early, the same idiom pop() uses.
+# ---------------------------------------------------------------------------
+
+
+## Fades `target`'s opacity in (0 -> full) or out (full -> 0) via `modulate:a` only - no
+## position or scale change, so it needs no reduced-motion branch of its own (it only ever
+## shortens its duration under reduce-motion, per DESIGN.md §0.10: motion is never the only
+## carrier of meaning, so this still gives a real response, just a snappier one). This is
+## also what slide()/scale_fade() themselves fall back to when reduce-motion is on.
+static func fade(
+	target: CanvasItem,
+	entering: bool,
+	duration: float = FADE_DURATION_DEFAULT,
+	sfx_id: StringName = SFX_FADE_DEFAULT
+) -> Tween:
+	if sfx_id != &"":
+		AudioDirector.play_sfx(sfx_id)
+	var real_duration: float = FADE_DURATION_REDUCED if is_reduce_motion_enabled() else duration
+	var from_alpha: float = 0.0 if entering else 1.0
+	var to_alpha: float = 1.0 if entering else 0.0
+	var tw: Tween = target.create_tween()
+	tw.set_ignore_time_scale(true)
+	var t: PropertyTweener = tw.tween_property(target, "modulate:a", to_alpha, real_duration)
+	t.from(from_alpha)
+	t.set_trans(Tween.TRANS_QUAD)
+	t.set_ease(Tween.EASE_OUT if entering else Tween.EASE_IN)
+	return tw
+
+
+## Scales `target` in with an overshoot (entering) or contracts it out (exiting), fading
+## opacity in parallel - the centered-interrupt entrance/exit language a one-shot modal
+## needs (as opposed to slide()'s edge-docked drawer language for a persistent, bottom-
+## anchored menu - DESIGN.md §2's PauseMenu/ConfirmDialog entry documents why those two
+## disagree on purpose). Callers using this on a Control MUST set `pivot_offset` to the
+## target's own center first - Control's default pivot is its top-left corner, and scaling
+## around that corner reads as the panel growing from a corner instead of appearing in
+## place. Reduce-motion drops to fade() alone: scale carries no meaning of its own here (the
+## dialog's mere presence/absence already is the cue), so losing it costs nothing.
+static func scale_fade(
+	target: CanvasItem,
+	entering: bool,
+	duration: float = SCALE_FADE_DURATION_DEFAULT,
+	sfx_id: StringName = SFX_SCALE_FADE_DEFAULT
+) -> Tween:
+	if sfx_id != &"":
+		AudioDirector.play_sfx(sfx_id)
+	if is_reduce_motion_enabled():
+		return fade(target, entering, FADE_DURATION_REDUCED, &"")
+	var from_scale: float = SCALE_FADE_FROM_ENTER if entering else 1.0
+	var to_scale: float = 1.0 if entering else SCALE_FADE_TO_EXIT
+	var from_alpha: float = 0.0 if entering else 1.0
+	var to_alpha: float = 1.0 if entering else 0.0
+	var tw: Tween = target.create_tween()
+	tw.set_ignore_time_scale(true)
+	tw.set_parallel(true)
+	var scale_t: PropertyTweener = tw.tween_property(
+		target, "scale", Vector2.ONE * to_scale, duration
+	)
+	scale_t.from(Vector2.ONE * from_scale)
+	scale_t.set_trans(Tween.TRANS_BACK if entering else Tween.TRANS_QUAD)
+	scale_t.set_ease(Tween.EASE_OUT if entering else Tween.EASE_IN)
+	var alpha_t: PropertyTweener = tw.tween_property(target, "modulate:a", to_alpha, duration)
+	alpha_t.from(from_alpha)
+	alpha_t.set_trans(Tween.TRANS_QUAD)
+	alpha_t.set_ease(Tween.EASE_OUT if entering else Tween.EASE_IN)
+	return tw

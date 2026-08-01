@@ -1,0 +1,7 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://src/scenes/parts/ChapterIntroBackdrop.gd" id="1_chapterintro"]
+
+[node name="ChapterIntroBackdrop" type="CanvasLayer" unique_id=2026073102]
+layer = -1
+script = ExtResource("1_chapterintro")

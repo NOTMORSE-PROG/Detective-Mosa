@@ -154,6 +154,63 @@ func test_burst_default_color_resolves_to_palette_gold() -> void:
 	assert_eq(particles.color, Juice.PALETTE.gold)
 
 
+func test_fade_entering_animates_alpha_from_zero_to_one() -> void:
+	var control := Control.new()
+	add_child_autofree(control)
+	var tw := Juice.fade(control, true, 0.05, &"")
+	await wait_for_signal(tw.finished, 1.0)
+	assert_almost_eq(control.modulate.a, 1.0, 0.01)
+
+
+func test_fade_exiting_animates_alpha_from_one_to_zero() -> void:
+	var control := Control.new()
+	add_child_autofree(control)
+	var tw := Juice.fade(control, false, 0.05, &"")
+	await wait_for_signal(tw.finished, 1.0)
+	assert_almost_eq(control.modulate.a, 0.0, 0.01)
+
+
+func test_fade_reduced_motion_still_animates_but_shorter() -> void:
+	Juice.set_reduce_motion_override_for_testing(true)
+	var control := Control.new()
+	add_child_autofree(control)
+	var tw := Juice.fade(control, true, 5.0, &"")  # a duration that would time out the wait
+	# if the reduced-duration override weren't actually applied.
+	await wait_for_signal(tw.finished, 1.0)
+	assert_almost_eq(control.modulate.a, 1.0, 0.01)
+
+
+func test_scale_fade_entering_settles_at_scale_one_fully_opaque() -> void:
+	var control := Control.new()
+	add_child_autofree(control)
+	var tw := Juice.scale_fade(control, true, 0.05, &"")
+	await wait_for_signal(tw.finished, 1.0)
+	assert_eq(control.scale, Vector2.ONE)
+	assert_almost_eq(control.modulate.a, 1.0, 0.01)
+
+
+func test_scale_fade_exiting_settles_at_the_configured_exit_scale_fully_transparent() -> void:
+	var control := Control.new()
+	add_child_autofree(control)
+	var tw := Juice.scale_fade(control, false, 0.05, &"")
+	await wait_for_signal(tw.finished, 1.0)
+	assert_almost_eq(control.scale.x, Juice.SCALE_FADE_TO_EXIT, 0.01)
+	assert_almost_eq(control.modulate.a, 0.0, 0.01)
+
+
+func test_scale_fade_reduced_motion_never_changes_scale() -> void:
+	Juice.set_reduce_motion_override_for_testing(true)
+	var control := Control.new()
+	add_child_autofree(control)
+	var tw := Juice.scale_fade(control, true, 0.05, &"")
+	# The reduced path falls back to fade() alone, which never touches scale at all - true
+	# synchronously, same as pop()'s own reduced-motion scale guarantee.
+	assert_eq(control.scale, Vector2.ONE)
+	await wait_for_signal(tw.finished, 1.0)
+	assert_eq(control.scale, Vector2.ONE)
+	assert_almost_eq(control.modulate.a, 1.0, 0.01)
+
+
 func test_burst_reduced_motion_spawns_no_particle_node() -> void:
 	Juice.set_reduce_motion_override_for_testing(true)
 	var parent := Node2D.new()

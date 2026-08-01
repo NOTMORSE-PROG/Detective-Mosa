@@ -21,9 +21,30 @@ func test_resume_closes_its_own_overlay() -> void:
 	await get_tree().process_frame
 
 	SceneRouter._overlay_stack[-1].call("_on_resume_pressed")
+	# Resume now plays a slide-down exit tween before closing (DM-068 juice pass) - a
+	# single process_frame is no longer enough to observe the close; wait past
+	# PauseMenu.gd's own SLIDE_DURATION_EXIT (0.20s) with a small margin instead of
+	# assuming synchronous timing. Literal, not PauseMenu.SLIDE_DURATION_EXIT: PauseMenu.gd
+	# deliberately carries no class_name (see that file's own header comment) - a
+	# check-only/autoload cascade specific to this file, not a style choice.
+	await get_tree().create_timer(0.20 + 0.1).timeout
+
+	assert_false(SceneRouter.has_open_overlay())
+
+
+func test_resume_closes_its_own_overlay_under_reduce_motion() -> void:
+	# DM-068 AC: "reduce-motion respected in everything animated" - the reduced path skips
+	# the slide tween's own await entirely (see PauseMenu.gd::_play_exit()), so this must
+	# still close promptly, not hang waiting on a tween that was never created.
+	Juice.set_reduce_motion_override_for_testing(true)
+	SceneRouter.open_overlay("res://src/scenes/PauseMenu.tscn")
+	await get_tree().process_frame
+
+	SceneRouter._overlay_stack[-1].call("_on_resume_pressed")
 	await get_tree().process_frame
 
 	assert_false(SceneRouter.has_open_overlay())
+	Juice.set_reduce_motion_override_for_testing(false)
 
 
 func test_settings_button_stacks_settings_as_a_second_overlay() -> void:

@@ -34,3 +34,4 @@ extends Resource
 
 @export_group("Per-location grades (DESIGN.md §1)")
 @export var grade_sala_amber: Color  ## CanvasModulate tint for Mang Ver's sala (DM-010 reopen)
+@export var grade_street_noon: Color  ## CanvasModulate tint for the street/S1 (DM-068)

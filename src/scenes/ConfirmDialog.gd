@@ -6,7 +6,23 @@ extends CanvasLayer
 signal confirmed
 signal cancelled
 
+## Exit-tween length (DM-068, `Juice.scale_fade()`'s duration override for this screen).
+## `PauseMenu.gd`'s own quit-to-title flow reads this constant directly to know how long to
+## wait before ITS OWN `SceneRouter.close_overlay()` call is safe to run (see that file's
+## `_on_quit_to_title_confirmed()` comment for why) - one source of truth so retuning this
+## value can never silently desync the two.
+const EXIT_DURATION: float = 0.16
+
 var _palette: Palette = load("res://data/palette.tres")
+
+## Guards Confirm/Cancel against a double-tap firing the exit sequence twice while it's
+## already playing - a second concurrent SceneRouter.close_overlay() call would pop
+## whatever is topmost by then, which is no longer guaranteed to be this dialog.
+var _is_closing: bool = false
+## Built in _ready(), not @onready-inferred from the scene tree like the four below -
+## these two ARE the buttons this script constructs, not existing .tscn nodes.
+var _confirm_button: ChromeButton
+var _cancel_button: ChromeButton
 
 @onready var _scrim: ColorRect = $Scrim
 @onready var _panel: PanelContainer = $Scrim/Panel
@@ -49,15 +65,27 @@ func _ready() -> void:
 	# looser than PauseMenu's crisp 32px-all-sides fit. Expanding to fill the row keeps
 	# both buttons legible-width regardless of exact panel sizing, rather than a magic
 	# number that has to be kept in sync with the panel's own width by hand.
-	var confirm := ChromeButton.new(tr("ui.common.confirm"), true)
-	confirm.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	confirm.pressed.connect(_on_confirm_pressed)
-	_button_row.add_child(confirm)
+	_confirm_button = ChromeButton.new(tr("ui.common.confirm"), true)
+	_confirm_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_confirm_button.pressed.connect(_on_confirm_pressed)
+	_button_row.add_child(_confirm_button)
 
-	var cancel := ChromeButton.new(tr("ui.common.cancel"), true)
-	cancel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	cancel.pressed.connect(_on_cancel_pressed)
-	_button_row.add_child(cancel)
+	_cancel_button = ChromeButton.new(tr("ui.common.cancel"), true)
+	_cancel_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_cancel_button.pressed.connect(_on_cancel_pressed)
+	_button_row.add_child(_cancel_button)
+
+	# Entrance (DM-068): centered, one-shot interrupt language - scale-in-with-overshoot +
+	# fade, the opposite motion vocabulary from PauseMenu's edge-docked slide, on purpose
+	# (DESIGN.md §2 - the two disagree on position AND, now, on how they move). pivot_offset
+	# must be the panel's own center before scaling it, or Control's default top-left pivot
+	# makes it read as growing from a corner - `_panel`'s size is fully static (fixed
+	# offset_left/right/top/bottom in the .tscn, both anchor pairs pinned to the same 0.5
+	# point rather than spanning the parent), so reading `.size` here needs no layout-pass
+	# wait, unlike a viewport-relative dimension would.
+	_panel.pivot_offset = _panel.size / 2.0
+	Juice.fade(_scrim, true)
+	Juice.scale_fade(_panel, true)
 
 
 ## Called by whoever opens this (Title.gd / PauseMenu.gd) right after
@@ -67,10 +95,33 @@ func set_body(text: String) -> void:
 
 
 func _on_confirm_pressed() -> void:
+	# confirmed.emit() stays first and stays synchronous/unmoved (DM-068's own load-bearing
+	# constraint: don't touch this signal's timing) - PauseMenu.gd's quit-to-title flow
+	# listens on it and must still fire at exactly this point, before this dialog's own
+	# exit animation runs.
 	confirmed.emit()
+	await _play_exit()
 	SceneRouter.close_overlay()
 
 
 func _on_cancel_pressed() -> void:
 	cancelled.emit()
+	await _play_exit()
 	SceneRouter.close_overlay()
+
+
+## Shared exit animation for Confirm/Cancel: scale+fade the panel out, fade the scrim out
+## in parallel, with an audible partner (SceneRouter.close_overlay() itself plays no sound
+## today - a real, previously-silent gap this closes). Both button presses reach this the
+## same way, since a one-shot interrupt closing looks and sounds the same regardless of
+## which answer was picked - only the `confirmed`/`cancelled` signal already fired above
+## carries which one it was.
+func _play_exit() -> void:
+	if _is_closing:
+		return
+	_is_closing = true
+	_confirm_button.disabled = true
+	_cancel_button.disabled = true
+	Juice.fade(_scrim, false, EXIT_DURATION, &"ui_transition")
+	var panel_tween: Tween = Juice.scale_fade(_panel, false, EXIT_DURATION)
+	await panel_tween.finished

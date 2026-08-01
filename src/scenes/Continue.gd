@@ -3,9 +3,30 @@ extends Control
 # (2026-07-29). Structure built in code, same convention as Title.gd/AssetAudit.gd.
 
 const PROLOGUE_SCENE_PATH: String = "res://src/scenes/Prologue.tscn"
-const MOSA_THINKING: Texture2D = preload("res://art/characters/mosa/MOSA-ThinkingFront.png")
+# New pixel-art pose, not the old illustrated MOSA-ThinkingFront.png (DM-068 reconstruction -
+# mosa-ui-designer caught this as a straight style-mismatch bug against the frozen
+# 2026-07-31 pixel-art ruling while proposing the redesign, not a design choice to carry
+# forward). ThinkingRIGHT, not ThinkingFront (mosa-critic, DM-068 v3 review): she stands
+# left-third with the case folder to her right - a front-facing "looking at camera" pose
+# read as arbitrary placement rather than "gazing toward the folder, waiting to find
+# something." D-003's own directional-pose convention already has a Right variant for
+# exactly this.
+const MOSA_THINKING: Texture2D = preload("res://art/characters/mosa/M-ThinkingRight.png")
 const SALA_BACKDROP_SCENE: PackedScene = preload("res://src/scenes/parts/SalaBackdrop.tscn")
+const FOLDER_STYLE: StyleBoxFlat = preload("res://data/stylebox/surface_panel_opaque.tres")
 const EMPTY_MOSA_HEIGHT: float = 320.0
+
+## The Case Folder empty state (DM-068 reconstruction, mosa-ui-designer consult, Direction 2
+## of 3 structural proposals - Reference C, Obra Dinn's Codex/Journal and Ace Attorney's
+## evidence-row precedent, chosen specifically because S2/S12/the notebook have never had a
+## real design precedent before). The livingroom backdrop already bakes in a coffee table
+## with a mug/pandesal/newspaper - this folder sits on that same table, in-world-adjacent
+## rather than a floating non-diegetic text block. Sized/positioned empirically against the
+## actual render, not guessed - see DM-068.md for the capture-driven tuning history.
+const FOLDER_WIDTH: float = 560.0
+const FOLDER_HEIGHT: float = 360.0
+const FOLDER_TAB_HEIGHT: float = 48.0
+const FOLDER_PADDING: float = 32.0
 
 const CARD_SIZE: float = 320.0
 const CARD_GAP: float = 16.0
@@ -28,49 +49,25 @@ var _palette: Palette = load("res://data/palette.tres")
 func _ready() -> void:
 	# S2 was the only screen with no backdrop at all - Mosa floated in a flat void while
 	# S1/S3 both sat in the sala. Same depth stack, same world (2026-07-29, owner review).
-	# show_character = false: S2 draws its own Mosa (Thinking pose), so the backdrop must
-	# not draw a second one.
 	var backdrop := SALA_BACKDROP_SCENE.instantiate() as SalaBackdrop
-	# No left band: this screen's content is centred/right, so the band would only hide
-	# the sala it was added to reveal.
+	# No left band: this screen's content is the case folder (centred-low) + Mosa
+	# (left-third), so the band would only hide the sala it was added to reveal.
 	backdrop.show_left_band = false
 	add_child(backdrop)
-
-	# Scrim over the sala. Without it every label on this screen sits straight on painted
-	# wood - a direct DESIGN.md 0.6 violation ("text always on a solid or high-opacity
-	# plate, never straight onto a busy backdrop"). S1 solves the same problem with the
-	# left band; S3 with its panel. This is S2's equivalent, and it keeps the sala present
-	# as atmosphere rather than sealing it off - the deference pole (REFERENCES.md).
-	# 0.62, not the scrim token's 0.85: this is a browsing screen, not a modal, so the room
-	# should still read behind it.
-	var scrim := ColorRect.new()
-	scrim.name = "Scrim"
-	scrim.color = Color(_palette.bg_deep, 0.62)
-	scrim.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	scrim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(scrim)
 
 	var slots: Array[Dictionary] = [
 		SaveManager.peek_slot(0), SaveManager.peek_slot(1), SaveManager.peek_slot(2)
 	]
 
-	var eyebrow := Label.new()
-	eyebrow.text = tr("ui.continue.title")
-	eyebrow.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	eyebrow.offset_left = 16
-	eyebrow.offset_top = 48
-	eyebrow.add_theme_font_size_override("font_size", 26)
-	# surface, not ink-soft: this sits directly on bg-deep, not a surface plate - ink-soft
-	# is a dark colour meant for text ON a light plate and is nearly invisible here. Caught
-	# by looking at the actual render, not assumed correct from the code (DM-050's own
-	# established practice). surface on bg-deep is 15.10:1 (tools/check_contrast.py) - safe
-	# well past the 3:1 bar the pair was frozen against.
-	eyebrow.add_theme_color_override("font_color", _palette.surface)
-	add_child(eyebrow)
-
+	# DM-068 reconstruction: the old top-left "Logged Cases" eyebrow label + full-screen
+	# scrim are GONE. The Case Folder direction folds the header into the folder's own tab
+	# (built in `_build_empty_state()`) rather than a separate floating label, and nothing
+	# else on this screen sits directly on the bare backdrop anymore (mosa-ui-designer:
+	# Reference C - the folder is the one plate everything reads against, not a scrim over
+	# the whole scene).
 	var all_empty := slots.all(func(s: Dictionary) -> bool: return s.get("status") == &"empty")
 	if all_empty:
-		add_child(_build_empty_state())
+		add_child(_build_empty_state(backdrop))
 	else:
 		add_child(_build_slot_row(slots))
 
@@ -364,74 +361,154 @@ func _format_timestamp(unix_time: int) -> String:
 	return "%04d-%02d-%02d  %02d:%02d" % [d["year"], d["month"], d["day"], d["hour"], d["minute"]]
 
 
-## The full fresh-install empty state - three quiet inert tiles would undersell the whole
-## project on the first thing a judge sees, so this replaces the card row entirely rather
-## than showing three empty cards (mosa-ui-designer consult).
-func _build_empty_state() -> Control:
+## The Case Folder empty state (DM-068 reconstruction). Replaces the old "Mosa left-third +
+## floating text block right-third, four unrelated elements in four corners" layout
+## (mosa-critic's own read of the baseline) with ONE plate the whole screen reads against -
+## Reference C (Obra Dinn's Codex/Journal; Ace Attorney's evidence-laid-on-a-surface
+## precedent), chosen over closer variations of the old skeleton per the Divergence Gate.
+func _build_empty_state(backdrop: SalaBackdrop) -> Control:
 	var wrapper := Control.new()
 	wrapper.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	var aspect := float(MOSA_THINKING.get_width()) / float(MOSA_THINKING.get_height())
 	var mosa_width := EMPTY_MOSA_HEIGHT * aspect
 
+	# ART-space anchored on BOTH axes, not a bare screen offset (mosa-critic, DM-068 roll-up,
+	# TWO rounds: round 1 fixed only X, using `PRESET_CENTER_LEFT`'s viewport-relative Y
+	# unchanged on the unverified assumption "the floor line runs roughly level across the
+	# crop range" - the critic's own re-check caught that this was never actually checked
+	# against a render, and it was wrong: the old Y formula was tuned against a DIFFERENT
+	# backdrop entirely (the pre-DM-068 illustrated `sala-amber_backdrop.png`) and never
+	# re-verified against `livingroom 1.png`'s own, different floor-line position, leaving her
+	# floating well above the floor with the table/bed's own base line visible below her feet.
+	# `backdrop_point_to_screen()` now anchors her FEET to a specific point in the artwork on
+	# BOTH axes - `PRESET_TOP_LEFT` (anchor 0,0) makes `offset_top/offset_bottom` literal
+	# screen-space coordinates, so the computed feet position can be used directly instead of
+	# converted through a viewport-center-relative offset.
+	# X=340: the 4:3 crop window only reveals art x >= 288 (scale_factor=1.0 at 1024 width,
+	# backdrop_position.x=-288) - any lower value pushes her off the left edge entirely at the
+	# narrowest supported ratio. Y=700: measured directly off `livingroom 1.png` - the visible
+	# floor line (where the table's legs meet the ground) sits close to the 768px-tall
+	# canvas's own bottom edge.
+	const MOSA_ART_FEET: Vector2 = Vector2(340.0, 700.0)
+	var feet_screen := backdrop.backdrop_point_to_screen(MOSA_ART_FEET)
+	# Clamped against the Back button's own true-edge footprint (mosa-critic, DM-068 THIRD
+	# pass on this same bug): fixing the Y-axis floor bug above put her feet in Back's own
+	# vertical range (y 640-736) for the first time - previously she floated well above it,
+	# so the two never visually collided even though her X was already close. At 4:3 the
+	# art-anchored X computes to only ~52px (the backdrop's own COVER-transform crops hard
+	# from the sides at the narrowest supported ratio), landing her squarely inside Back's
+	# x 16-176 footprint. Same pattern `Title.gd::_mosa_left_edge()` already uses for a
+	# different button-collision case: clamp the ART-anchored position against a SCREEN-
+	# anchored element's own known geometry, in screen space, after computing the natural
+	# art position - not by guessing a different fixed art-space X that happens to avoid it
+	# at one aspect ratio and may not at another.
+	const BACK_CLEARANCE_X: float = 176.0 + 24.0  # Back's right edge (16+160) + 24px gap.
+	feet_screen.x = maxf(feet_screen.x, BACK_CLEARANCE_X)
+
 	var mosa := TextureRect.new()
 	mosa.texture = MOSA_THINKING
 	mosa.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	mosa.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT
 	mosa.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	mosa.set_anchors_and_offsets_preset(Control.PRESET_CENTER_LEFT)
-	mosa.offset_left = 160
-	mosa.offset_right = 160 + mosa_width
-	mosa.offset_top = -EMPTY_MOSA_HEIGHT / 2.0
-	mosa.offset_bottom = EMPTY_MOSA_HEIGHT / 2.0
-	# Same fix as S1 (`Title.gd::_build_mosa()`), never applied here (mosa-critic, DM-067
-	# pass): a Control on the default canvas layer never receives `SalaBackdrop`'s
-	# CanvasModulate grade (scoped to its own CanvasLayer, verified engine fact). Without
-	# this her source art's cool greys read at full strength against the warm graded room -
-	# 0.440 relLum measured, ~10x the couch behind her - a sticker pasted on the scene, not
-	# standing in it.
+	mosa.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	mosa.offset_left = feet_screen.x
+	mosa.offset_right = feet_screen.x + mosa_width
+	mosa.offset_bottom = feet_screen.y
+	mosa.offset_top = feet_screen.y - EMPTY_MOSA_HEIGHT
+	# Same fix as S1 (`Title.gd::_build_mosa()`), never applied here until DM-067 caught it:
+	# a Control on the default canvas layer never receives `SalaBackdrop`'s CanvasModulate
+	# grade (scoped to its own CanvasLayer, verified engine fact). Without this her source
+	# art's cool greys read at full strength against the warm graded room - a sticker pasted
+	# on the scene, not standing in it.
 	mosa.modulate = _palette.grade_sala_amber
 	wrapper.add_child(mosa)
 
-	var text_block := VBoxContainer.new()
-	text_block.add_theme_constant_override("separation", 16)
-	text_block.set_anchors_and_offsets_preset(Control.PRESET_CENTER_RIGHT)
-	text_block.offset_left = -480
-	text_block.offset_right = -160
-	text_block.offset_top = -120
-	text_block.offset_bottom = 120
+	# The folder tab - a small protrusion at the plate's top-left edge, same component
+	# family (surface/bg-deep/8px radius) as every other plate, shaped like a folder tab
+	# rather than a rectangle. This IS the old "Logged Cases" header, relocated onto the
+	# object it describes instead of floating separately.
+	var tab := Panel.new()
+	tab.add_theme_stylebox_override("panel", FOLDER_STYLE)
+	var tab_label := Label.new()
+	tab_label.text = tr("ui.continue.title")
+	tab_label.add_theme_font_size_override("font_size", 22)
+	tab_label.add_theme_color_override("font_color", _palette.ink_soft)
+	tab_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	# light_mask = 0, same reasoning as every other UI element sitting over SalaBackdrop's
+	# lit stack (ChromeButton, ConfirmDialog, PauseMenu - PointLight2D crosses CanvasLayer
+	# boundaries, verified engine fact). Missing here on the first render (self-caught on
+	# recapture): the tab text and folder plate both picked up a visible warm tint/gradient
+	# from KeyLight/LampLight bleeding through, reading as tokens-drifting-off-palette
+	# rather than as chrome. tab/folder/headline/subline all need it, not just this one.
+	tab_label.light_mask = 0
+	tab.light_mask = 0
+	tab.add_child(tab_label)
 
-	# surface, not ink/ink-soft, for the same reason as the eyebrow above: this whole
-	# block sits directly on bg-deep, not a plate. surface on bg-deep measures 15.10:1 -
-	# safe for both sizes here, well past the 4.5:1 normal-text bar, not just the 3:1
-	# heading bar the frozen pair was originally reasoned about under.
+	# The folder body - the screen's single focal point (DESIGN.md §0.1), positioned low-
+	# center over the backdrop's own coffee-table prop, touching the bottom third line
+	# (rule-of-thirds anchor the old "four corners" layout never had).
+	var folder := Panel.new()
+	folder.add_theme_stylebox_override("panel", FOLDER_STYLE)
+	folder.light_mask = 0
+	folder.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	folder.offset_left = -FOLDER_WIDTH / 2.0 + 60.0
+	folder.offset_right = FOLDER_WIDTH / 2.0 + 60.0
+	folder.offset_top = -FOLDER_HEIGHT / 2.0 + 80.0
+	folder.offset_bottom = FOLDER_HEIGHT / 2.0 + 80.0
+	wrapper.add_child(folder)
+
+	# Same PRESET_CENTER anchor as `folder`, not PRESET_TOP_LEFT - a real bug caught on
+	# recapture (DM-068 self-review): the two anchor presets put offsets in different
+	# coordinate spaces (center-relative vs. viewport-edge-relative), so a TOP_LEFT tab
+	# computed from CENTER-relative folder offsets rendered nowhere visible - same
+	# coordinate-space mistake class `mosa-critic` already caught once on S1's framing.
+	tab.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	tab.offset_left = folder.offset_left + 24.0
+	tab.offset_top = folder.offset_top - FOLDER_TAB_HEIGHT + 4.0
+	tab.offset_right = tab.offset_left + 220.0
+	tab.offset_bottom = folder.offset_top + 4.0
+	wrapper.add_child(tab)
+
+	var content := VBoxContainer.new()
+	content.add_theme_constant_override("separation", 16)
+	content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	content.offset_left = FOLDER_PADDING
+	content.offset_top = FOLDER_PADDING
+	content.offset_right = -FOLDER_PADDING
+	content.offset_bottom = -FOLDER_PADDING
+	content.alignment = BoxContainer.ALIGNMENT_CENTER
+
 	var headline := Label.new()
 	headline.text = tr("ui.continue.empty_headline")
-	headline.add_theme_font_size_override("font_size", 48)
-	headline.add_theme_color_override("font_color", _palette.surface)
-	text_block.add_child(headline)
+	headline.add_theme_font_size_override("font_size", 40)
+	headline.add_theme_color_override("font_color", _palette.ink)
+	headline.light_mask = 0
+	content.add_child(headline)
 
 	var subline := Label.new()
 	subline.text = tr("ui.continue.empty_state")
 	subline.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	subline.light_mask = 0
 	subline.add_theme_font_size_override("font_size", 26)
-	subline.add_theme_color_override("font_color", _palette.surface)
-	text_block.add_child(subline)
+	subline.add_theme_color_override("font_color", _palette.ink_soft)
+	content.add_child(subline)
 
 	var spacer := Control.new()
 	spacer.custom_minimum_size = Vector2(0, 8)
-	text_block.add_child(spacer)
+	content.add_child(spacer)
 
 	# 320px, matching every other primary ChromeButton on S1/S2/S3 (mosa-critic, DM-010
 	# review, P2 finding: three different button widths with no documented rule and no
 	# content-driven reason for the difference) - one width for this role, everywhere.
+	# Docked bottom-right of the folder, like a stamp on the file, not a floating card.
 	var cta := ChromeButton.new(tr("ui.title.new_game"), true)
 	cta.custom_minimum_size.x = 320
-	cta.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	cta.size_flags_horizontal = Control.SIZE_SHRINK_END
 	cta.pressed.connect(_on_new_game_pressed)
-	text_block.add_child(cta)
+	content.add_child(cta)
 
-	wrapper.add_child(text_block)
+	folder.add_child(content)
 	return wrapper
 
 

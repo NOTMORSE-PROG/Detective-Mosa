@@ -22,16 +22,15 @@ func test_confirm_emits_confirmed_and_closes_its_overlay() -> void:
 	await get_tree().process_frame
 	watch_signals(dialog)
 
-	# Assertions before the next frame, not after: close_overlay() inside
-	# _on_confirm_pressed() calls queue_free() on this same dialog, which resolves at the
-	# end of the current frame - awaiting a frame first (as an earlier version of this
-	# test did) inspects an already-freed object and fails with "does not have the
-	# signal", not a real assertion failure. The signal fires and the stack pops
-	# synchronously; only the node's own removal is deferred, and this test doesn't need
-	# to wait for that part.
+	# confirmed.emit() still fires synchronously, same frame as the press (DM-068's own
+	# load-bearing constraint: don't move this signal's timing) - but closing itself now
+	# plays a short scale/fade exit tween before SceneRouter.close_overlay() runs, so the
+	# overlay-closed assertion needs to wait past ConfirmDialog.EXIT_DURATION instead of
+	# the old same-frame assumption.
 	dialog._on_confirm_pressed()
-
 	assert_signal_emitted(dialog, "confirmed")
+
+	await get_tree().create_timer(ConfirmDialog.EXIT_DURATION + 0.1).timeout
 	assert_false(SceneRouter.has_open_overlay())
 
 
@@ -40,9 +39,25 @@ func test_cancel_emits_cancelled_and_closes_its_overlay_without_confirming() -> 
 	await get_tree().process_frame
 	watch_signals(dialog)
 
-	# Same reasoning as the confirm test above - check before the deferred free resolves.
 	dialog._on_cancel_pressed()
-
 	assert_signal_emitted(dialog, "cancelled")
 	assert_signal_not_emitted(dialog, "confirmed")
+
+	await get_tree().create_timer(ConfirmDialog.EXIT_DURATION + 0.1).timeout
 	assert_false(SceneRouter.has_open_overlay())
+
+
+func test_confirm_closes_its_overlay_under_reduce_motion() -> void:
+	# DM-068 AC: reduce-motion still must close, not hang - Juice.scale_fade()'s reduced
+	# path returns a real Tween (via fade()) with a real `finished` signal, so the await in
+	# ConfirmDialog._play_exit() still resolves; this proves it end to end rather than
+	# trusting Juice's own unit tests alone.
+	Juice.set_reduce_motion_override_for_testing(true)
+	var dialog := SceneRouter.open_overlay("res://src/scenes/ConfirmDialog.tscn") as ConfirmDialog
+	await get_tree().process_frame
+
+	dialog._on_confirm_pressed()
+	await get_tree().create_timer(Juice.FADE_DURATION_REDUCED + 0.1).timeout
+
+	assert_false(SceneRouter.has_open_overlay())
+	Juice.set_reduce_motion_override_for_testing(false)

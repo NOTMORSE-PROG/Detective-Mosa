@@ -1,5 +1,16 @@
 extends CanvasLayer
 # Screen S19 - Pause menu. Layout spec: mosa-ui-designer consult, DM-051 (2026-07-29).
+# No class_name (tried adding one for DM-068, reverted): test_pause_menu.gd preloads
+# PauseMenu.tscn, which forces this script through a full check-only compile that already
+# hits the known SceneRouter autoload false positive (tools/check_quality.py) - tolerated
+# fine on its own, but a test-side type reference to `PauseMenu.SOME_CONST` cascades that
+# into a SECOND, differently-worded "not declared in the current scope" error the guard's
+# tolerance regex doesn't recognise. ConfirmDialog.gd's own class_name+const cross-
+# reference (EXIT_DURATION) does NOT hit this - proven clean in the same quality-gate run -
+# so this is a real, narrow difference in this file's specific case, not a rule against the
+# pattern in general. Fixing tools/check_quality.py's cascade detection is DM-066 territory
+# (guard hardening), not this ticket's - avoided the whole question by keeping this file
+# unnamed and using a literal in the test instead (see test_pause_menu.gd's own comment).
 # A CanvasLayer, not a Control reparented under the paused scene: a child of the frozen
 # scene would inherit that location's CanvasModulate colour grade and stop rendering
 # tokens at their actual frozen hex values (see SceneRouter.open_overlay's own comment).
@@ -20,13 +31,33 @@ const PANEL_HEIGHT: float = 544.0
 const PANEL_BOTTOM_MARGIN: float = 32.0
 const BUTTON_GAP: float = 16.0
 
+# --- entrance/exit motion (DM-068) ---
+## How far below its own resting offsets the panel starts (entrance) / ends up (exit) -
+## PANEL_HEIGHT + PANEL_BOTTOM_MARGIN alone would leave its top edge exactly level with the
+## viewport's bottom edge; +40px pushes it fully clear so no sliver is visible pre-entrance.
+const PANEL_SLIDE_DISTANCE: float = PANEL_HEIGHT + PANEL_BOTTOM_MARGIN + 40.0
+## Entrance is a touch slower than exit (settle vs. dismiss - the same asymmetry
+## Juice.pop()'s own rise/settle split already uses), matching this menu's identity as a
+## persistent, edge-docked drawer rather than ConfirmDialog's centered interrupt.
+const SLIDE_DURATION_ENTER: float = 0.30
+const SLIDE_DURATION_EXIT: float = 0.20
+
 var _palette: Palette = load("res://data/palette.tres")
+## Guards Resume against a double-tap firing the exit sequence twice while it's already
+## playing - see ConfirmDialog.gd's identical `_is_closing` field for the same reasoning.
+var _is_closing: bool = false
+var _panel: PanelContainer
+var _scrim: ColorRect
+var _resume_button: ChromeButton
+var _settings_button: ChromeButton
+var _quit_to_title_button: ChromeButton
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 
 	var scrim := ColorRect.new()
+	_scrim = scrim
 	scrim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	scrim.mouse_filter = Control.MOUSE_FILTER_STOP
 	scrim.color = _palette.scrim
@@ -42,6 +73,7 @@ func _ready() -> void:
 	add_child(scrim)
 
 	var panel := PanelContainer.new()
+	_panel = panel
 	panel.light_mask = 0
 	# surface_panel_opaque.tres, not surface_panel.tres (2026-07-30, visual quality pass):
 	# the 0.82-alpha shared resource let a real backdrop ghost through ConfirmDialog's
@@ -118,21 +150,89 @@ func _ready() -> void:
 	title.light_mask = 0  # same light-bleed reasoning as scrim/panel above.
 	vbox.add_child(title)
 
-	var resume := ChromeButton.new(tr("ui.pause.resume"), true)
-	resume.pressed.connect(_on_resume_pressed)
-	vbox.add_child(resume)
+	_resume_button = ChromeButton.new(tr("ui.pause.resume"), true)
+	_resume_button.pressed.connect(_on_resume_pressed)
+	vbox.add_child(_resume_button)
 
-	var settings := ChromeButton.new(tr("ui.title.settings"), true)
-	settings.pressed.connect(_on_settings_pressed)
-	vbox.add_child(settings)
+	_settings_button = ChromeButton.new(tr("ui.title.settings"), true)
+	_settings_button.pressed.connect(_on_settings_pressed)
+	vbox.add_child(_settings_button)
 
-	var quit_to_title := ChromeButton.new(tr("ui.pause.quit_to_title"), true)
-	quit_to_title.pressed.connect(_on_quit_to_title_pressed)
-	vbox.add_child(quit_to_title)
+	_quit_to_title_button = ChromeButton.new(tr("ui.pause.quit_to_title"), true)
+	_quit_to_title_button.pressed.connect(_on_quit_to_title_pressed)
+	vbox.add_child(_quit_to_title_button)
+
+	# Entrance (DM-068): edge-docked drawer language - slides up from below its own resting
+	# position rather than ConfirmDialog's centered scale-in, reinforcing (not blurring) the
+	# "disagree on purpose" rule above. Hand-rolled on the panel's own offset_top/
+	# offset_bottom rather than routed through a generic Juice.slide() helper: those two
+	# values are already known, exact local numbers computed just above for the anchor math
+	# - shifting them by a known delta and tweening back sidesteps any question about
+	# whether Control.position is safe to read back synchronously the same frame its anchors
+	# were set, which this file's own anchor bug above (the PRESET_LEFT_WIDE-class mistake)
+	# is a reminder not to assume casually. The scrim's fade uses Juice.fade() instead - a
+	# plain modulate:a tween has no such read-back question.
+	var rest_top: float = panel.offset_top
+	var rest_bottom: float = panel.offset_bottom
+	if Juice.is_reduce_motion_enabled():
+		# Reduced motion: skip the slide outright (position carries no meaning of its own -
+		# the panel simply being present already is the cue); the scrim still gets its
+		# (shortened, not deleted) fade below, same rule Juice.fade() itself applies.
+		pass
+	else:
+		panel.offset_top = rest_top + PANEL_SLIDE_DISTANCE
+		panel.offset_bottom = rest_bottom + PANEL_SLIDE_DISTANCE
+		var entrance: Tween = panel.create_tween()
+		entrance.set_ignore_time_scale(true)
+		entrance.set_parallel(true)
+		var top_t: PropertyTweener = entrance.tween_property(
+			panel, "offset_top", rest_top, SLIDE_DURATION_ENTER
+		)
+		top_t.set_trans(Tween.TRANS_BACK)
+		top_t.set_ease(Tween.EASE_OUT)
+		var bottom_t: PropertyTweener = entrance.tween_property(
+			panel, "offset_bottom", rest_bottom, SLIDE_DURATION_ENTER
+		)
+		bottom_t.set_trans(Tween.TRANS_BACK)
+		bottom_t.set_ease(Tween.EASE_OUT)
+	Juice.fade(scrim, true)
 
 
 func _on_resume_pressed() -> void:
+	await _play_exit()
 	SceneRouter.close_overlay()
+
+
+## Slides the panel back down off its own bottom edge and fades the scrim, mirroring
+## _ready()'s entrance in reverse - the exit half of this menu's edge-docked drawer
+## language. Paired with an audible partner (SceneRouter.close_overlay() plays no sound of
+## its own).
+func _play_exit() -> void:
+	if _is_closing:
+		return
+	_is_closing = true
+	_resume_button.disabled = true
+	_settings_button.disabled = true
+	_quit_to_title_button.disabled = true
+	Juice.fade(_scrim, false, Juice.FADE_DURATION_DEFAULT, &"ui_transition")
+	if Juice.is_reduce_motion_enabled():
+		return
+	var rest_top: float = _panel.offset_top
+	var rest_bottom: float = _panel.offset_bottom
+	var exit_tw: Tween = _panel.create_tween()
+	exit_tw.set_ignore_time_scale(true)
+	exit_tw.set_parallel(true)
+	var top_t: PropertyTweener = exit_tw.tween_property(
+		_panel, "offset_top", rest_top + PANEL_SLIDE_DISTANCE, SLIDE_DURATION_EXIT
+	)
+	top_t.set_trans(Tween.TRANS_QUAD)
+	top_t.set_ease(Tween.EASE_IN)
+	var bottom_t: PropertyTweener = exit_tw.tween_property(
+		_panel, "offset_bottom", rest_bottom + PANEL_SLIDE_DISTANCE, SLIDE_DURATION_EXIT
+	)
+	bottom_t.set_trans(Tween.TRANS_QUAD)
+	bottom_t.set_ease(Tween.EASE_IN)
+	await exit_tw.finished
 
 
 ## Stacks Settings on top rather than replacing this panel in place - Settings.tscn
@@ -140,6 +240,8 @@ func _on_resume_pressed() -> void:
 ## and the scrim beneath it at zero extra cost, and needs no view-switcher inside this
 ## scene that doesn't exist anywhere else in the codebase yet (mosa-ui-designer consult).
 func _on_settings_pressed() -> void:
+	if _is_closing:  # Resume's exit tween is mid-flight; ignore, don't stack a screen on it.
+		return
 	SceneRouter.open_overlay("res://src/scenes/Settings.tscn")
 
 
@@ -149,6 +251,8 @@ func _on_settings_pressed() -> void:
 ## recommendation - accepted, since the confirm component already exists for Title's own
 ## hard requirement and reusing it here is nearly free).
 func _on_quit_to_title_pressed() -> void:
+	if _is_closing:  # Resume's exit tween is mid-flight; ignore, same reasoning as above.
+		return
 	# open_overlay()'s declared return type is CanvasLayer (it also wraps plain-Control
 	# overlays, so it can't statically promise the more specific type) - explicit downcast
 	# rather than relying on implicit narrowing, which GDScript's static checker rejects.
@@ -160,5 +264,23 @@ func _on_quit_to_title_pressed() -> void:
 func _on_quit_to_title_confirmed() -> void:
 	# Closes this pause menu's own overlay too, not just the confirm dialog - "Quit to
 	# Title" means leaving the paused state entirely, not returning to it.
+	#
+	# Waits for ConfirmDialog's OWN exit animation to actually finish closing IT off
+	# SceneRouter's overlay stack before this call runs (DM-068). Both close_overlay() calls
+	# in this flow pop whatever is CURRENTLY TOPMOST - that's SceneRouter's existing,
+	# unmodified stack discipline (this dance is what "Closes this pause menu's own overlay
+	# too" above already relied on before this ticket, when both calls were synchronous and
+	# ran back-to-back in one call stack with no room for anything to interleave). Once
+	# ConfirmDialog's own Confirm handler became async (a real exit tween, not an instant
+	# pop), that guarantee breaks unless this call is ALSO delayed until ConfirmDialog has
+	# genuinely finished closing - firing early would pop ConfirmDialog's still-mid-tween
+	# layer instead of this menu's, orphaning this menu in the stack forever (verified
+	# failure mode by tracing the exact call order with mosa-godot-engineer before writing
+	# this, not a hypothetical). ConfirmDialog.EXIT_DURATION is that dialog's own single
+	# source of truth for how long its exit tween runs; +0.05s is scheduler/frame-timing
+	# slack, not a second guess at the duration. No visible cost to waiting here - this menu
+	# sits fully occluded behind ConfirmDialog's own opaque scrim+panel for the entire
+	# quit-to-title flow, so it has nothing worth animating on its own end anyway.
+	await get_tree().create_timer(ConfirmDialog.EXIT_DURATION + 0.05, true, false, true).timeout
 	SceneRouter.close_overlay()
 	SceneRouter.go_to("res://src/scenes/Title.tscn")

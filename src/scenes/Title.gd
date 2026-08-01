@@ -1,78 +1,39 @@
 extends Control
-# Screen S1 - Title, the game's entry point (project.godot run/main_scene). Layout spec:
-# mosa-ui-designer consult, DM-010 (2026-07-29 initial build; 2026-07-29 reopen redesign -
-# backdrop/depth stack, corrected touch sizes, two-tier lockup, safe-area insets). Structure
-# built in code, not the .tscn, same convention as AssetAudit.gd.
+# Screen S1 - Title, the game's entry point (project.godot run/main_scene). FULL
+# RECONSTRUCTION (DM-068, 2026-07-31) against the pixel-art delivery - not an iteration of
+# the DM-010/DM-067 sala layout. mosa-ui-designer/mosa-art-director/mosa-godot-engineer joint
+# consult: adopts `art/backdrops/launchinggame 1.png` wholesale (Mosa baked directly into the
+# art, mid-investigation on the street outside Mang Ver's sari-sari store, holding a
+# document) instead of the old sala-interior + separately-placed Mosa sprite. This deletes an
+# entire class of true-edge-anchoring code the old build needed (Mosa's inset math, her
+# contact shadow, the rim light chasing her position) because there is no separate Mosa
+# sprite left to anchor - full history in DESIGN.md §5 and STATE.md's DM-068 entries.
 
-## The prologue doesn't exist yet (DM-015, M2 - this ticket is M1, design-system only).
-## Guarded so New Game/Continue stay honestly functional (real GameState mutation, real
-## audio/visual feedback) without erroring on a scene that isn't built yet. Flagged in
-## STATE.md; DM-015 replaces this path outright, no change needed here when it does.
+## The prologue doesn't exist yet (DM-015, M2). Guarded so New Game/Continue stay honestly
+## functional without erroring on a scene that isn't built yet.
 const PROLOGUE_SCENE_PATH: String = "res://src/scenes/Prologue.tscn"
-const SALA_BACKDROP_SCENE: PackedScene = preload("res://src/scenes/parts/SalaBackdrop.tscn")
-# EXPERIMENT (DM-067, mosa-ui-designer proposal): a Black-weight (wght 900) variation of
-# the SAME Nunito variable font file, not a second font family. See _apply_text_legibility()
-# for why this is the fix, not another glow-tuning pass.
+const STREET_BACKDROP_SCENE: PackedScene = preload("res://src/scenes/parts/StreetBackdrop.tscn")
+const WORDMARK_PLATE_STYLE: StyleBoxFlat = preload("res://data/stylebox/surface_panel_opaque.tres")
 const FONT_NUNITO_DISPLAY: FontVariation = preload("res://art/ui/fonts/font_nunito_display.tres")
 
-const MOSA_SPRITE: Texture2D = preload("res://art/characters/mosa/MOSA-IdleFront.png")
-# 496, down from 560 (mosa-ui-designer, DM-010 reopen item 6) - the redesigned two-tier
-# wordmark and lit backdrop give Mosa more visual competition than the original flat
-# ColorRect background did; a slightly smaller figure reads as grounded in the scene rather
-# than pasted in front of it.
-# 496 -> 400 (2026-07-29, owner visual review). Scaling the wordmark up to actually
-# dominate the frame pushed the subtitle down to y~310; at 496 tall Mosa's head started
-# at y~264 and physically overlapped it. She also reads better smaller now that the
-# title, not the character, is the focal point.
-# 470 -> 440 (2026-07-30, mosa-critic): at the 4:3 base canvas her hair spike touched the
-# gold rule line with effectively zero clearance (her computed top edge, 290px, landed just
-# 4px above the rule at 294px) - not caused by today's horizontal repositioning (the rule and
-# her vertical placement are both height-only, unaffected by the wide-aspect fix), a latent
-# gap this project's own "guaranteed-safe 4:3 rect" promise (DESIGN.md §6) never actually
-# held. 440 gives a real 24px (an 8px-grid multiple) of clearance between the rule and her
-# top edge at 768px height.
-const MOSA_HEIGHT: float = 440.0
-const GROUND_SHADOW_SIZE: Vector2 = Vector2(240, 72)
-
-## Mosa's inset from the left safe-area margin. Was an inline `440.0` literal repeated in
-## `_build_mosa()` and re-derived (WRONGLY) in `_update_ground_shadow()`, which is how her
-## contact shadow ended up 440px to her left, underneath the wordmark, on the dark band
-## where nothing could ever be seen of it. Three separate review rounds recorded "no visible
-## contact shadow" against this; the geometry fix each time was applied to the shadow's
-## *height*, never to the fact that it was under the wrong object entirely. One constant,
-## used by both, so they cannot disagree again.
-const MOSA_INSET_X: float = 440.0
-## Widens Mosa's inset as the viewport reveals more than the 1024px base canvas (2026-07-30,
-## owner review: "the character feels so out of touch... the placement is inconsistent").
-## `MOSA_INSET_X` alone is a flat base-canvas number - correct at 1024x768 (confirmed: the
-## 4:3 capture already has the intended clearance to the button column), but static against
-## a wide device, so the right-anchored button column drifts further away while she stays
-## put. Measured on the real device capture: ~40% of frame width was empty between her and
-## the column. Zero-effect at 1024 base (`extra_width` is 0 there), so the already-reviewed
-## narrow layout is untouched.
-const MOSA_WIDE_BONUS: float = 0.28
-
 const BUTTON_COLUMN_WIDTH: float = 320.0
-# 16 -> 24 (DESIGN.md §5, 2026-07-29 reopen) - part of the same touch-correction pass as
-# ChromeButton's 120/96 heights; a 16px gap between 120px-tall targets reads as cramped
-# next to the new scale.
 const BUTTON_GAP: float = 24.0
+
+## Padding inside the wordmark's cream signboard plate (DESIGN.md §6, 8px grid multiple).
+const PLATE_PADDING: float = 24.0
 
 var _palette: Palette = load("res://data/palette.tres")
 var _continue_button: ChromeButton
-var _sala_backdrop: SalaBackdrop
-var _mosa_rect: TextureRect
+var _street_backdrop: StreetBackdrop
+var _wordmark_plate: Panel
 
 
 func _ready() -> void:
-	_sala_backdrop = SALA_BACKDROP_SCENE.instantiate()
-	add_child(_sala_backdrop)
+	_street_backdrop = STREET_BACKDROP_SCENE.instantiate()
+	add_child(_street_backdrop)
 
-	_build_wordmark()
-	_build_mosa()
+	_build_wordmark_plate()
 	_build_buttons()
-	_update_ground_shadow()
-	get_viewport().size_changed.connect(_update_ground_shadow)
 
 	# BACK at the title prompts before quitting, never quits silently (DM-051 AC).
 	SceneRouter.back_handler = _on_back_pressed
@@ -84,215 +45,117 @@ func _on_back_pressed() -> void:
 	dialog.confirmed.connect(get_tree().quit)
 
 
-## Two-tier lockup (mosa-ui-designer, DM-010 reopen item 3), replacing the single-line
-## wordmark + gold-deep backing panel: `DETECTIVE` (48px, `heading`) over `MOSA` (96px, the
-## new `display` tier), a thin rule, then the subtitle. The gold-deep backing panel is
-## deleted outright - `mosa-critic`'s finding #3 (no focal point) is now solved by the
-## backdrop's own KeyLight sitting behind this lockup instead of a flat coloured chip, which
-## also removes the "reads as a debug chip" complaint the panel never fully escaped.
-## Text over ARTWORK cannot rely on a single computed contrast ratio, because the thing
-## behind it is not one colour. The subtitle proved this on device: its contrast was
-## verified as `surface` on `bg-deep` (15.10:1, passes easily) but it physically spans the
-## dark band AND the lit backdrop, so the right half rendered unreadable while the check
-## reported green. A ratio measured against one background is the wrong measurement for
-## text that crosses two.
+## The wordmark now lives on its OWN cream signboard plate - `surface` fill, `bg-deep` 2px
+## border, 8px radius (`surface_panel_opaque.tres`, an existing token-only stylebox, no new
+## one needed) - the same visual grammar as the "MANG VER SARI-SARI STORE" sign baked into
+## the backdrop art it sits above (mosa-ui-designer consult: reads as a prop that belongs in
+## this world - a case-file placard - rather than a UI layer dropped on top of the scene).
 ##
-## An outline fixes it structurally rather than per-screen: the glyph carries its own
-## contrast everywhere it goes, so legibility stops depending on what happens to be behind
-## it. Standard practice for UI over art, and it is why this is a helper rather than four
-## copies of the same override.
-func _apply_text_legibility(label: Label, font_size: int, outline_scale: float = 0.14) -> void:
-	# Outline scales with type size: heavy enough to separate the glyph from a busy
-	# backdrop, light enough not to thicken the letterform into a blob.
-	# `outline_scale` is smaller for a bold/Black-weight glyph (see MOSA below): a thick
-	# stroke already carries its own separation from the backdrop, so a full 0.14 outline
-	# would just add bulk without adding legibility - and it's the exact thing diluting the
-	# block-averaged luminance test today (EXPERIMENT, DM-067).
-	var outline := maxi(4, int(round(font_size * outline_scale)))
-	label.add_theme_color_override("font_outline_color", _palette.bg_deep)
-	label.add_theme_constant_override("outline_size", outline)
-	# A soft drop shadow underneath adds separation on light backdrops, where an outline
-	# alone can still read as flat.
-	label.add_theme_color_override("font_shadow_color", Color(_palette.bg_deep, 0.55))
-	label.add_theme_constant_override("shadow_offset_x", 0)
-	label.add_theme_constant_override("shadow_offset_y", 3)
-	label.add_theme_constant_override("shadow_outline_size", 2)
-
-
-func _build_wordmark() -> void:
+## This replaces the old DM-067 approach entirely (Black-weight gold-on-bg-deep with a
+## structural glyph outline, fighting for contrast against a painted backdrop). Text on an
+## OPAQUE PLATE needs none of that: DESIGN.md §0.6's rule ("text always on a solid or
+## high-opacity plate") is satisfied structurally, so legibility no longer depends on what's
+## behind the glyph. `gold`, not `gold-ink`, is now the WRONG token here - `gold` is reserved
+## for bg-deep/bg-base only (DESIGN.md §1); on a `surface`-toned plate the cream-safe twin
+## `gold-ink` is the correct one (4.79:1 verified).
+func _build_wordmark_plate() -> void:
 	var margins := SafeAreaInsets.get_edge_margins(get_viewport_rect().size)
 	var left: float = margins["left"]
 	var top: float = margins["top"]
 
+	var content := VBoxContainer.new()
+	content.add_theme_constant_override("separation", 2)
+	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
 	var detective := Label.new()
 	detective.text = tr("ui.title.wordmark_detective")
-	detective.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	detective.offset_left = left
-	detective.offset_top = top
-	detective.add_theme_font_size_override("font_size", 64)
-	detective.add_theme_color_override("font_color", _palette.gold)
-	# KeyLight sits directly behind this lockup (SalaBackdrop.gd) to give it real visual
-	# weight - but a `PointLight2D` crosses CanvasLayer boundaries (verified), so without
-	# this the light additively brightens the gold TEXT too, gold-on-gold, and crushes its
-	# own contrast against the backdrop instead of adding to it. `light_mask = 0` keeps the
-	# glow ambient - visible bleeding in from behind the letterforms, never on top of them.
-	detective.light_mask = 0
-	_apply_text_legibility(detective, 64)
-	add_child(detective)
+	# 36, not the old 48 (mosa-critic, DM-068 v3 review): the plate's total height now runs
+	# into Mosa's own baked-in head position - she's unreadable as a shape (REFERENCES.md
+	# Reference A) with the plate's original full footprint. MOSA itself stays frozen at the
+	# 168px `display` tier (that's the element that has to win the squint test); DETECTIVE
+	# is a secondary label with room to give.
+	detective.add_theme_font_size_override("font_size", 36)
+	detective.add_theme_color_override("font_color", _palette.gold_ink)
+	content.add_child(detective)
 
 	var mosa_word := Label.new()
 	mosa_word.text = tr("ui.title.wordmark_mosa")
-	mosa_word.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	mosa_word.offset_left = left
-	# Tight lockup, not two independent lines (mosa-critic's own vocabulary for this kind
-	# of pairing) - the two tiers sit close enough to read as one mark.
-	mosa_word.offset_top = top + 56.0
+	# 168px, not a guessed value: DESIGN.md §1's `display` tier is frozen at 168px (the value
+	# actually shipped and judged on device across several DM-067 tuning passes, not the
+	# earlier 96px that was logged but never rendered). Using 96 here was a real mistake
+	# caught by mosa-critic's DM-068 v2 review, not a deliberate re-tuning - it shrank the
+	# one element meant to win the squint test at the exact moment a same-value store sign
+	# entered frame for the first time, recreating the wordmark-vs-CTA tie this ticket exists
+	# to close.
 	mosa_word.add_theme_font_size_override("font_size", 168)
-	# EXPERIMENT (DM-067): Black weight (wght 900) of the SAME Nunito variable font file -
-	# not a second font family, §5's "one family only" rule stays satisfied. This is the
-	# structural fix for the focal-point contest: MOSA's thin regular-weight strokes left
-	# most of each 24x24 measurement block as near-black outline/gap, capping the block
-	# average regardless of how bright the KeyGlow behind it gets. A Black-weight stroke is
-	# roughly 3x wider at this size, so the SAME fixed-width outline becomes a much smaller
-	# fraction of each stroke's total width - more of every block is gold fill, not gap.
 	mosa_word.add_theme_font_override("font", FONT_NUNITO_DISPLAY)
-	mosa_word.add_theme_color_override("font_color", _palette.gold)
-	mosa_word.light_mask = 0  # same KeyLight-contrast reasoning as `detective` above.
-	# 0.08, not 0.14: a Black-weight glyph needs less relative outline to separate from the
-	# backdrop than a regular-weight one does (see _apply_text_legibility docstring).
-	_apply_text_legibility(mosa_word, 168, 0.08)
-	add_child(mosa_word)
+	mosa_word.add_theme_color_override("font_color", _palette.gold_ink)
+	content.add_child(mosa_word)
 
-	var font := get_theme_default_font()
-	var detective_width := font.get_string_size(detective.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 64).x
-	# EXPERIMENT (DM-067): measured against FONT_NUNITO_DISPLAY, not the regular-weight
-	# default font - a Black-weight "MOSA" is measurably wider than regular weight, and
-	# measuring against the wrong font under-sized the rule/subtitle width beneath it.
+	var rule := ColorRect.new()
+	rule.color = _palette.gold_ink
+	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rule.custom_minimum_size = Vector2(0, 2)
+	content.add_child(rule)
+
+	# Subtitle moved OUT of the plate entirely (mosa-critic, DM-068 v3 review) - it was the
+	# cheapest remaining vertical space to cut once DETECTIVE's own trim wasn't enough on its
+	# own to clear Mosa's head. Rendered as its own small caption directly under the plate,
+	# with the same outline/shadow legibility treatment the old backdrop-composited wordmark
+	# used (DESIGN.md §0.6 - it's back to sitting on a busy backdrop, not an opaque plate, so
+	# it needs that structural contrast again).
+	var subtitle := Label.new()
+	subtitle.text = tr("ui.title.subtitle")
+	subtitle.add_theme_font_size_override("font_size", 22)
+	subtitle.add_theme_color_override("font_color", _palette.surface)
+	subtitle.add_theme_color_override("font_outline_color", _palette.bg_deep)
+	subtitle.add_theme_constant_override("outline_size", 4)
+
+	_wordmark_plate = Panel.new()
+	_wordmark_plate.add_theme_stylebox_override("panel", WORDMARK_PLATE_STYLE)
+	_wordmark_plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_wordmark_plate.add_child(content)
+	content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	content.offset_left = PLATE_PADDING
+	content.offset_top = PLATE_PADDING
+	content.offset_right = -PLATE_PADDING
+	content.offset_bottom = -PLATE_PADDING
+
+	_wordmark_plate.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	_wordmark_plate.offset_left = left
+	_wordmark_plate.offset_top = top
+	# Sized to content: measure the widest line (MOSA, Black-weight display font) plus the
+	# plate's own padding on both sides - same "measure the actual rendered font" discipline
+	# the old wordmark used, not a guessed fixed width.
 	var mosa_width := (
 		FONT_NUNITO_DISPLAY.get_string_size(mosa_word.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 168).x
 	)
-	var rule_width := maxf(detective_width, mosa_width)
-	var rule_top := top + 56.0 + 190.0
+	var plate_width := mosa_width + PLATE_PADDING * 2.0
+	_wordmark_plate.offset_right = left + plate_width
+	# Height left auto via the VBox's own computed minimum + padding, resolved after the
+	# content is in the tree.
+	add_child(_wordmark_plate)
+	await get_tree().process_frame
+	var content_height := content.get_combined_minimum_size().y
+	_wordmark_plate.offset_bottom = top + content_height + PLATE_PADDING * 2.0
 
-	var rule := ColorRect.new()
-	rule.color = _palette.gold
-	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	rule.light_mask = 0  # same KeyLight-contrast reasoning as the wordmark labels above.
-	rule.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	rule.offset_left = left
-	rule.offset_top = rule_top
-	rule.offset_right = left + rule_width
-	rule.offset_bottom = rule_top + 2.0
-	add_child(rule)
-
-	var subtitle := Label.new()
-	subtitle.text = tr("ui.title.subtitle")
+	# Pushed further below the plate than the first attempt (12px -> 72px): the initial gap
+	# was too tight and the caption landed directly across Mosa's face/hair (visible on
+	# recapture, self-caught) - the exact occlusion problem the plate itself was just fixed
+	# for, just handed to a different element. 72px clears her head into the shoulder/torso
+	# area, which Reference A's "readable as a shape" rule cares about less than her face.
 	subtitle.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
 	subtitle.offset_left = left
-	subtitle.offset_top = rule_top + 16.0
-	subtitle.offset_right = left + maxf(rule_width, 320.0)
-	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	subtitle.add_theme_font_size_override("font_size", 30)
-	subtitle.add_theme_color_override("font_color", _palette.surface)
-	subtitle.light_mask = 0  # same KeyLight-contrast reasoning as the wordmark labels above.
-	# The worst offender on device - it spans the band edge, so it needs this most.
-	_apply_text_legibility(subtitle, 30)
+	subtitle.offset_top = _wordmark_plate.offset_bottom + 72.0
 	add_child(subtitle)
-
-
-## Her left edge, resolved against the two things she actually has to sit between: the
-## title lockup on her left and the button column on her right. `MOSA_INSET_X` alone is a
-## bare offset-from-edge - correct at the 1024x768 base canvas, but static against a wider
-## device, so the right-anchored button column drifts further away while she stays put
-## (owner review, 2026-07-30: "the character feels out of touch... placement inconsistent").
-## `MOSA_WIDE_BONUS` widens the inset by a fraction of whatever width the viewport reveals
-## past 1024 - zero effect at the base canvas (already correct, already reviewed), real
-## effect on a wide device, still clamped against the column so she can never crowd it.
-func _mosa_left_edge(margins: Dictionary, width: float) -> float:
-	const CLEARANCE: float = 24.0
-	var right_margin: float = margins["right"]
-	var left_margin: float = margins["left"]
-	var column_left: float = get_viewport_rect().size.x - right_margin - BUTTON_COLUMN_WIDTH
-	var latest: float = column_left - width - CLEARANCE
-	var extra_width: float = maxf(0.0, get_viewport_rect().size.x - 1024.0)
-	var inset: float = MOSA_INSET_X + extra_width * MOSA_WIDE_BONUS
-	return minf(left_margin + inset, latest)
-
-
-func _build_mosa() -> void:
-	var margins := SafeAreaInsets.get_edge_margins(get_viewport_rect().size)
-	var aspect := float(MOSA_SPRITE.get_width()) / float(MOSA_SPRITE.get_height())
-	var width := MOSA_HEIGHT * aspect
-
-	_mosa_rect = TextureRect.new()
-	_mosa_rect.texture = MOSA_SPRITE
-	_mosa_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	_mosa_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT
-	_mosa_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	# True-edge anchored (A3): feet near the real bottom edge, left-anchored at the live
-	# safe-area margin (not a fixed 32/48 - a real device's landscape notch eats a SIDE,
-	# not the top, so Mosa's own left edge has to respect it too), regardless of how much
-	# extra width a wider-than-4:3 phone reveals. offset_bottom is -8, not a literal 0:
-	# mosa-critic (DM-010 review, finding #1) measured MOSA-IdleFront.png's own art directly
-	# and found zero built-in bottom padding, so an offset of 0 sliced both shoe soles clean
-	# off against the true viewport edge. 8px is the grid's own step. This offset matches
-	# the sala backdrop's own COVER-transform floor line (bottom-anchored, DM-010 reopen
-	# item 1), so Mosa's feet and the painted floor agree.
-	var left := _mosa_left_edge(margins, width)
-	_mosa_rect.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-	_mosa_rect.offset_left = left
-	_mosa_rect.offset_bottom = -8
-	_mosa_rect.offset_right = left + width
-	_mosa_rect.offset_top = -8 - MOSA_HEIGHT
-	# She is a Control on the DEFAULT canvas layer, so `SalaBackdrop`'s `CanvasModulate` -
-	# which is scoped to its own layer (verified engine fact, DM-010) - never reaches her.
-	# That is the whole of "Mosa is ungraded": her source art's own cool greys sat at full
-	# strength against a warm amber room and read as a sticker pasted onto the scene.
-	# Multiplying by the location's own `grade-sala-amber` token puts her in the same light
-	# as everything behind her. `light_mask` stays at its default 1 so the sala's three
-	# lights also play across her - graded AND lit, the same treatment the room gets.
-	_mosa_rect.modulate = _palette.grade_sala_amber
-	add_child(_mosa_rect)
-
-
-## Contact shadow (mosa-ui-designer, DM-010 reopen item 6) lives on `SalaBackdrop` (behind
-## Mosa, on the graded/lit layer), not here - but only this screen knows her true edge-
-## anchored position, so it's computed here and pushed down rather than re-derived inside
-## SalaBackdrop itself. Re-run on viewport resize (Tier 1, TESTING.md §1): Mosa's own
-## anchor-relative position doesn't move on a width-only resize, but a height change shifts
-## the floor line, and the shadow has no anchor system of its own to follow it for free.
-func _update_ground_shadow() -> void:
-	if _mosa_rect == null or _sala_backdrop == null:
-		return
-	var margins := SafeAreaInsets.get_edge_margins(get_viewport_rect().size)
-	var aspect := float(MOSA_SPRITE.get_width()) / float(MOSA_SPRITE.get_height())
-	var width := MOSA_HEIGHT * aspect
-	var vp_height := get_viewport_rect().size.y
-	# mosa-ui-designer review (2026-07-29): couldn't confirm the shadow was visible at all
-	# in the evidence. Root cause found by re-deriving the geometry, not by eye: centering
-	# the ellipse ON the floor line put half its 72px height below `vp_height` - off-screen,
-	# invisible, leaving only a thin unrecognisable arc. The ellipse's BOTTOM edge belongs
-	# on the floor line (a shadow sits on the ground, it isn't bisected by it).
-	var floor_y := vp_height - 8.0
-	# Shares `_mosa_left_edge()` with `_build_mosa()` - the shadow must be centred on HER,
-	# not on the safe-area margin, and the two must resolve her position the same way or the
-	# 440px split re-opens the moment either side is touched again.
-	var center := Vector2(
-		_mosa_left_edge(margins, width) + width / 2.0, floor_y - GROUND_SHADOW_SIZE.y / 2.0
-	)
-	_sala_backdrop.show_ground_shadow(center, GROUND_SHADOW_SIZE)
-	# Keeps RimLight aimed at her actual silhouette (2026-07-30 wide-aspect placement fix) -
-	# same reasoning as the shadow above: computed here, not re-derived inside SalaBackdrop,
-	# because only this screen knows her true edge-anchored position.
-	_sala_backdrop.set_rim_light_x(center.x)
 
 
 func _build_buttons() -> void:
 	var margins := SafeAreaInsets.get_edge_margins(get_viewport_rect().size)
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", BUTTON_GAP)
-	# True-edge anchored (A3): right-anchored, so the void between Mosa and the buttons
-	# grows on a wider phone rather than either edge drifting off-frame.
+	# True-edge anchored: right-anchored, so the void grows on a wider phone rather than
+	# either edge drifting off-frame (unchanged convention from the old build).
 	column.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 	column.offset_right = -margins["right"]
 	column.offset_left = -margins["right"] - BUTTON_COLUMN_WIDTH
@@ -301,9 +164,6 @@ func _build_buttons() -> void:
 	add_child(column)
 
 	# Fixed order always - New Game, Continue, Settings - regardless of save state.
-	# Reordering when a save exists would reintroduce the exact "menu jumps between
-	# states" problem the ticket rules out for hiding Continue; the same discipline
-	# extends to position.
 	var new_game := ChromeButton.new(tr("ui.title.new_game"), true)
 	new_game.pressed.connect(_on_new_game_pressed)
 	column.add_child(new_game)
