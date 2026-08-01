@@ -42,9 +42,14 @@ directories/dch_directory={
 "mosa": "res://data/dialogic/characters/mosa.dch"
 }
 directories/dtl_directory={
-"dm012_smoke": "res://data/dialogic/timelines/dm012_smoke.dtl"
+"dm012_smoke": "res://data/dialogic/timelines/dm012_smoke.dtl",
+"dm013_choice_smoke": "res://data/dialogic/timelines/dm013_choice_smoke.dtl",
+"dm013_longstring_smoke": "res://data/dialogic/timelines/dm013_longstring_smoke.dtl"
 }
-layout/style_directory={}
+layout/style_directory={
+"": "res://data/dialogic/styles/detective_mosa_style.tres"
+}
+layout/default_style="res://data/dialogic/styles/detective_mosa_style.tres"
 
 [display]
 
