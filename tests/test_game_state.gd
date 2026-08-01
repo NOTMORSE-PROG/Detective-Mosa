@@ -34,18 +34,31 @@ func test_apply_minigame_failure_lowers_trust_by_tunable_amount() -> void:
 	assert_eq(GameState.trust, 50 + GameState.TUNABLES.trust_minigame_failure_delta)
 
 
-## CANON #12 — trust clamps at the boundary and never goes out of range, no matter how
-## many times a mutator fires.
+## CANON #12 — trust clamps at the boundary and never goes out of range.
+## DM-014/CANON #11 made apply_chismis() single-fire (a real player never gets a second
+## Chismis It to call it again), so these no longer drive the clamp via a repeated-call
+## loop - that was never a realistic path anyway, only a convenient one. Reaching the
+## boundary via restore_from_save (already its own sanctioned rehydration path, DM-049)
+## then a single apply_chismis() call mirrors how a real save-near-the-edge would
+## actually overflow. Repeated-firing clamp coverage moves to
+## test_trust_clamps_at_min_via_repeated_minigame_failures below, which fires a mutator
+## that genuinely can trigger more than once in real play (one per 0-lives retry).
 func test_trust_clamps_at_max_and_never_exceeds_100() -> void:
-	for i in range(10):
-		GameState.apply_chismis(true)
+	GameState.restore_from_save({"trust": 95})
+	GameState.apply_chismis(true)  # 95 + 25 would overshoot to 120
 	assert_eq(GameState.trust, 100, "trust must clamp at 100, never overshoot")
 
 
 func test_trust_clamps_at_min_and_never_goes_below_0() -> void:
-	for i in range(10):
-		GameState.apply_chismis(false)
+	GameState.restore_from_save({"trust": 10})
+	GameState.apply_chismis(false)  # 10 - 25 would undershoot to -15
 	assert_eq(GameState.trust, 0, "trust must clamp at 0, never undershoot")
+
+
+func test_trust_clamps_at_min_via_repeated_minigame_failures() -> void:
+	for i in range(10):
+		GameState.apply_minigame_failure()
+	assert_eq(GameState.trust, 0, "apply_minigame_failure has no CANON #11 lock - must still clamp")
 
 
 func test_trust_changed_signal_fires_with_new_value() -> void:

@@ -11,14 +11,26 @@ var lives: int = TUNABLES.lives_start
 var chapter: int = 1
 var flags: Dictionary = {}
 var clues_found: Array[StringName] = []
+## CANON #11: once a Chismis It decision is made, it is locked - a replay can revisit
+## content but must never re-apply (or reverse) its Trust delta. DM-014.
+var chismis_locked: bool = false
 
 
 ## The sharing decision - CANON #8. The only other trust mutator is
 ## apply_minigame_failure() below. CODING.md §4: nothing else, anywhere, may write
 ## `trust` - enforced by the CI trust guard, not just this comment.
+## CANON #11: a completed Chismis It is locked permanently - a second call (a replay
+## walking back in through the side door CANON #10 already closed) is ignored rather
+## than moving trust again.
 func apply_chismis(verified: bool) -> void:
+	if chismis_locked:
+		push_warning(
+			"GameState.apply_chismis() called after the choice was already locked (CANON #11) - ignored."
+		)
+		return
 	var delta: int = TUNABLES.trust_chismis_delta if verified else -TUNABLES.trust_chismis_delta
 	trust = clampi(trust + delta, TUNABLES.trust_min, TUNABLES.trust_max)
+	chismis_locked = true
 	trust_changed.emit(trust)
 
 
@@ -39,6 +51,7 @@ func reset_to_defaults() -> void:
 	chapter = 1
 	flags = {}
 	clues_found = []
+	chismis_locked = false
 	trust_changed.emit(trust)
 
 
@@ -57,6 +70,9 @@ func restore_from_save(data: Dictionary) -> void:
 	for entry: Variant in data.get("clues_found", []):
 		found.append(StringName(entry))
 	clues_found = found
+	# .get() default false: an old (pre-DM-014) save has no such field and must not be
+	# misread as already-locked - it legitimately hasn't made the choice yet.
+	chismis_locked = bool(data.get("chismis_locked", false))
 	trust_changed.emit(trust)
 
 
@@ -67,4 +83,5 @@ func to_save_dict() -> Dictionary:
 		"chapter": chapter,
 		"flags": flags,
 		"clues_found": clues_found,
+		"chismis_locked": chismis_locked,
 	}

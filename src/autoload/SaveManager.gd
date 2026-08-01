@@ -11,6 +11,17 @@ const SAVE_DIR: String = "user://saves/"
 const META_PATH: String = "user://meta.json"
 const SETTINGS_PATH: String = "user://settings.json"
 
+## Populated by the most recent successful load_game() - where in its Dialogic timeline
+## that save was. Deliberately NOT auto-applied here: calling Dialogic.start_timeline()
+## from this autoload would run with no layout scene in the tree yet and silently stall
+## forever (mosa-godot-engineer, DM-014 research - group-lookup driven signals never
+## connect with zero layout nodes present, no error printed). The scene that actually
+## hosts the Dialogic layout (DM-015's Prologue.gd) reads these and calls
+## Dialogic.start(loaded_dialogic_timeline, loaded_dialogic_event_idx) once it's ready.
+## Empty/-1 after a fresh load_game() call means "no timeline was running when saved."
+var loaded_dialogic_timeline: String = ""
+var loaded_dialogic_event_idx: int = -1
+
 
 func _ready() -> void:
 	DirAccess.make_dir_recursive_absolute(SAVE_DIR)
@@ -27,6 +38,16 @@ func slot_exists(slot: int) -> bool:
 func save_game(slot: int) -> void:
 	var payload: Dictionary = GameState.to_save_dict()
 	payload["save_version"] = SAVE_VERSION
+	payload["dialogic_timeline"] = ""
+	payload["dialogic_event_idx"] = -1
+	# Read Dialogic's own position fields as-is, no arithmetic - mirrors Dialogic's own
+	# DialogicSaveState contract (get_full_state()/load_full_state()) exactly, so passing
+	# the stored value straight back into Dialogic.start() later resumes the SAME
+	# in-flight event rather than skipping or repeating one (mosa-godot-engineer, DM-014
+	# research - a +1 here would silently eat whichever line was on screen at save time).
+	if Dialogic.current_timeline != null:
+		payload["dialogic_timeline"] = Dialogic.current_timeline.resource_path
+		payload["dialogic_event_idx"] = Dialogic.current_event_idx
 	_write_json_atomic(slot_path(slot), payload)
 	save_completed.emit(slot)
 
@@ -35,6 +56,9 @@ func save_game(slot: int) -> void:
 ## carries why - callers show a safe "can't load this save" state, never a crash and
 ## never a silent garbage load (DM-049 edge cases).
 func load_game(slot: int) -> bool:
+	loaded_dialogic_timeline = ""
+	loaded_dialogic_event_idx = -1
+
 	var path := slot_path(slot)
 	if not FileAccess.file_exists(path):
 		load_failed.emit(slot, "missing")
@@ -51,6 +75,8 @@ func load_game(slot: int) -> bool:
 		return false
 
 	GameState.restore_from_save(data)
+	loaded_dialogic_timeline = String(data.get("dialogic_timeline", ""))
+	loaded_dialogic_event_idx = int(data.get("dialogic_event_idx", -1))
 	load_completed.emit(slot)
 	return true
 
