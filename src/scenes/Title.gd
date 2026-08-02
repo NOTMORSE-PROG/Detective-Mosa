@@ -13,14 +13,39 @@ extends Control
 ## functional without erroring on a scene that isn't built yet.
 const PROLOGUE_SCENE_PATH: String = "res://src/scenes/Prologue.tscn"
 const STREET_BACKDROP_SCENE: PackedScene = preload("res://src/scenes/parts/StreetBackdrop.tscn")
-const WORDMARK_PLATE_STYLE: StyleBoxFlat = preload("res://data/stylebox/surface_panel_opaque.tres")
-const FONT_NUNITO_DISPLAY: FontVariation = preload("res://art/ui/fonts/font_nunito_display.tres")
+
+## Delivered art (2026-08-02). NOT `MOSALOGO.png` - its baked-in plaque carries a
+## regular checkerboard that hard-clips at the plaque's curved silhouette instead of
+## bending with it (unlike the hand-painted border/shadow on the same asset, which do
+## bend) - the signature of an unflattened transparency layer, not authored wood/plaid
+## texture (mosa-art-director consult, pixel-sampled and confirmed before deciding).
+## `MOSALOGO-NOBG.png` sidesteps the question entirely and is composited onto a
+## `bg-deep` backing below instead of the old cream plate (cream-on-cream would vanish).
+const LOGO_TEXTURE: Texture2D = preload("res://art/ui/branding/MOSALOGO-NOBG.png")
+## The art's own opaque bbox within its 1600x940 canvas (downscaled from the delivered
+## 1663x977 to clear `check_asset_sizes.py`'s 1600px branding ceiling - proportional,
+## no crop, so it changes nothing visible at this element's ~480px display width).
+## Measured directly, PIL `getbbox()` on the alpha channel, post-resize - crops out the
+## dead transparent margin so the logo aligns flush to the plate's padding instead of
+## sitting off-centre inside it.
+const LOGO_CROP_REGION: Rect2 = Rect2(203, 164, 1212, 622)
+const LOGO_DISPLAY_WIDTH: float = 480.0
 
 const BUTTON_COLUMN_WIDTH: float = 320.0
 const BUTTON_GAP: float = 24.0
 
-## Padding inside the wordmark's cream signboard plate (DESIGN.md §6, 8px grid multiple).
+## Padding inside the wordmark's backing plate (DESIGN.md §6, 8px grid multiple).
 const PLATE_PADDING: float = 24.0
+## Gap between the wordmark plate and the subtitle caption below it - re-measured
+## directly against Mosa's own silhouette on this backdrop at 4:3 (mosa-critic, two
+## rounds this ticket): the inherited DM-068 v3 value (72px) was tuned for the old,
+## taller text-plate footprint and put the subtitle across her face once the plate
+## got shorter; round 1's fix (120px) cleared her face but grazed the case-folder
+## prop in her hands with zero margin. 140px clears the folder's own lower edge with
+## real breathing room, re-verified against a fresh render, not assumed from round 1.
+const SUBTITLE_GAP: float = 140.0
+const SUBTITLE_PADDING_H: float = 16.0
+const SUBTITLE_PADDING_V: float = 8.0
 
 var _palette: Palette = load("res://data/palette.tres")
 var _continue_button: ChromeButton
@@ -45,109 +70,111 @@ func _on_back_pressed() -> void:
 	dialog.confirmed.connect(get_tree().quit)
 
 
-## The wordmark now lives on its OWN cream signboard plate - `surface` fill, `bg-deep` 2px
-## border, 8px radius (`surface_panel_opaque.tres`, an existing token-only stylebox, no new
-## one needed) - the same visual grammar as the "MANG VER SARI-SARI STORE" sign baked into
-## the backdrop art it sits above (mosa-ui-designer consult: reads as a prop that belongs in
-## this world - a case-file placard - rather than a UI layer dropped on top of the scene).
+## The typographic wordmark is replaced by the delivered `MOSALOGO-NOBG.png` art
+## (2026-08-02) on a `bg-deep` backing plate - `gold` 2px border, 8px radius, the same
+## "near-black anchor, gold accents it" pairing `DESIGN.md §1` already documents for
+## bg-deep/bg-base surfaces, and the same technique `ChapterIntroBand`'s text band and
+## `StreetBackdrop`'s own framing silhouette use for a guaranteed-contrast corner mass
+## regardless of what's painted in the backdrop behind it (mosa-art-director + mosa-ui-
+## designer joint consult - both independently converged on a bg-deep backing as the
+## fix for the same problem: this art's own value range can't be trusted to win the
+## squint test against the CTA column the way the old flat cream plate did).
+## `gold`, not `gold-ink`, is correct here - `gold` is reserved for bg-deep/bg-base
+## surfaces only (DESIGN.md §1), and this plate IS bg-deep.
 ##
-## This replaces the old DM-067 approach entirely (Black-weight gold-on-bg-deep with a
-## structural glyph outline, fighting for contrast against a painted backdrop). Text on an
-## OPAQUE PLATE needs none of that: DESIGN.md §0.6's rule ("text always on a solid or
-## high-opacity plate") is satisfied structurally, so legibility no longer depends on what's
-## behind the glyph. `gold`, not `gold-ink`, is now the WRONG token here - `gold` is reserved
-## for bg-deep/bg-base only (DESIGN.md §1); on a `surface`-toned plate the cream-safe twin
-## `gold-ink` is the correct one (4.79:1 verified).
+## The subtitle stays OUT of the art (mosa-narrative/CANON: the art says "Detective
+## Mosa" only, never "Check Muna Bago Chismis") - same small outlined caption below the
+## plate the old build used, unchanged tokens/position.
 func _build_wordmark_plate() -> void:
 	var margins := SafeAreaInsets.get_edge_margins(get_viewport_rect().size)
 	var left: float = margins["left"]
 	var top: float = margins["top"]
 
-	var content := VBoxContainer.new()
-	content.add_theme_constant_override("separation", 2)
-	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var logo_atlas := AtlasTexture.new()
+	logo_atlas.atlas = LOGO_TEXTURE
+	logo_atlas.region = LOGO_CROP_REGION
+	var logo_height := LOGO_DISPLAY_WIDTH * LOGO_CROP_REGION.size.y / LOGO_CROP_REGION.size.x
 
-	var detective := Label.new()
-	detective.text = tr("ui.title.wordmark_detective")
-	# 36, not the old 48 (mosa-critic, DM-068 v3 review): the plate's total height now runs
-	# into Mosa's own baked-in head position - she's unreadable as a shape (REFERENCES.md
-	# Reference A) with the plate's original full footprint. MOSA itself stays frozen at the
-	# 168px `display` tier (that's the element that has to win the squint test); DETECTIVE
-	# is a secondary label with room to give.
-	detective.add_theme_font_size_override("font_size", 36)
-	detective.add_theme_color_override("font_color", _palette.gold_ink)
-	content.add_child(detective)
+	var logo_rect := TextureRect.new()
+	logo_rect.texture = logo_atlas
+	logo_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	# `expand_mode` defaults to EXPAND_KEEP_SIZE, which reports the raw texture's own
+	# size as the control's minimum size and ignores an explicit `.size` below -
+	# IGNORE_SIZE is what actually lets the box below control the rendered size.
+	logo_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	logo_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	logo_rect.light_mask = 0
+	logo_rect.position = Vector2(PLATE_PADDING, PLATE_PADDING)
+	logo_rect.size = Vector2(LOGO_DISPLAY_WIDTH, logo_height)
 
-	var mosa_word := Label.new()
-	mosa_word.text = tr("ui.title.wordmark_mosa")
-	# 168px, not a guessed value: DESIGN.md §1's `display` tier is frozen at 168px (the value
-	# actually shipped and judged on device across several DM-067 tuning passes, not the
-	# earlier 96px that was logged but never rendered). Using 96 here was a real mistake
-	# caught by mosa-critic's DM-068 v2 review, not a deliberate re-tuning - it shrank the
-	# one element meant to win the squint test at the exact moment a same-value store sign
-	# entered frame for the first time, recreating the wordmark-vs-CTA tie this ticket exists
-	# to close.
-	mosa_word.add_theme_font_size_override("font_size", 168)
-	mosa_word.add_theme_font_override("font", FONT_NUNITO_DISPLAY)
-	mosa_word.add_theme_color_override("font_color", _palette.gold_ink)
-	content.add_child(mosa_word)
-
-	var rule := ColorRect.new()
-	rule.color = _palette.gold_ink
-	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	rule.custom_minimum_size = Vector2(0, 2)
-	content.add_child(rule)
-
-	# Subtitle moved OUT of the plate entirely (mosa-critic, DM-068 v3 review) - it was the
-	# cheapest remaining vertical space to cut once DETECTIVE's own trim wasn't enough on its
-	# own to clear Mosa's head. Rendered as its own small caption directly under the plate,
-	# with the same outline/shadow legibility treatment the old backdrop-composited wordmark
-	# used (DESIGN.md §0.6 - it's back to sitting on a busy backdrop, not an opaque plate, so
-	# it needs that structural contrast again).
-	var subtitle := Label.new()
-	subtitle.text = tr("ui.title.subtitle")
-	subtitle.add_theme_font_size_override("font_size", 22)
-	subtitle.add_theme_color_override("font_color", _palette.surface)
-	subtitle.add_theme_color_override("font_outline_color", _palette.bg_deep)
-	subtitle.add_theme_constant_override("outline_size", 4)
+	var backing_style := StyleBoxFlat.new()
+	backing_style.bg_color = _palette.bg_deep
+	backing_style.border_color = _palette.gold
+	backing_style.border_width_left = 2
+	backing_style.border_width_top = 2
+	backing_style.border_width_right = 2
+	backing_style.border_width_bottom = 2
+	backing_style.corner_radius_top_left = 8
+	backing_style.corner_radius_top_right = 8
+	backing_style.corner_radius_bottom_right = 8
+	backing_style.corner_radius_bottom_left = 8
 
 	_wordmark_plate = Panel.new()
-	_wordmark_plate.add_theme_stylebox_override("panel", WORDMARK_PLATE_STYLE)
+	_wordmark_plate.add_theme_stylebox_override("panel", backing_style)
 	_wordmark_plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_wordmark_plate.add_child(content)
-	content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	content.offset_left = PLATE_PADDING
-	content.offset_top = PLATE_PADDING
-	content.offset_right = -PLATE_PADDING
-	content.offset_bottom = -PLATE_PADDING
+	_wordmark_plate.light_mask = 0
+	_wordmark_plate.add_child(logo_rect)
 
 	_wordmark_plate.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
 	_wordmark_plate.offset_left = left
 	_wordmark_plate.offset_top = top
-	# Sized to content: measure the widest line (MOSA, Black-weight display font) plus the
-	# plate's own padding on both sides - same "measure the actual rendered font" discipline
-	# the old wordmark used, not a guessed fixed width.
-	var mosa_width := (
-		FONT_NUNITO_DISPLAY.get_string_size(mosa_word.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 168).x
-	)
-	var plate_width := mosa_width + PLATE_PADDING * 2.0
-	_wordmark_plate.offset_right = left + plate_width
-	# Height left auto via the VBox's own computed minimum + padding, resolved after the
-	# content is in the tree.
+	_wordmark_plate.offset_right = left + LOGO_DISPLAY_WIDTH + PLATE_PADDING * 2.0
+	_wordmark_plate.offset_bottom = top + logo_height + PLATE_PADDING * 2.0
 	add_child(_wordmark_plate)
-	await get_tree().process_frame
-	var content_height := content.get_combined_minimum_size().y
-	_wordmark_plate.offset_bottom = top + content_height + PLATE_PADDING * 2.0
 
-	# Pushed further below the plate than the first attempt (12px -> 72px): the initial gap
-	# was too tight and the caption landed directly across Mosa's face/hair (visible on
-	# recapture, self-caught) - the exact occlusion problem the plate itself was just fixed
-	# for, just handed to a different element. 72px clears her head into the shoulder/torso
-	# area, which Reference A's "readable as a shape" rule cares about less than her face.
-	subtitle.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	subtitle.offset_left = left
-	subtitle.offset_top = _wordmark_plate.offset_bottom + 72.0
-	add_child(subtitle)
+	# mosa-critic (this ticket): the inherited "72px clearance" was tuned against the OLD
+	# text-plate's footprint (~330px tall). This plate is shorter (293px), so the same 72px
+	# gap put the subtitle back on Mosa's face - the exact defect DM-068 v3 already paid to
+	# fix once, regressed by inheriting a number instead of re-verifying it against this
+	# plate's own geometry. 120px re-measured directly against a real capture (below).
+	#
+	# Also mosa-critic: an outline-only label on this busy backdrop drops to 1.9:1 against
+	# the store shutter's capiz-lattice pattern - fails DESIGN.md §0.6 ("text always on a
+	# solid or high-opacity plate"). Given its own small `bg-deep` backing instead, same
+	# family as the wordmark plate above but quieter (no border) so it reads as a caption,
+	# not a second competing focal mass.
+	var subtitle := Label.new()
+	subtitle.text = tr("ui.title.subtitle")
+	subtitle.add_theme_font_size_override("font_size", 22)
+	subtitle.add_theme_color_override("font_color", _palette.surface)
+	subtitle.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	subtitle.position = Vector2(SUBTITLE_PADDING_H, SUBTITLE_PADDING_V)
+
+	var subtitle_backing_style := StyleBoxFlat.new()
+	subtitle_backing_style.bg_color = _palette.bg_deep
+	subtitle_backing_style.corner_radius_top_left = 8
+	subtitle_backing_style.corner_radius_top_right = 8
+	subtitle_backing_style.corner_radius_bottom_right = 8
+	subtitle_backing_style.corner_radius_bottom_left = 8
+
+	var subtitle_backing := Panel.new()
+	subtitle_backing.add_theme_stylebox_override("panel", subtitle_backing_style)
+	subtitle_backing.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	subtitle_backing.light_mask = 0
+	subtitle_backing.add_child(subtitle)
+
+	subtitle_backing.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	subtitle_backing.offset_left = left
+	subtitle_backing.offset_top = _wordmark_plate.offset_bottom + SUBTITLE_GAP
+	add_child(subtitle_backing)
+	await get_tree().process_frame
+	var subtitle_size := subtitle.get_combined_minimum_size()
+	subtitle_backing.offset_right = (
+		subtitle_backing.offset_left + subtitle_size.x + SUBTITLE_PADDING_H * 2.0
+	)
+	subtitle_backing.offset_bottom = (
+		subtitle_backing.offset_top + subtitle_size.y + SUBTITLE_PADDING_V * 2.0
+	)
 
 
 func _build_buttons() -> void:
