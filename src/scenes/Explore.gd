@@ -39,6 +39,14 @@ const PALETTE: Palette = preload("res://data/palette.tres")
 const EXPLORE_BACKDROP_SCENE: PackedScene = preload("res://src/scenes/parts/ExploreBackdrop.tscn")
 const MOSA_SCENE: PackedScene = preload("res://src/actors/Mosa.tscn")
 const TOUCH_CONTROLS_SCENE: PackedScene = preload("res://src/scenes/parts/TouchControls.tscn")
+const INTERACTABLE_SCENE: PackedScene = preload("res://src/scenes/parts/Interactable.tscn")
+
+## DM-019 owns no specific clue content (`DM-020`'s job) - this single instance exists
+## only so the ticket's own thesis-gate QA step ("tap every interactable in the scene
+## repeatedly, confirm trust/lives unchanged") and the render→view→judge loop have a real
+## object to exercise. `DM-020` replaces this with real Chase It clues.
+const DEMO_CLUE_ART_X: float = 700.0
+const DEMO_CLUE_ID: StringName = &"dm019_demo_clue"
 
 ## Where Mosa starts, in the backdrop art's own native pixel space (0,0-1600,768) - left of
 ## the court's central backboard/bullseye focal object (mosa-art-director: that mass sits at
@@ -114,6 +122,11 @@ func _ready() -> void:
 	_touch_controls = TOUCH_CONTROLS_SCENE.instantiate() as TouchControls
 	add_child(_touch_controls)
 
+	var demo_clue := INTERACTABLE_SCENE.instantiate() as Interactable
+	demo_clue.clue_id = DEMO_CLUE_ID
+	demo_clue.position = _backdrop.floor_point_to_screen(DEMO_CLUE_ART_X)
+	add_child(demo_clue)
+
 	AudioDirector.set_mood(&"barangay_calm")
 
 	_layout_for_viewport()
@@ -123,8 +136,17 @@ func _ready() -> void:
 ## The ground shadow has to be re-driven every frame now that Mosa can actually move - she
 ## stays in the same screen/world space as the fixed camera (see class doc), so this is a
 ## direct, un-projected read of her own position, same math DM-017 used for her static spawn.
+##
+## Also drives every `Interactable`'s proximity affordance (DM-019) - kept here rather than
+## each Interactable polling Mosa itself, the same "scene orchestrates, component stays
+## ignorant of its caller" split already established for grading/walk-bounds.
 func _process(_delta: float) -> void:
 	_backdrop.show_ground_shadow(_mosa.position + Vector2(0, SHADOW_LIFT), SHADOW_SIZE)
+
+	for node: Node in get_tree().get_nodes_in_group(&"interactables"):
+		var interactable := node as Interactable
+		if interactable != null:
+			interactable.update_proximity(_mosa.position.distance_to(interactable.position))
 
 
 ## Camera stays at rest (see class doc); Mosa's spawn X, her walkable X range, and the

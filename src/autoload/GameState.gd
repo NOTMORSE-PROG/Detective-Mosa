@@ -42,6 +42,20 @@ func apply_minigame_failure() -> void:
 	trust_changed.emit(trust)
 
 
+## DM-019 — the only write path into `clues_found`, so every caller (`Interactable.gd`
+## today, whatever DM-020's real content adds later) gets the same idempotency guarantee
+## for free rather than each re-implementing "check before append." Checked-before-append,
+## not append-then-dedupe, so a double registration can never transiently exist even
+## mid-save. Returns whether this was a first-time registration (true) or an already-known
+## clue re-examined (false) — callers use this to distinguish "first discovery" feedback
+## from "revisited" feedback without needing their own local seen-state.
+func register_clue(id: StringName) -> bool:
+	if clues_found.has(id):
+		return false
+	clues_found.append(id)
+	return true
+
+
 ## New Game. Not a thesis-relevant trust mutator (CODING.md §4's "exactly two methods"
 ## is about gameplay events) - this sets the starting value, the same way the field's
 ## own default does at boot.

@@ -59,6 +59,10 @@ var _joystick: Control
 
 
 func _ready() -> void:
+	# DM-019: lets any Interactable find this node without a tight reference - see
+	# is_point_inside_joystick()'s own doc comment for why that lookup exists at all.
+	add_to_group(&"touch_controls")
+
 	_joystick = ClassDB.instantiate("VirtualJoystick")
 	_joystick.name = "Joystick"
 	_joystick.set("joystick_size", JOYSTICK_SIZE)
@@ -169,3 +173,13 @@ func _layout_for_viewport() -> void:
 	# top-left - verified by the rendered probe capture during this ticket's research
 	# (a fresh instance's ring appeared centred within its declared size, not offset).
 	_joystick.pivot_offset = Vector2(half, half)
+
+
+## DM-019 (mosa-godot-engineer finding): a Control's mouse_filter=STOP does NOT suppress
+## Area2D picking for the same screen point - verified against the engine source, not
+## assumed. Any world-space Interactable whose footprint ever overlapped this joystick's
+## screen rect would double-fire without this explicit check. `event.position` from an
+## InputEventMouseButton/InputEventScreenTouch is already in this same screen-space, so
+## no conversion is needed here.
+func is_point_inside_joystick(screen_point: Vector2) -> bool:
+	return _joystick.get_global_rect().has_point(screen_point)

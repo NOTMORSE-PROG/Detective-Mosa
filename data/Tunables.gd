@@ -20,5 +20,12 @@ extends Resource
 @export var ch1_clue_total: int = 4
 @export var ch1_clue_unlock_threshold: int = 3
 
+## Interactables — DM-019. mosa-minigame-designer consult: bigger than the 96px tap
+## floor, so the proximity affordance sharpens BEFORE the player is already standing on
+## top of it (a "getting warmer" read), not merely a hitbox-adjacent trigger.
+@export var interactable_proximity_radius_px: float = 140.0
+## Seconds, slow/ambient — matches `barangay_calm`, not an urgent game-timer feel.
+@export var interactable_idle_pulse_period_sec: float = 2.4
+
 ## Save system — CANON #15
 @export var save_slot_count: int = 3
