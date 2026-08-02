@@ -1,0 +1,17 @@
+join jorge (Happy) center
+jorge (Happy): Grabe 'to! Tingnan niyo —
+jorge (Happy): tinambakan na naman tayo ng basura ng mga taga-Purok 7!
+join jorge (Idle) center
+jorge (Idle): Oo, sinend ng tropa ko sa akin.
+join alingvilma (Happy) center
+alingvilma (Happy): Talaga? I-send ko na sa GC para malaman ng buong barangay!
+join jorge (HandChest) center
+jorge (HandChest): Feel ko may galit talaga 'tong kabilang purok sa atin eh!
+jorge (HandChest): Dati pa tayo tinatambakan ng mga basura nila.
+join mosa (Idle) center
+mosa (Idle): Ano ganap, bes? Ba't parang may gulo.. ano chismis?
+# DM-020: this beat plays once, autoplaying on first entry to the court (Explore.gd
+# gates it behind `FLAG_COURT_ESTABLISHING_SEEN`, same pattern Prologue.gd's own
+# FLAG_PROLOGUE_SEEN already established). This signal hands control back to the
+# player - free walk/tap unlocks the moment it fires.
+[signal arg="court_establishing_done"]

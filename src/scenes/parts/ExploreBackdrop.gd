@@ -436,10 +436,18 @@ func _layout_for_viewport() -> void:
 	# KeyLight targets the upper-LEFT roof structure (art-space x~380), deliberately off
 	# the bullseye at x~800 (see _build_lights()'s doc comment - stacking a stepped radial
 	# light dead-center on the art's own painted target graphic doubled the ring pattern
-	# and blew the frame out in the first real render). RimLight stays centered low on
-	# Mosa's own position; LampLight keeps the third point low-right.
+	# and blew the frame out in the first real render). LampLight keeps the third point
+	# low-right. RimLight's OWN x is intentionally NOT set here - see set_rim_light_x()'s
+	# doc comment (mosa-art-director, DM-020 finding): it only tracked Mosa's position by
+	# coincidence while her walk range stayed narrow and centered; the real live-follow
+	# has to come from the caller, the same way SalaBackdrop's own identically-named
+	# method already works.
 	_key_light.position = backdrop_point_to_screen(Vector2(380.0, 160.0))
-	_rim_light.position = Vector2(vp_size.x / 2.0, floor_point_to_screen(800.0).y - 40.0)
+	# x defaults to viewport-center until the caller's own live-follow (set_rim_light_x())
+	# takes over on the next frame - a reasonable rest position, not a real Mosa reference.
+	if _rim_light.position.x == 0.0:
+		_rim_light.position.x = vp_size.x / 2.0
+	_rim_light.position.y = floor_point_to_screen(800.0).y - 40.0
 	_lamp_light.position = Vector2(vp_size.x - 340.0, vp_size.y - 120.0)
 
 	_framing.scale = Vector2(vp_size.x / 1024.0, 1.0)
@@ -451,6 +459,20 @@ func _layout_for_viewport() -> void:
 	if _sky_recede != null:
 		_sky_recede.position = Vector2.ZERO
 		_sky_recede.scale = Vector2(vp_size.x / 32.0, vp_size.y / 768.0)
+
+
+## Real bug found and fixed (mosa-art-director, DM-020 - caught by reading the code
+## against its OWN doc comment, `AGENTS.md §2`'s "code intent and rendered fact are not
+## the same claim"): `RimLight`'s comment always claimed it tracked Mosa's position, but
+## the implementation was a static screen-center point recomputed only on `size_changed` -
+## it only ever looked correct because DM-018/019's own narrow, centered walk range kept
+## her close enough to screen-center to sit inside the light's pool by coincidence.
+## Explore.gd calls this every frame (the same call site that already re-drives the
+## ground shadow for the same reason) so the pool genuinely follows her once the walk
+## range widens past that coincidence. Same name/shape as SalaBackdrop's own identical
+## method, which this project already established this pattern for.
+func set_rim_light_x(x: float) -> void:
+	_rim_light.position.x = x
 
 
 func show_ground_shadow(center: Vector2, size: Vector2) -> void:

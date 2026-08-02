@@ -137,7 +137,17 @@ func set_walk_bounds(min_x: float, max_x: float) -> void:
 	_walk_max_x = max_x
 
 
+## DM-020: a `Dialogic` conversation (an NPC interview, a clue reaction) is a separate
+## system from `SceneRouter`'s own overlay/pause mechanism - it never sets
+## `SceneTree.paused`, so without this guard she could still be walked by touch/keyboard
+## underneath an open dialogue box. Checked every tick rather than only at the moment a
+## conversation starts, since a real device's screen-tap could land as both "start this
+## NPC's interview" and "also drag the joystick" in the same frame.
 func _physics_process(delta: float) -> void:
+	if Dialogic.current_timeline != null:
+		velocity = Vector2.ZERO
+		_update_animation(false, delta)
+		return
 	var axis := Input.get_axis(&"move_left", &"move_right")
 	velocity.x = axis * SPEED
 	velocity.y = 0.0  # side-view only (D-003) - vertical input is never read, not half-wired

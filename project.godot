@@ -42,6 +42,14 @@ directories/dch_directory={
 "mosa": "res://data/dialogic/characters/mosa.dch"
 }
 directories/dtl_directory={
+"ch1_court_alingvilma": "res://data/dialogic/timelines/ch1_court_alingvilma.dtl",
+"ch1_court_bugoy": "res://data/dialogic/timelines/ch1_court_bugoy.dtl",
+"ch1_court_clue_net": "res://data/dialogic/timelines/ch1_court_clue_net.dtl",
+"ch1_court_clue_sign": "res://data/dialogic/timelines/ch1_court_clue_sign.dtl",
+"ch1_court_clue_tarp": "res://data/dialogic/timelines/ch1_court_clue_tarp.dtl",
+"ch1_court_clue_tree": "res://data/dialogic/timelines/ch1_court_clue_tree.dtl",
+"ch1_court_establishing": "res://data/dialogic/timelines/ch1_court_establishing.dtl",
+"ch1_court_jorge": "res://data/dialogic/timelines/ch1_court_jorge.dtl",
 "dm012_smoke": "res://data/dialogic/timelines/dm012_smoke.dtl",
 "dm013_choice_smoke": "res://data/dialogic/timelines/dm013_choice_smoke.dtl",
 "dm013_longstring_smoke": "res://data/dialogic/timelines/dm013_longstring_smoke.dtl",
