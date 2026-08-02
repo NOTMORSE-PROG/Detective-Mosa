@@ -214,7 +214,7 @@ registered.)
 ## Slot table
 
 _Generated from `data/asset_manifest.tres` by `tools/generate_asset_brief.gd` - do not
-hand-edit this section, edit the manifest and regenerate. Counts: 125 final, 5
+hand-edit this section, edit the manifest and regenerate. Counts: 126 final, 4
 placeholder, 0 missing, 130 total._
 
 ### Characters
@@ -301,7 +301,7 @@ placeholder, 0 missing, 130 total._
 |---|---|---|---|
 | sala_amber_backdrop | backdrop_content | final | 1600x768 |
 | sala_amber_framing | backdrop_framing | **placeholder** | 1600x768 |
-| court_gold_backdrop | backdrop_content | **placeholder** | 1600x768 |
+| court_gold_backdrop | backdrop_content | final | 1600x768 |
 | court_gold_framing | backdrop_framing | **placeholder** | 1600x768 |
 | chap1_intro_backdrop | backdrop_content | final | 1600x768 |
 | chap2_intro_backdrop | backdrop_content | final | 1600x768 |

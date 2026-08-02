@@ -109,6 +109,9 @@ COLOR_LITERAL_ALLOWLIST: dict[str, set[str]] = {
     "src/scenes/parts/SalaBackdrop.gd": {
         "Color(1, 1, 1, 1)",  # white mask base for a procedural radial light texture, tinted after
     },
+    "src/scenes/parts/ExploreBackdrop.gd": {
+        "Color(1, 1, 1, 1)",  # white mask base for a procedural radial light texture, tinted after
+    },
     "src/ui/ChromeButton.gd": {
         "Color(1, 1, 1, 1)",  # MODULATE_DEFAULT - identity (no-op) self_modulate multiply
         "Color(0.88, 0.88, 0.88, 1)",  # MODULATE_PRESSED - darken multiply, not a hue

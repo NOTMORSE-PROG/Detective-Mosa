@@ -1,0 +1,7 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://src/scenes/parts/ExploreBackdrop.gd" id="1_explore"]
+
+[node name="ExploreBackdrop" type="CanvasLayer" unique_id=2026080202]
+layer = -1
+script = ExtResource("1_explore")

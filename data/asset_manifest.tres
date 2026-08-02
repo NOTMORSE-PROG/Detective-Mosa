@@ -561,7 +561,7 @@ screens = Array[StringName]([&"S4", &"S5"])
 [sub_resource type="Resource" id="Resource_sfhmy"]
 script = ExtResource("2_wkqbc")
 id = &"court_gold_backdrop"
-path = "res://art/backdrops/court-gold_backdrop.png"
+path = "res://art/backdrops/coveredcourt 1.png"
 kind = &"backdrop_content"
 canvas_size = Vector2i(1600, 768)
 anchor = "top-left"
