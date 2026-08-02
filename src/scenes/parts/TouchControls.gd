@@ -189,17 +189,25 @@ func _apply_theme() -> void:
 func _layout_for_viewport() -> void:
 	var vp_size := get_viewport().get_visible_rect().size
 	var margins := SafeAreaInsets.get_edge_margins(vp_size)
+	var half := JOYSTICK_SIZE / 2.0
+	# DM-071 (second finding, same root cause as the hit-rect fix above): `position` is the
+	# ring's CENTRE, not its top-left corner - this formula previously assumed top-left
+	# semantics (`margins.left + EDGE_MARGIN` with no radius term, since a top-left point
+	# needs none), which put the ring's own LEFT EDGE flush against the true screen edge
+	# with ZERO clearance instead of the intended safe-area+edge margin - confirmed on a
+	# real device-resolution emulator capture, ring visibly touching x=0. Adding `half` on
+	# both axes places the ring's CENTRE far enough in that its own edges land where the
+	# margin math always intended. Safe to do now, where it would not have been before this
+	# ticket's own hit-rect fix: the interactive area is `CircularVirtualJoystick._has_point()`
+	# below, keyed to this same centre point, so it moves with the ring automatically instead
+	# of needing to be independently re-aligned.
 	_joystick.position = Vector2(
-		margins["left"] + EDGE_MARGIN, vp_size.y - margins["bottom"] - EDGE_MARGIN - JOYSTICK_SIZE
+		margins["left"] + EDGE_MARGIN + half, vp_size.y - margins["bottom"] - EDGE_MARGIN - half
 	)
 	_joystick.size = Vector2(JOYSTICK_SIZE, JOYSTICK_SIZE)
-	# DM-071: `pivot_offset` does NOT move where the ring draws - zeroing it changed
-	# nothing under a controlled re-measurement (the ring is centred on `position` no
-	# matter what `pivot_offset` is set to). Not set here any more; the real fix is
-	# `CircularVirtualJoystick._has_point()` above, which matches the hit-test to
-	# wherever the ring actually renders instead of trying to move the ring to match a
-	# rect. This `position`/`size` pair is UNCHANGED from the value `mosa-critic`'s three
-	# DM-018 rounds already verified safe against Mosa's spawn X and walk bounds.
+	# `pivot_offset` does NOT move where the ring draws - zeroing it changed nothing under a
+	# controlled re-measurement (the ring is centred on `position` no matter what
+	# `pivot_offset` is set to). Not set here any more.
 
 
 ## DM-019 (mosa-godot-engineer finding): a Control's mouse_filter=STOP does NOT suppress

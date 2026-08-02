@@ -163,6 +163,14 @@ func _ready() -> void:
 	# doc comment) - mosa-critic caught her reading visibly cooler/flatter than the graded
 	# scene around her in the first real capture.
 	_mosa.apply_grade(PALETTE.grade_court_gold)
+	# DM-020's own logged non-blocking defect, fixed here: with no z_index set, Godot draws
+	# 2D siblings in ADD ORDER, and `_build_npcs()` runs after this - so every NPC silently
+	# drew on top of her whenever she walked into their screen footprint (confirmed on the
+	# emulator: walking her into the cluster visually fused her into Aling Vilma's sprite).
+	# The player's own avatar must stay legible over ambient NPCs on the same floor line, so
+	# she gets a z_index above the scene's default (0, which every NPC/ClueProp here still
+	# uses) - robust against add-order rather than depending on it.
+	_mosa.z_index = 10
 
 	_camera = Camera2D.new()
 	_camera.name = "Camera"
