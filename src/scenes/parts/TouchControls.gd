@@ -23,6 +23,31 @@ extends CanvasLayer
 # default-mode Control does under pause - verified live (mosa-godot-engineer probe): a
 # `VirtualJoystick` at default process mode received a synthesized touch event while
 # unpaused and zero events for the identical input while paused.
+#
+# DM-071 (P0 hit-rect fix, mosa-godot-engineer probe against the real production scene,
+# not an isolated synthetic one - an earlier probe pass gave a wrong answer here and was
+# caught and retracted before this shipped): the engine draws `VirtualJoystick`'s rest-state
+# ring as a circle CENTRED on the control's own `position`, independent of `size`, but its
+# unoverridden `_has_point()` uses Godot's default rectangular `[position, position+size]`
+# test anchored with `position` as the top-left corner. A circle centred on a corner can
+# never be fully covered by a square that only extends outward from that same corner, for
+# ANY `size` - proven, not assumed, so no `position`/`size` value can fix this; only
+# overriding the hit-test itself can. `CircularVirtualJoystick` below does exactly that,
+# leaving the built-in class's own drag/deadzone/clampzone/dynamic-recentre logic untouched
+# (confirmed live: symmetric axis output in all four drag directions, no change from before
+# the override). `is_point_inside_joystick()` now calls the same override rather than
+# duplicating the circle math, so it cannot desync from it the way the old rect check did.
+
+
+## Circular hit-test matching the visible ring exactly, in place of the engine's default
+## rectangular one - see the DM-071 note above for why the rectangular default cannot be
+## fixed by adjusting `position`/`size` alone.
+class CircularVirtualJoystick:
+	extends VirtualJoystick
+
+	func _has_point(point: Vector2) -> bool:
+		return point.length() <= joystick_size / 2.0
+
 
 const PALETTE: Palette = preload("res://data/palette.tres")
 
@@ -55,7 +80,7 @@ const CLAMPZONE_RATIO: float = 0.7
 ## held control, not a one-shot tap).
 const EDGE_MARGIN: float = 32.0
 
-var _joystick: Control
+var _joystick: CircularVirtualJoystick
 
 
 func _ready() -> void:
@@ -63,7 +88,7 @@ func _ready() -> void:
 	# is_point_inside_joystick()'s own doc comment for why that lookup exists at all.
 	add_to_group(&"touch_controls")
 
-	_joystick = ClassDB.instantiate("VirtualJoystick")
+	_joystick = CircularVirtualJoystick.new()
 	_joystick.name = "Joystick"
 	_joystick.set("joystick_size", JOYSTICK_SIZE)
 	_joystick.set("tip_size", TIP_SIZE)
@@ -164,22 +189,35 @@ func _apply_theme() -> void:
 func _layout_for_viewport() -> void:
 	var vp_size := get_viewport().get_visible_rect().size
 	var margins := SafeAreaInsets.get_edge_margins(vp_size)
-	var half := JOYSTICK_SIZE / 2.0
 	_joystick.position = Vector2(
 		margins["left"] + EDGE_MARGIN, vp_size.y - margins["bottom"] - EDGE_MARGIN - JOYSTICK_SIZE
 	)
 	_joystick.size = Vector2(JOYSTICK_SIZE, JOYSTICK_SIZE)
-	# VirtualJoystick draws itself centred on its own Control rect center, not its
-	# top-left - verified by the rendered probe capture during this ticket's research
-	# (a fresh instance's ring appeared centred within its declared size, not offset).
-	_joystick.pivot_offset = Vector2(half, half)
+	# DM-071: `pivot_offset` does NOT move where the ring draws - zeroing it changed
+	# nothing under a controlled re-measurement (the ring is centred on `position` no
+	# matter what `pivot_offset` is set to). Not set here any more; the real fix is
+	# `CircularVirtualJoystick._has_point()` above, which matches the hit-test to
+	# wherever the ring actually renders instead of trying to move the ring to match a
+	# rect. This `position`/`size` pair is UNCHANGED from the value `mosa-critic`'s three
+	# DM-018 rounds already verified safe against Mosa's spawn X and walk bounds.
 
 
 ## DM-019 (mosa-godot-engineer finding): a Control's mouse_filter=STOP does NOT suppress
 ## Area2D picking for the same screen point - verified against the engine source, not
 ## assumed. Any world-space Interactable whose footprint ever overlapped this joystick's
 ## screen rect would double-fire without this explicit check. `event.position` from an
-## InputEventMouseButton/InputEventScreenTouch is already in this same screen-space, so
-## no conversion is needed here.
+## InputEventMouseButton/InputEventScreenTouch arrives in this same screen-space, so it's
+## converted into `_joystick`'s own local space below - the same conversion Godot's own
+## GUI input routing performs before calling `_has_point()`.
+##
+## DM-071: reads the SAME `_has_point()` override the joystick's own input routing uses,
+## instead of re-deriving the circle math here - the old rect-based check here was already
+## consistent with `_joystick`'s old default hit-test, but both were wrong about where the
+## ring actually is. Routing through one shared method means this can't desync from
+## whatever `CircularVirtualJoystick` does again. Calls `_has_point()` directly, not the
+## `has_point()` wrapper the Control docs describe - this 4.7.1 binary has no such public
+## wrapper on this class (`has_method("has_point")` is false, verified live), only the
+## virtual override point Godot's own C++ input routing calls internally.
 func is_point_inside_joystick(screen_point: Vector2) -> bool:
-	return _joystick.get_global_rect().has_point(screen_point)
+	var local_point := _joystick.get_global_transform().affine_inverse() * screen_point
+	return _joystick._has_point(local_point)
