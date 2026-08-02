@@ -119,6 +119,9 @@ COLOR_LITERAL_ALLOWLIST: dict[str, set[str]] = {
     "tests/test_design_tokens.gd": {
         "Color(0, 0, 0, 1)",  # "field left at unset default" sentinel, never rendered
     },
+    "tests/test_mosa.gd": {
+        "Color(0.5, 0.4, 0.3, 1.0)",  # arbitrary non-default test fixture, asserts the grade actually applied
+    },
     "tests/test_juice.gd": {
         "Color(0, 0, 0, 0)",  # test fixture matching Juice's own unset-colour sentinel
     },
