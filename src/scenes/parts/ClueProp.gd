@@ -10,8 +10,8 @@ extends Node2D
 # NONE of the four objects CANON #14's clue set needs (tree, store sign, hoop net, tarp)
 # exist anywhere in the real backdrop art. Grepped `data/asset_manifest.tres` for
 # tree/sign/net/tarp/hoop - zero matches; nothing was ever registered or delivered. This
-# is a genuine asset gap, not a placement question - "art never blocks code" (CLAUDE.md),
-# so these ship as procedural flat shapes using the exact same technique
+# is a genuine asset gap, not a placement question - "art never blocks code" (the charter's
+# own operating rule), so these ship as procedural flat shapes using the exact same technique
 # `ExploreBackdrop._build_framing()` already established for its own silhouette layer,
 # clearly flagged here for a real artist pass later, same as every other placeholder in
 # this project.
