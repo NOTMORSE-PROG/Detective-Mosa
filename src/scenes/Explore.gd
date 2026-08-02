@@ -50,6 +50,7 @@ extends Node2D
 # range to be tappable, only to be visible in frame.
 
 const PALETTE: Palette = preload("res://data/palette.tres")
+const TUNABLES: Tunables = preload("res://data/tunables.tres")
 const EXPLORE_BACKDROP_SCENE: PackedScene = preload("res://src/scenes/parts/ExploreBackdrop.tscn")
 const MOSA_SCENE: PackedScene = preload("res://src/actors/Mosa.tscn")
 const TOUCH_CONTROLS_SCENE: PackedScene = preload("res://src/scenes/parts/TouchControls.tscn")
@@ -63,6 +64,22 @@ const SIGNAL_ESTABLISHING_DONE: String = "court_establishing_done"
 ## `DM-020` - autoplays once on first entry, same pattern `Prologue.gd`'s own
 ## `FLAG_PROLOGUE_SEEN` already established.
 const FLAG_COURT_ESTABLISHING_SEEN: StringName = &"ch1_court_establishing_seen"
+
+## CANON #14 / `DM-021` - set once all 4 clues are found. Named once, here, per the
+## ticket's own edge case ("don't let a second spelling appear later") - `DM-026`'s Recap
+## Card and `DM-030`'s notebook both read this exact key later. Deliberately NOT computed
+## inside `GameState.register_clue()`: that method is location-agnostic (Ch2/Ch3 may have a
+## different clue total), so the CH1-specific "4" stays here, in this court's own scene
+## script, not baked into shared autoload code.
+const FLAG_PERFECT_RUN: StringName = &"perfect_run"
+
+## `mosa-ui-designer` consult (DM-021): top-left, true-edge anchored - every clue/NPC this
+## ticket places sits clear of the top ~150px, `TouchControls`' joystick is the opposite
+## corner, and `ExploreBackdrop`'s own `LeftEdge` framing polygon already puts a near-black
+## wedge in exactly this corner (free figure/ground separation for the banner's cream
+## plate). 16px side margin, not the joystick's 32px - this is a chip, not a large held
+## control.
+const OBJECTIVE_BANNER_MARGIN: float = 16.0
 
 ## Where Mosa starts, in the backdrop art's own native pixel space (0,0-1600,768) - left of
 ## the court's central backboard/bullseye focal object (mosa-art-director: that mass sits at
@@ -130,6 +147,7 @@ var _backdrop: ExploreBackdrop
 var _camera: Camera2D
 var _mosa: Mosa
 var _touch_controls: TouchControls
+var _objective_banner: ObjectiveBanner
 var _spawned: bool = false
 var _establishing_played: bool = false
 
@@ -158,6 +176,33 @@ func _ready() -> void:
 	_touch_controls = TOUCH_CONTROLS_SCENE.instantiate() as TouchControls
 	add_child(_touch_controls)
 
+	# Own `CanvasLayer`, not a direct Node2D-tree child - and NOT `layer = 1` either (real
+	# render finding, DM-021, isolated by direct pixel scan across four controlled tests,
+	# not guessed): a plain `Control` with `light_mask = 0` set STILL picked up
+	# `ExploreBackdrop`'s own `PointLight2D`s as a real left-dark/right-light gradient
+	# across its cream plate - `light_mask = 0` reliably exempts Node2D-based shapes here
+	# (`ClueProp`, `NPCActor`'s icons) but empirically did NOT exempt a `Control`'s own
+	# StyleBoxFlat background from these specific lights. Confirmed root cause by disabling
+	# every `Light2D` in the tree (gradient vanished) and, separately, by checking
+	# `ExploreBackdrop`'s own lights: their `range_layer_min/max` is deliberately widened to
+	# -512/512 (own doc comment: "so a layer=-1 CanvasLayer's own lights don't silently
+	# exclude every sibling") - `layer = 1` (matching `TouchControls`) sits well inside that
+	# range, so it never stopped being lit. `layer = 999` sits outside it - verified via the
+	# same pixel scan, this is what actually stops it, not `light_mask` at all.
+	var banner_layer := CanvasLayer.new()
+	banner_layer.name = "ObjectiveBannerLayer"
+	banner_layer.layer = 999
+	add_child(banner_layer)
+
+	_objective_banner = ObjectiveBanner.new()
+	_objective_banner.name = "ObjectiveBanner"
+	banner_layer.add_child(_objective_banner)
+	# Counter is the PERMANENT half (never fades, see the component's own class doc) - must
+	# read the true current count at ready, not start at 0, so a save/load round-trip (or
+	# simply re-entering this scene after the establishing beat already played) shows the
+	# real number immediately rather than an incorrect zero that only later corrects itself.
+	_objective_banner.set_clue_count(GameState.clues_found.size())
+
 	_build_npcs()
 	_build_clues()
 
@@ -172,6 +217,7 @@ func _ready() -> void:
 		Dialogic.start(ESTABLISHING_TIMELINE)
 	else:
 		_establishing_played = true
+		_objective_banner.show_objective(tr("ch1.court.objective_intro"))
 
 
 func _build_npcs() -> void:
@@ -236,6 +282,15 @@ func _on_clue_examined(id: StringName, first_time: bool) -> void:
 	if ResourceLoader.exists(timeline_path):
 		Dialogic.start(timeline_path)
 
+	var count := GameState.clues_found.size()
+	_objective_banner.set_clue_count(count)
+	# CANON #14: the 3-of-4 gate itself needs no stored flag - a later mini-game entry
+	# point re-derives "is the gate open" by comparing `GameState.clues_found.size()`
+	# against `TUNABLES.ch1_clue_unlock_threshold` directly, live, the same way this line
+	# does. Only the 4th clue's reward is a one-time achievement worth persisting.
+	if count >= TUNABLES.ch1_clue_total:
+		GameState.flags[FLAG_PERFECT_RUN] = true
+
 
 func _clue_key(id: StringName) -> String:
 	# &"ch1_clue_tree" -> "tree" - matches the ch1_court_clue_<key>.dtl filenames directly.
@@ -246,6 +301,7 @@ func _on_dialogic_signal(arg: Variant) -> void:
 	if arg == SIGNAL_ESTABLISHING_DONE:
 		_establishing_played = true
 		GameState.flags[FLAG_COURT_ESTABLISHING_SEEN] = true
+		_objective_banner.show_objective(tr("ch1.court.objective_intro"))
 
 
 ## The ground shadow has to be re-driven every frame now that Mosa can actually move - she
@@ -273,6 +329,11 @@ func _process(_delta: float) -> void:
 func _layout_for_viewport() -> void:
 	var vp_size := get_viewport().get_visible_rect().size
 	_camera.position = vp_size / 2.0
+
+	var margins := SafeAreaInsets.get_edge_margins(vp_size)
+	_objective_banner.position = Vector2(
+		margins["left"] + OBJECTIVE_BANNER_MARGIN, margins["top"] + OBJECTIVE_BANNER_MARGIN
+	)
 
 	var min_pos := _backdrop.floor_point_to_screen(WALK_MIN_ART_X)
 	var max_pos := _backdrop.floor_point_to_screen(WALK_MAX_ART_X)

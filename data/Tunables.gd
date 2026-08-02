@@ -29,3 +29,8 @@ extends Resource
 
 ## Save system — CANON #15
 @export var save_slot_count: int = 3
+
+## ObjectiveBanner — DM-021. mosa-ui-designer consult: fixed dwell, not scaled by string
+## length — generous enough to clear a 2-line/40-char Tagalog line at normal reading pace
+## with margin, verified against the longest real Ch1 objective string.
+@export var objective_banner_dwell_sec: float = 4.5
