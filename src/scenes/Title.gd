@@ -36,16 +36,6 @@ const BUTTON_GAP: float = 24.0
 
 ## Padding inside the wordmark's backing plate (DESIGN.md §6, 8px grid multiple).
 const PLATE_PADDING: float = 24.0
-## Gap between the wordmark plate and the subtitle caption below it - re-measured
-## directly against Mosa's own silhouette on this backdrop at 4:3 (mosa-critic, two
-## rounds this ticket): the inherited DM-068 v3 value (72px) was tuned for the old,
-## taller text-plate footprint and put the subtitle across her face once the plate
-## got shorter; round 1's fix (120px) cleared her face but grazed the case-folder
-## prop in her hands with zero margin. 140px clears the folder's own lower edge with
-## real breathing room, re-verified against a fresh render, not assumed from round 1.
-const SUBTITLE_GAP: float = 140.0
-const SUBTITLE_PADDING_H: float = 16.0
-const SUBTITLE_PADDING_V: float = 8.0
 
 var _palette: Palette = load("res://data/palette.tres")
 var _continue_button: ChromeButton
@@ -82,9 +72,11 @@ func _on_back_pressed() -> void:
 ## `gold`, not `gold-ink`, is correct here - `gold` is reserved for bg-deep/bg-base
 ## surfaces only (DESIGN.md §1), and this plate IS bg-deep.
 ##
-## The subtitle stays OUT of the art (mosa-narrative/CANON: the art says "Detective
-## Mosa" only, never "Check Muna Bago Chismis") - same small outlined caption below the
-## plate the old build used, unchanged tokens/position.
+## 2026-08-03, owner decision: the "Check Muna Bago Chismis" subtitle caption is
+## REMOVED from S1 outright (was a small `bg-deep` chip below the plate). This
+## reverses the earlier "subtitle survives, non-negotiable" instruction this same
+## screen was built under one day prior - a direct owner call, not a silent drift,
+## logged in `DESIGN.md §5`/`STATE.md`. Do not re-add it without a fresh owner ruling.
 func _build_wordmark_plate() -> void:
 	var margins := SafeAreaInsets.get_edge_margins(get_viewport_rect().size)
 	var left: float = margins["left"]
@@ -131,50 +123,6 @@ func _build_wordmark_plate() -> void:
 	_wordmark_plate.offset_right = left + LOGO_DISPLAY_WIDTH + PLATE_PADDING * 2.0
 	_wordmark_plate.offset_bottom = top + logo_height + PLATE_PADDING * 2.0
 	add_child(_wordmark_plate)
-
-	# mosa-critic (this ticket): the inherited "72px clearance" was tuned against the OLD
-	# text-plate's footprint (~330px tall). This plate is shorter (293px), so the same 72px
-	# gap put the subtitle back on Mosa's face - the exact defect DM-068 v3 already paid to
-	# fix once, regressed by inheriting a number instead of re-verifying it against this
-	# plate's own geometry. 120px re-measured directly against a real capture (below).
-	#
-	# Also mosa-critic: an outline-only label on this busy backdrop drops to 1.9:1 against
-	# the store shutter's capiz-lattice pattern - fails DESIGN.md §0.6 ("text always on a
-	# solid or high-opacity plate"). Given its own small `bg-deep` backing instead, same
-	# family as the wordmark plate above but quieter (no border) so it reads as a caption,
-	# not a second competing focal mass.
-	var subtitle := Label.new()
-	subtitle.text = tr("ui.title.subtitle")
-	subtitle.add_theme_font_size_override("font_size", 22)
-	subtitle.add_theme_color_override("font_color", _palette.surface)
-	subtitle.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	subtitle.position = Vector2(SUBTITLE_PADDING_H, SUBTITLE_PADDING_V)
-
-	var subtitle_backing_style := StyleBoxFlat.new()
-	subtitle_backing_style.bg_color = _palette.bg_deep
-	subtitle_backing_style.corner_radius_top_left = 8
-	subtitle_backing_style.corner_radius_top_right = 8
-	subtitle_backing_style.corner_radius_bottom_right = 8
-	subtitle_backing_style.corner_radius_bottom_left = 8
-
-	var subtitle_backing := Panel.new()
-	subtitle_backing.add_theme_stylebox_override("panel", subtitle_backing_style)
-	subtitle_backing.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	subtitle_backing.light_mask = 0
-	subtitle_backing.add_child(subtitle)
-
-	subtitle_backing.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	subtitle_backing.offset_left = left
-	subtitle_backing.offset_top = _wordmark_plate.offset_bottom + SUBTITLE_GAP
-	add_child(subtitle_backing)
-	await get_tree().process_frame
-	var subtitle_size := subtitle.get_combined_minimum_size()
-	subtitle_backing.offset_right = (
-		subtitle_backing.offset_left + subtitle_size.x + SUBTITLE_PADDING_H * 2.0
-	)
-	subtitle_backing.offset_bottom = (
-		subtitle_backing.offset_top + subtitle_size.y + SUBTITLE_PADDING_V * 2.0
-	)
 
 
 func _build_buttons() -> void:
