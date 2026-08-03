@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://src/scenes/MiniGameHost.gd" id="1_minigamehost"]
+
+[node name="MiniGameHost" type="CanvasLayer" unique_id=2026080301]
+script = ExtResource("1_minigamehost")

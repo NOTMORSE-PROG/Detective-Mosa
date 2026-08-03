@@ -106,6 +106,9 @@ COLOR_LITERAL_ALLOWLIST: dict[str, set[str]] = {
     "src/scenes/Continue.gd": {
         "Color(0, 0, 0, 0)",  # transparent stylebox fill, outline-only components
     },
+    "src/ui/LivesHUD.gd": {
+        "Color(0, 0, 0, 0)",  # transparent stylebox fill, "spent" bubble's outline-only state
+    },
     "src/scenes/parts/SalaBackdrop.gd": {
         "Color(1, 1, 1, 1)",  # white mask base for a procedural radial light texture, tinted after
     },
@@ -133,6 +136,16 @@ COLOR_LITERAL_ALLOWLIST: dict[str, set[str]] = {
 # GameState.gd (DM-049) is the only file allowed to write `trust`.
 TRUST_GUARD_EXCLUDES = {"src/autoload/GameState.gd"}
 TRUST_WRITE_RE = re.compile(r"\btrust\s*=[^=]")
+
+# MiniGame.gd (DM-022) is the only file allowed to define `submit()` - CANON #17's
+# batch-confirm rule needs to be structurally un-overridable, but GDScript has no `final`
+# (verified live, mosa-godot-engineer consult, DM-022: a probe subclass overriding
+# `submit()` directly compiled clean and silently bypassed the life-cost logic, zero
+# warnings). This guard is the actual enforcement, matching the trust guard's own shape for
+# a structurally identical rule.
+SUBMIT_GUARD_EXCLUDES = {"src/minigames/MiniGame.gd"}
+SUBMIT_GUARD_SCOPE_PREFIX = "src/minigames/"
+SUBMIT_OVERRIDE_RE = re.compile(r"^\s*func\s+submit\s*\(", re.MULTILINE)
 
 # AudioDirector (DM-011) is the only thing allowed to own an AudioStreamPlayer - every
 # other scene/script goes through AudioDirector.set_mood()/play_sfx() instead
@@ -364,6 +377,23 @@ def check_trust_guard() -> list[str]:
     return []
 
 
+def check_submit_guard() -> list[str]:
+    hits = []
+    for f in gd_files():
+        rel = str(f.relative_to(REPO_ROOT)).replace("\\", "/")
+        if not rel.startswith(SUBMIT_GUARD_SCOPE_PREFIX) or rel in SUBMIT_GUARD_EXCLUDES:
+            continue
+        text = f.read_text(encoding="utf-8", errors="replace")
+        if SUBMIT_OVERRIDE_RE.search(text):
+            hits.append(rel)
+    if hits:
+        sys.stderr.write("  ! submit guard: FAILED (submit() overridden outside MiniGame.gd)\n")
+        sys.stderr.write("".join(f"      {h}\n" for h in hits))
+        return ["submit guard"]
+    sys.stderr.write("  · submit guard ... ok\n")
+    return []
+
+
 def check_audio_guard() -> list[str]:
     hits = []
     for full in token_guard_scope():
@@ -463,6 +493,7 @@ def main() -> int:
         "trace": check_trace_guard,
         "token": check_token_guard,
         "trust": check_trust_guard,
+        "submit": check_submit_guard,
         "audio": check_audio_guard,
         "assets": check_asset_sizes,
         "contrast": check_contrast,

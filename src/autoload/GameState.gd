@@ -3,6 +3,7 @@ extends Node
 # AudioDirector -> SceneRouter. Pure state - depends on no other autoload.
 
 signal trust_changed(new_trust: int)
+signal lives_changed(new_lives: int)
 
 const TUNABLES: Tunables = preload("res://data/tunables.tres")
 
@@ -42,6 +43,28 @@ func apply_minigame_failure() -> void:
 	trust_changed.emit(trust)
 
 
+## SYS2, CANON #17 / DM-022 — the only place `lives` decrements. `MiniGame.submit()` is
+## the sole sanctioned caller (grep-guarded — `tools/check_quality.py`'s submit guard, plus
+## this project's own convention of a single mutator method per stat, matching
+## `apply_chismis()`/`register_clue()`'s own shape). Floors at 0, never negative.
+## Deliberately does NOT run the 0-lives checkpoint (refill + `apply_minigame_failure()`)
+## itself — that is a mini-game FLOW concept (a puzzle attempt resetting), not a fact about
+## the lives counter, so it stays out of this file the same way `chismis_locked` keeps
+## Chismis-specific flow out of `apply_minigame_failure()`.
+func spend_life() -> void:
+	lives = maxi(0, lives - 1)
+	lives_changed.emit(lives)
+
+
+## The 0-lives checkpoint's own refill half — called by `MiniGame.submit()` in the exact
+## same call where it observed `lives` hit 0, immediately before `apply_minigame_failure()`.
+## Never called anywhere else: a mid-mini-game refill outside that one checkpoint would let
+## a script silently undo the life cost `spend_life()` just charged.
+func refill_lives() -> void:
+	lives = TUNABLES.lives_start
+	lives_changed.emit(lives)
+
+
 ## DM-019 — the only write path into `clues_found`, so every caller (`Interactable.gd`
 ## today, whatever DM-020's real content adds later) gets the same idempotency guarantee
 ## for free rather than each re-implementing "check before append." Checked-before-append,
@@ -67,6 +90,7 @@ func reset_to_defaults() -> void:
 	clues_found = []
 	chismis_locked = false
 	trust_changed.emit(trust)
+	lives_changed.emit(lives)
 
 
 ## SaveManager's load path. Rehydrates a previously-computed value from disk rather
@@ -88,6 +112,7 @@ func restore_from_save(data: Dictionary) -> void:
 	# misread as already-locked - it legitimately hasn't made the choice yet.
 	chismis_locked = bool(data.get("chismis_locked", false))
 	trust_changed.emit(trust)
+	lives_changed.emit(lives)
 
 
 func to_save_dict() -> Dictionary:
