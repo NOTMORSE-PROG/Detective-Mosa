@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="ReverseSearchConfig" format=3]
+
+[ext_resource type="Script" path="res://src/minigames/ReverseSearchConfig.gd" id="1_config"]
+
+[resource]
+script = ExtResource("1_config")
+correct_ids = Array[StringName]([&"result_original"])
+decoy_ids = Array[StringName]([&"result_vintage", &"result_reupload", &"result_diff_location"])
+failure_hint_key = &"ui.minigame.reverse_search.failure_hint"
+solved_reveal_key = &"ui.minigame.reverse_search.solved_reveal"
+result_ids = Array[StringName]([&"result_original", &"result_vintage", &"result_reupload", &"result_diff_location"])
+result_date_keys = {
+&"result_original": &"ui.minigame.reverse_search.date_original",
+&"result_vintage": &"ui.minigame.reverse_search.date_vintage",
+&"result_reupload": &"ui.minigame.reverse_search.date_reupload",
+&"result_diff_location": &"ui.minigame.reverse_search.date_diff_location"
+}
+result_meta_keys = {
+&"result_original": &"ui.minigame.reverse_search.meta_original",
+&"result_vintage": &"ui.minigame.reverse_search.meta_vintage",
+&"result_reupload": &"ui.minigame.reverse_search.meta_reupload",
+&"result_diff_location": &"ui.minigame.reverse_search.meta_diff_location"
+}
+result_watermark_style = {
+&"result_original": &"clean",
+&"result_vintage": &"vintage",
+&"result_reupload": &"reupload",
+&"result_diff_location": &"diff_location"
+}
+result_compression = {
+&"result_original": 0.35,
+&"result_vintage": 0.0,
+&"result_reupload": 0.8,
+&"result_diff_location": 0.15
+}

@@ -23,3 +23,12 @@ extends Resource
 ## per-mark reveal). Empty string is a valid placeholder while a concrete game is still
 ## under construction - `MiniGameHost` simply shows nothing if unset, never a raw key.
 @export var failure_hint_key: StringName = &""
+## i18n key for a positive reveal shown on SOLVE, reusing the same hint-chip slot/geometry
+## `failure_hint_key` already uses (DM-024, mosa-ui-designer consult - "the explanation
+## always lives here," win or lose, matching this project's calm register rather than
+## inventing a separate triumphant state). Empty string (the default) keeps every existing
+## mini-game's current behaviour - the hint chip simply hides on solve, unchanged. A concrete
+## game sets this only when the win condition itself carries information the player needs
+## to read, not just "correct!" (`DM-024`'s own AC: selecting the true original must reveal
+## it was published over a year ago - that reveal IS the MIL1 payoff, not a bare success flag).
+@export var solved_reveal_key: StringName = &""

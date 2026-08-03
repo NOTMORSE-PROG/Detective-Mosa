@@ -255,9 +255,19 @@ func _on_submit_cancelled() -> void:
 ## as "hasn't started" just as much as it reads as "nothing left to submit." The lock rings
 ## carry the real state; this only stops the one thing every player habitually re-checks
 ## (the CTA itself) from actively lying about it.
+##
+## `solved_reveal_key` branch added DM-024 (mosa-ui-designer consult): reuses the exact same
+## hint-chip slot/geometry the failure path already owns rather than inventing a second win-
+## only surface - "the explanation always lives here," win or lose. Every mini-game before
+## DM-024 leaves this key empty and keeps today's hide-on-solve behaviour unchanged.
 func _on_solved(report: AttemptReport) -> void:
-	_hint_clip.modulate.a = 0.0
 	_submit_button.text = tr("ui.minigame.solved")
+	if _config.solved_reveal_key != &"":
+		_hint_label.text = tr(String(_config.solved_reveal_key))
+		_hint_clip.modulate.a = 1.0
+		_warn_if_overflowing.call_deferred()
+	else:
+		_hint_clip.modulate.a = 0.0
 	mini_game_solved.emit(report)
 
 
