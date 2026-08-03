@@ -56,14 +56,26 @@ const CONFIRM_DIALOG_SCENE_PATH: String = "res://src/scenes/ConfirmDialog.tscn"
 const EDGE_MARGIN: float = 16.0
 ## Top reserved strip: 16 margin + LivesHUD's own ~50px height + 16 gap, rounded to grid.
 const PUZZLE_TOP_STRIP: float = 88.0
-## Bottom reserved strip: 16 margin + 120 submit + 24 gap + 64 hint - held constant whether
-## or not the hint is currently visible.
-const PUZZLE_BOTTOM_STRIP: float = 224.0
+## Bottom reserved strip: 16 margin + 120 submit + 24 gap + 116 hint + 24 gap - held constant
+## whether or not the hint is currently visible. 116px, not 64 (real finding, DM-023: this
+## ticket's first REAL failure-hint copy needed 2 lines, the same "a placeholder test
+## string only ever proved the 1-line case, real content didn't fit" gap `ObjectiveBanner`
+## already hit - a 2-line 26px label measured 77px of CONTENT there, so this box's own
+## 32px of margin (16 top/bottom, see `_build_failure_hint()`) needs at least 109px total;
+## rounded up to 116 for real margin, not a bare minimum). The trailing +24 is a second,
+## separate post-close correction (mosa-critic pass, DM-023): this strip's own total was
+## previously spent entirely on margin/submit/gap/hint with nothing held back for the
+## puzzle content's OWN bottom edge, so `_puzzle_root`'s computed height and the hint's
+## computed top landed on the exact same y-coordinate by construction - measured as a
+## literal 1px seam in the real render, not a rounding artefact. This gap is the puzzle's
+## own clearance, distinct from `HINT_GAP_ABOVE_SUBMIT` (which is the hint's clearance from
+## the button below it) - two different seams, so two different constants, not one reused.
+const PUZZLE_BOTTOM_STRIP: float = 300.0
 const HINT_GAP_ABOVE_SUBMIT: float = 24.0
 const HINT_WIDTH: float = 520.0
-const HINT_HEIGHT: float = 64.0
+const HINT_HEIGHT: float = 116.0
 const HINT_FONT_SIZE: int = 26
-const HINT_MAX_LINES: int = 1
+const HINT_MAX_LINES: int = 2
 ## Clears the 96px touch floor with real margin, and reads as a substantial primary CTA
 ## next to a likely-≤96px in-content mark (mosa-ui-designer consult's own "size is one of
 ## three independent differentiators" reasoning).
@@ -145,7 +157,13 @@ func _build_failure_hint() -> void:
 	_hint_clip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_hint_clip.light_mask = 0
 	_hint_clip.custom_minimum_size = Vector2(HINT_WIDTH, HINT_HEIGHT)
-	_hint_clip.visible = false
+	# `modulate.a`, not `.visible` (real render finding, DM-023, matching `ObjectiveBanner`'s
+	# own already-working pattern): a `Control` with `visible = false` appears to skip
+	# Container layout recomputation for its own subtree, so flipping it back to `true`
+	# left the label's own MarginContainer-driven width stuck at a stale near-zero value
+	# even a full frame later - `modulate.a = 0` keeps the subtree "visible" from the
+	# layout system's own point of view (just fully transparent), so it never goes stale.
+	_hint_clip.modulate.a = 0.0
 	add_child(_hint_clip)
 
 	var panel := PanelContainer.new()
@@ -175,6 +193,17 @@ func _build_failure_hint() -> void:
 	_hint_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_hint_label.add_theme_font_size_override("font_size", HINT_FONT_SIZE)
 	_hint_label.add_theme_color_override("font_color", PALETTE.chip_ink)
+	# Real bug found via render, DM-023: inside a `MarginContainer`, a `Label` with
+	# `autowrap_mode` enabled reports its OWN minimum size as roughly one character wide -
+	# autowrap can always shrink to fit by wrapping harder - so without an explicit expand
+	# flag, `MarginContainer`'s layout pass sized this label to that tiny self-reported
+	# minimum instead of stretching it to fill the row, which is what produced the "one
+	# character per line" explosion measured at both 31 and 57 lines. `ObjectiveBanner`'s
+	# own label never hit this because it uses `PRESET_FULL_RECT` directly on a plain
+	# `Control` parent, bypassing Container-driven sizing entirely - this file's own
+	# MarginContainer chain needs the flag instead.
+	_hint_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_hint_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	margin.add_child(_hint_label)
 
 
@@ -193,8 +222,9 @@ func launch(minigame_scene: PackedScene, config: MiniGameConfig) -> void:
 	_mini_game.solved.connect(_on_solved)
 	_mini_game.failed.connect(_on_failed)
 	_mini_game.setup(config)
+	_submit_button.text = tr("ui.minigame.submit")
 	_submit_button.disabled = true
-	_hint_clip.visible = false
+	_hint_clip.modulate.a = 0.0
 
 
 func _on_marks_changed(has_pending_marks: bool) -> void:
@@ -218,15 +248,23 @@ func _on_submit_cancelled() -> void:
 	SceneRouter.back_blocked = false
 
 
+## `_submit_button.text` swap, post-close correction (mosa-critic pass, DM-023): pixel-
+## sampled identical between the solved and fresh captures - `_on_marks_changed(false)`
+## (fired from `MiniGame.submit()` before its own `solved` signal, see that file's own
+## ordering) already disables the button correctly, but "disabled, unchanged label" reads
+## as "hasn't started" just as much as it reads as "nothing left to submit." The lock rings
+## carry the real state; this only stops the one thing every player habitually re-checks
+## (the CTA itself) from actively lying about it.
 func _on_solved(report: AttemptReport) -> void:
-	_hint_clip.visible = false
+	_hint_clip.modulate.a = 0.0
+	_submit_button.text = tr("ui.minigame.solved")
 	mini_game_solved.emit(report)
 
 
 func _on_failed(report: AttemptReport) -> void:
 	if _config.failure_hint_key != &"":
 		_hint_label.text = tr(String(_config.failure_hint_key))
-		_hint_clip.visible = true
+		_hint_clip.modulate.a = 1.0
 		_warn_if_overflowing.call_deferred()
 	mini_game_failed.emit(report)
 
@@ -261,6 +299,16 @@ func _layout_for_viewport() -> void:
 		submit_right - _submit_button.size.x, submit_bottom - _submit_button.size.y
 	)
 
+	# Real bug found via render, DM-023: `custom_minimum_size` alone does NOT set a plain
+	# `Control`'s actual `.size` outside a Container - unlike `LivesHUD` (an `HBoxContainer`,
+	# self-sizing from its own children) or `_submit_button` (a real `Button`, which
+	# computes its own minimum size from its theme/label automatically), `_hint_clip` is a
+	# bare `Control` added directly to this `CanvasLayer`'s tree with no Container driving
+	# its layout - its `.size` silently stayed at the engine default (near zero) forever,
+	# so the hint label's own autowrap had almost no width to work with and wrapped every
+	# real string into dozens of lines. `.size` must be assigned explicitly here, the same
+	# way `_puzzle_root.size` already is a few lines up.
+	_hint_clip.size = Vector2(HINT_WIDTH, HINT_HEIGHT)
 	_hint_clip.position = Vector2(
 		submit_right - HINT_WIDTH, _submit_button.position.y - HINT_GAP_ABOVE_SUBMIT - HINT_HEIGHT
 	)
