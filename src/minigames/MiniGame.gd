@@ -99,8 +99,16 @@ func is_marked(id: StringName) -> bool:
 	return id in _marked
 
 
+## True either when there's something newly marked to evaluate, OR when every correct id
+## is already locked in from a prior submission and nothing new needs marking to confirm
+## it - the second clause exists because of the decoy-taint fix `submit()` documents below:
+## without it, a player whose tainted submission already locked every correct id would
+## have nothing left to legitimately re-mark (every correct hotspot is locked and can't be
+## re-tapped; the only remaining tappable target is the decoy, which would just re-taint
+## the next submission) - a genuine soft-lock, caught by writing this exact scenario as a
+## test before shipping, not found on a device.
 func has_pending_marks() -> bool:
-	return not _marked.is_empty()
+	return not _marked.is_empty() or _locked_ids.size() >= _config.correct_ids.size()
 
 
 ## Self-reported by the concrete mini-game's own win-condition logic, never inferred here
@@ -121,6 +129,23 @@ func submit() -> void:
 
 	_report.submissions_used += 1
 
+	# A submission that includes ANY decoy id can never resolve as solved, even if every
+	# correct id is also present in that same submission - real bug found and fixed during
+	# DM-023's own pre-implementation consult (mosa-minigame-designer, traced live against
+	# this exact method): the original check was only `_locked_ids.size() >=
+	# correct_ids.size()`, so marking literally every hotspot on screen - every correct id
+	# AND every decoy - in one single submission solved instantly with zero discrimination
+	# performed. That is precisely the "fake heuristic" failure mode CANON #17/FEATURES.md
+	# warn a mini-game must never teach. Correct ids still lock in normally even on a
+	# decoy-tainted submission (progress is never lost) - only the SOLVE itself is withheld
+	# until a decoy-free submission, which is the actual skill being tested: at some point
+	# the player must consciously exclude what they once suspected.
+	var decoy_present := false
+	for id: StringName in _marked:
+		if id in _config.decoy_ids:
+			decoy_present = true
+			break
+
 	for id: StringName in _marked.duplicate():
 		if id in _config.correct_ids:
 			_locked_ids.append(id)
@@ -140,7 +165,7 @@ func submit() -> void:
 			still_missing.append(id)
 	_report.marks_missed = still_missing
 
-	if _locked_ids.size() >= _config.correct_ids.size():
+	if _locked_ids.size() >= _config.correct_ids.size() and not decoy_present:
 		_solved = true
 		_report.marks_correct = _locked_ids.duplicate()
 		# Partial measurement, honestly scoped (real gap, not silently absorbed): this is

@@ -76,6 +76,47 @@ func test_wrong_submission_costs_exactly_one_life_and_does_not_solve() -> void:
 	assert_eq(GameState.lives, lives_before - 1)
 
 
+## Real bug found and fixed via a DM-023 pre-implementation consult (mosa-minigame-designer,
+## traced live against this exact method): the original check only compared
+## `_locked_ids.size()` against `correct_ids.size()`, so marking literally every hotspot on
+## screen - every correct id AND every decoy, all in one submission - solved instantly with
+## zero discrimination performed. That's precisely the "fake heuristic" failure mode CANON
+## #17/FEATURES.md warn a mini-game must never teach.
+func test_submitting_every_correct_id_plus_a_decoy_does_not_solve() -> void:
+	var config := _make_config([&"a", &"b"], [&"decoy"])
+	var game := _make_game(config)
+	watch_signals(game)
+
+	game.mark(&"a")
+	game.mark(&"b")
+	game.mark(&"decoy")
+	game.submit()
+
+	assert_signal_not_emitted(game, "solved")
+	assert_signal_emitted(game, "failed")
+	# Progress is never lost, even on a decoy-tainted submission - only the SOLVE is
+	# withheld until a decoy-free submission.
+	assert_true(game.is_locked(&"a"))
+	assert_true(game.is_locked(&"b"))
+
+
+## The player must submit the SAME correct set again, decoy-free, to actually solve -
+## proving the fix doesn't just block the tainted submission, it requires real convergence.
+func test_solving_after_a_decoy_tainted_submission_requires_a_clean_resubmit() -> void:
+	var config := _make_config([&"a", &"b"], [&"decoy"])
+	var game := _make_game(config)
+
+	game.mark(&"a")
+	game.mark(&"b")
+	game.mark(&"decoy")
+	game.submit()  # tainted - does not solve, per the test above
+
+	watch_signals(game)
+	game.submit()  # nothing newly marked - a's and b's are already locked, decoy cleared
+
+	assert_signal_emitted(game, "solved")
+
+
 ## CANON #17: correct marks lock in ACROSS submissions - the player converges, not restarts.
 func test_correct_marks_persist_across_a_failed_submission() -> void:
 	var config := _make_config([&"a", &"b"], [&"decoy"])
