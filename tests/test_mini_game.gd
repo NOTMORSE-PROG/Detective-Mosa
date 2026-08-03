@@ -94,14 +94,18 @@ func test_submitting_every_correct_id_plus_a_decoy_does_not_solve() -> void:
 
 	assert_signal_not_emitted(game, "solved")
 	assert_signal_emitted(game, "failed")
-	# Progress is never lost, even on a decoy-tainted submission - only the SOLVE is
-	# withheld until a decoy-free submission.
-	assert_true(game.is_locked(&"a"))
-	assert_true(game.is_locked(&"b"))
+	# Second, deeper fix (DM-024's own pre-implementation consult): a decoy-tainted
+	# submission locks in NOTHING, not even the correct ids also present in it - the first
+	# fix above still let them lock in "so progress isn't lost," which is exactly what let a
+	# player mark literally everything at once, get full credit instantly, then solve for
+	# free on an empty resubmit. See `MiniGame.submit()`'s own doc comment for the full trace.
+	assert_false(game.is_locked(&"a"))
+	assert_false(game.is_locked(&"b"))
 
 
-## The player must submit the SAME correct set again, decoy-free, to actually solve -
-## proving the fix doesn't just block the tainted submission, it requires real convergence.
+## The player must re-mark the SAME correct set and resubmit decoy-free to actually solve -
+## proving the fix doesn't just block the tainted submission, it requires a genuinely clean
+## submission, not a free empty "confirm" once everything happens to already be locked.
 func test_solving_after_a_decoy_tainted_submission_requires_a_clean_resubmit() -> void:
 	var config := _make_config([&"a", &"b"], [&"decoy"])
 	var game := _make_game(config)
@@ -109,25 +113,27 @@ func test_solving_after_a_decoy_tainted_submission_requires_a_clean_resubmit() -
 	game.mark(&"a")
 	game.mark(&"b")
 	game.mark(&"decoy")
-	game.submit()  # tainted - does not solve, per the test above
+	game.submit()  # tainted - locks nothing, per the test above
 
 	watch_signals(game)
-	game.submit()  # nothing newly marked - a's and b's are already locked, decoy cleared
+	game.mark(&"a")
+	game.mark(&"b")
+	game.submit()  # same set, decoy excluded this time
 
 	assert_signal_emitted(game, "solved")
 
 
 ## CANON #17: correct marks lock in ACROSS submissions - the player converges, not restarts.
+## Uses a CLEAN but incomplete submission (no decoy) - the decoy-tainted case has its own
+## test above, and conflating the two hid a real bug once (see `submit()`'s own doc comment).
 func test_correct_marks_persist_across_a_failed_submission() -> void:
-	var config := _make_config([&"a", &"b"], [&"decoy"])
+	var config := _make_config([&"a", &"b"])
 	var game := _make_game(config)
 
 	game.mark(&"a")
-	game.mark(&"decoy")
-	game.submit()  # wrong - "a" locks, "decoy" doesn't, one life spent
+	game.submit()  # correct but incomplete - "a" locks, "b" still missing, one life spent
 
 	assert_true(game.is_locked(&"a"))
-	assert_false(game.is_marked(&"decoy"))
 
 	game.mark(&"b")
 	game.submit()  # "b" completes the set
@@ -204,10 +210,11 @@ func test_attempt_report_populates_all_fields_on_solve() -> void:
 
 	game.mark(&"decoy")
 	game.mark(&"a")
-	game.submit()  # wrong - locks "a", records the decoy, spends 1 life
+	game.submit()  # tainted - locks nothing, records the decoy, spends 1 life
 	game.report_technique(&"reverse_image_search")
+	game.mark(&"a")
 	game.mark(&"b")
-	game.submit()  # completes the set
+	game.submit()  # clean resubmit of the same set completes it
 
 	var report: AttemptReport = get_signal_parameters(game, "solved")[0]
 	assert_eq(report.marks_correct, [&"a", &"b"])
@@ -230,6 +237,34 @@ func test_report_technique_is_idempotent() -> void:
 
 	var report: AttemptReport = get_signal_parameters(game, "solved")[0]
 	assert_eq(report.techniques_used, [&"timestamp_check"])
+
+
+## The exact exploit trace found during DM-024's own pre-implementation consult (mosa-
+## minigame-designer, traced live against `submit()`'s real code): mark literally EVERY
+## hotspot on screen - every correct id AND every decoy - submit once (tainted, fails), then
+## resubmit with nothing newly marked. Before this fix, the first submission still locked in
+## every correct id despite the decoy, and the second (empty) submission solved for free -
+## a guaranteed 2-submission, 1-life win for ANY config, with zero discrimination performed.
+## Must now require a genuinely clean re-mark to ever solve.
+func test_marking_everything_then_resubmitting_empty_does_not_solve_for_free() -> void:
+	var config := _make_config([&"a", &"b", &"c"], [&"decoy1", &"decoy2"])
+	var game := _make_game(config)
+	watch_signals(game)
+	var lives_before: int = GameState.lives
+
+	game.mark(&"a")
+	game.mark(&"b")
+	game.mark(&"c")
+	game.mark(&"decoy1")
+	game.mark(&"decoy2")
+	game.submit()  # tainted - must lock nothing
+	game.submit()  # nothing newly marked - must be a no-op, not a free solve
+
+	assert_signal_not_emitted(game, "solved")
+	assert_eq(GameState.lives, lives_before - 1, "only the one real submission may cost a life")
+	assert_false(game.is_locked(&"a"))
+	assert_false(game.is_locked(&"b"))
+	assert_false(game.is_locked(&"c"))
 
 
 ## CANON #8: `apply_minigame_failure()` fires exactly once per 0-lives checkpoint, never

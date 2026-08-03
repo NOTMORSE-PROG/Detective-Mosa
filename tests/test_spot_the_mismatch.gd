@@ -104,7 +104,12 @@ func test_solving_reports_the_cross_reference_technique() -> void:
 	assert_true(report.techniques_used.has(&"cross_reference_current_photo"))
 
 
-func test_a_decoy_tainted_submission_leaves_the_decoy_marker_unlocked() -> void:
+## Post-close correction, found during DM-024's own pre-implementation consult: a
+## decoy-tainted submission now locks in NOTHING, not even the correct ids marked alongside
+## the decoy - see `MiniGame.submit()`'s own doc comment for why the earlier "still locks
+## in normally" behavior was itself a real exploit (mark everything, resubmit empty, solve
+## for free). Both markers stay unlocked here on purpose.
+func test_a_decoy_tainted_submission_leaves_both_markers_unlocked() -> void:
 	var game := _make_game()
 	var markers: Dictionary = game.get("_markers")
 
@@ -113,4 +118,4 @@ func test_a_decoy_tainted_submission_leaves_the_decoy_marker_unlocked() -> void:
 	game.submit()
 
 	assert_false(markers[&"tricycle"].get("_lock_ring").visible)
-	assert_true(markers[&"sign"].get("_lock_ring").visible)
+	assert_false(markers[&"sign"].get("_lock_ring").visible)

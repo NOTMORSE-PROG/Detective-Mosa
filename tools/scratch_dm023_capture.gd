@@ -55,8 +55,12 @@ func _run() -> void:
 		await process_frame
 		_save("dm023-s09-failed-hint", res)
 
-		# Finish the solve: mark the remaining 3 correct ids (decoy already cleared by the
-		# failed submit above) and submit clean.
+		# Finish the solve: a decoy-tainted submission now locks in nothing (MiniGame.gd
+		# post-close correction, DM-024's own pre-implementation consult - marking every
+		# correct id AND every decoy in one submission used to still lock all correct ids in,
+		# which combined with an empty resubmit was a guaranteed free win). "sign" must be
+		# re-marked here alongside the other 3, not assumed already locked.
+		mini_game.call("mark", &"sign")
 		mini_game.call("mark", &"tree")
 		mini_game.call("mark", &"net")
 		mini_game.call("mark", &"tarp")

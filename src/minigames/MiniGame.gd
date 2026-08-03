@@ -99,16 +99,15 @@ func is_marked(id: StringName) -> bool:
 	return id in _marked
 
 
-## True either when there's something newly marked to evaluate, OR when every correct id
-## is already locked in from a prior submission and nothing new needs marking to confirm
-## it - the second clause exists because of the decoy-taint fix `submit()` documents below:
-## without it, a player whose tainted submission already locked every correct id would
-## have nothing left to legitimately re-mark (every correct hotspot is locked and can't be
-## re-tapped; the only remaining tappable target is the decoy, which would just re-taint
-## the next submission) - a genuine soft-lock, caught by writing this exact scenario as a
-## test before shipping, not found on a device.
+## True when there's something newly marked to evaluate. `_locked_ids` reaching full size
+## is no longer a second reason to return true here (real post-close correction, found
+## during `DM-024`'s own pre-implementation consult - see `submit()`'s own doc comment for
+## why): under the current lock-in rule, `_locked_ids` can only ever reach
+## `_config.correct_ids.size()` inside a submission that ALSO solves in that same call, so
+## "everything is locked but `_solved` is still false" is unreachable - once solved,
+## `submit()`'s own top guard rejects every further call regardless of this method.
 func has_pending_marks() -> bool:
-	return not _marked.is_empty() or _locked_ids.size() >= _config.correct_ids.size()
+	return not _marked.is_empty()
 
 
 ## Self-reported by the concrete mini-game's own win-condition logic, never inferred here
@@ -129,27 +128,35 @@ func submit() -> void:
 
 	_report.submissions_used += 1
 
-	# A submission that includes ANY decoy id can never resolve as solved, even if every
-	# correct id is also present in that same submission - real bug found and fixed during
-	# DM-023's own pre-implementation consult (mosa-minigame-designer, traced live against
-	# this exact method): the original check was only `_locked_ids.size() >=
-	# correct_ids.size()`, so marking literally every hotspot on screen - every correct id
-	# AND every decoy - in one single submission solved instantly with zero discrimination
-	# performed. That is precisely the "fake heuristic" failure mode CANON #17/FEATURES.md
-	# warn a mini-game must never teach. Correct ids still lock in normally even on a
-	# decoy-tainted submission (progress is never lost) - only the SOLVE itself is withheld
-	# until a decoy-free submission, which is the actual skill being tested: at some point
-	# the player must consciously exclude what they once suspected.
 	var decoy_present := false
 	for id: StringName in _marked:
 		if id in _config.decoy_ids:
 			decoy_present = true
 			break
 
-	for id: StringName in _marked.duplicate():
-		if id in _config.correct_ids:
-			_locked_ids.append(id)
-		elif id in _config.decoy_ids and id not in _report.decoys_marked:
+	# Correct ids lock in ONLY from a submission with no decoy present - real post-close
+	# correction, DM-024's own pre-implementation consult (mosa-minigame-designer, traced
+	# live against this exact method for a second time). The FIRST fix here (a decoy-
+	# tainted submission can never SOLVE) still let correct ids lock in from that same
+	# tainted submission "so progress isn't lost" - but that let a player mark literally
+	# every hotspot on screen, correct ids AND every decoy, in ONE submission: every correct
+	# id locked in immediately despite zero discrimination performed, then a second, empty
+	# "confirm" resubmit solved for free (`has_pending_marks()`'s own prior broadening let an
+	# empty `_marked` through once everything was already locked). That is a guaranteed
+	# 2-submission, 1-life win for ANY config, regardless of decoy count or puzzle size -
+	# exactly the "fake heuristic"/over-marking failure mode CANON #17 and every mini-game
+	# ticket's own edge cases warn against, just easier to see on Reverse Search's single-
+	# answer shape than on Spot the Mismatch's partial-credit one. Withholding lock-in (not
+	# just the solve) on a tainted submission closes it: marking everything now costs a life
+	# AND discards that attempt's correct marks, forcing a genuinely clean re-mark next time
+	# - "progress is never lost" now means a mark ONCE LOCKED IN stays locked, not that a
+	# tainted submission owes credit for what it got right.
+	if not decoy_present:
+		for id: StringName in _marked:
+			if id in _config.correct_ids:
+				_locked_ids.append(id)
+	for id: StringName in _marked:
+		if id in _config.decoy_ids and id not in _report.decoys_marked:
 			_report.decoys_marked.append(id)
 	_marked.clear()
 	marks_changed.emit(false)
