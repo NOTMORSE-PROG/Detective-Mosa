@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="EvidencePairsConfig" format=3]
+
+[ext_resource type="Script" path="res://src/minigames/EvidencePairsConfig.gd" id="1_config"]
+
+[resource]
+script = ExtResource("1_config")
+correct_ids = Array[StringName]([&"sign", &"tree", &"net", &"tarp"])
+decoy_ids = Array[StringName]([&"sign_wrong_link", &"tree_wrong_link", &"net_wrong_link", &"tarp_wrong_link"])
+failure_hint_key = &"ui.minigame.evidence_pairs.failure_hint"
+pair_ids = Array[StringName]([&"sign", &"tree", &"net", &"tarp"])
+clue_text_keys = {
+&"sign": &"ui.minigame.evidence_pairs.clue_sign",
+&"tree": &"ui.minigame.evidence_pairs.clue_tree",
+&"net": &"ui.minigame.evidence_pairs.clue_net",
+&"tarp": &"ui.minigame.evidence_pairs.clue_tarp"
+}
+proof_text_keys = {
+&"sign": &"ui.minigame.evidence_pairs.proof_sign",
+&"tree": &"ui.minigame.evidence_pairs.proof_tree",
+&"net": &"ui.minigame.evidence_pairs.proof_net",
+&"tarp": &"ui.minigame.evidence_pairs.proof_tarp"
+}
