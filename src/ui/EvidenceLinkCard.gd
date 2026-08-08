@@ -38,6 +38,8 @@ const LOCK_RING_SCALE: float = 1.6
 var _state: State = State.IDLE
 var _label: Label
 var _backing_style: StyleBoxFlat
+## See `_on_gui_input()`'s own doc comment for why this debounce exists.
+var _press_active: bool = false
 
 
 func _ready() -> void:
@@ -112,14 +114,25 @@ func set_state(state: State) -> void:
 		Juice.pop(self)
 
 
+## `_press_active` debounce - real bug found via a genuine Tier 2 emulator touch pass
+## (`tickets/README.md §5`): Godot's own "emulate mouse from touch" delivers a real
+## `InputEventScreenTouch` AND a synthesized `InputEventMouseButton` for the SAME physical
+## tap, so accepting either as an independent trigger fired `pressed` TWICE per real tap -
+## on a two-step select gesture this meant a single tap could arm-then-immediately-unarm
+## itself. See `HotspotMarker.gd`'s own doc comment for the full trace (same fix, same
+## root cause, found on the same device pass).
 func _on_gui_input(event: InputEvent) -> void:
 	if not (event is InputEventMouseButton or event is InputEventScreenTouch):
 		return
-	if not event.pressed:
-		return
 	if _state == State.LOCKED:
 		return
-	pressed.emit(card_id)
+	if event.pressed:
+		if _press_active:
+			return
+		_press_active = true
+		pressed.emit(card_id)
+	else:
+		_press_active = false
 
 
 func _draw() -> void:

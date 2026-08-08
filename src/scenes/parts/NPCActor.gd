@@ -33,6 +33,8 @@ const TAP_RADIUS: float = 60.0
 @export var world_scale: float = 0.24
 
 var _sprite: Sprite2D
+## See `_on_input_event()`'s own doc comment for why this debounce exists.
+var _press_active: bool = false
 
 
 func _ready() -> void:
@@ -57,16 +59,27 @@ func _ready() -> void:
 	input_event.connect(_on_input_event)
 
 
+## Real event-double-delivery finding (found this session via a genuine Tier 2 emulator
+## touch pass, `tickets/README.md §5` - see `HotspotMarker.gd`'s own doc comment for the
+## full trace): Godot's "emulate mouse from touch" delivers a real `InputEventScreenTouch`
+## AND a synthesized `InputEventMouseButton` for the SAME physical tap. Without this guard, a
+## single real tap could call `Dialogic.start()` TWICE in immediate succession - worse than
+## `Interactable.gd`'s own version of this bug, since starting the same timeline twice is not
+## obviously idempotent the way re-examining a clue is.
 func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> void:
 	if not (event is InputEventMouseButton or event is InputEventScreenTouch):
 		return
 	if not event.pressed:
+		_press_active = false
+		return
+	if _press_active:
 		return
 	# Same guard as Interactable.gd, same reason (mosa-godot-engineer, DM-019 finding):
 	# Control.mouse_filter=STOP does not suppress Area2D picking for the same point.
 	var touch_controls: Node = get_tree().get_first_node_in_group(&"touch_controls")
 	if touch_controls != null and touch_controls.is_point_inside_joystick(event.position):
 		return
+	_press_active = true
 	start_interview()
 
 

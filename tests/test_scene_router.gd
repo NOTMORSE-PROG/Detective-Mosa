@@ -13,6 +13,23 @@ func after_each() -> void:
 	SceneRouter.back_handler = Callable()
 
 
+## Real bug found via a genuine Tier 2 emulator touch pass (`tickets/README.md §5`):
+## `open_overlay()` never set an explicit `CanvasLayer.layer`, defaulting to Godot's own
+## default (1) - well below `MiniGameHost`'s own `layer = 999`, so `ConfirmDialog` rendered
+## completely hidden and unreachable behind every mini-game. No desktop capture or scripted
+## `submit()` call could ever have caught this - only a real overlay opened over a real
+## higher-layer host reveals it, which is exactly why this stayed invisible until a real
+## touch pass. Asserts the fix directly: every overlay must sit above the highest content
+## layer used anywhere in the project (999, `MiniGameHost.gd`/`ObjectiveBanner`).
+func test_open_overlay_uses_a_layer_above_every_known_content_layer() -> void:
+	var layer: CanvasLayer = SceneRouter.open_overlay("res://src/scenes/PauseMenu.tscn")
+	await get_tree().process_frame
+
+	assert_gt(
+		layer.layer, 999, "overlays must render/receive input above MiniGameHost's own layer = 999"
+	)
+
+
 func test_open_overlay_pauses_the_tree() -> void:
 	SceneRouter.open_overlay("res://src/scenes/PauseMenu.tscn")
 	await get_tree().process_frame

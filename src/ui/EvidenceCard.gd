@@ -38,6 +38,8 @@ var _marker: HotspotMarker
 var _tab: PanelContainer
 var _tab_label: Label
 var _inspected_glyph: Control
+## See `_on_thumbnail_gui_input()`'s own doc comment for why this debounce exists.
+var _press_active: bool = false
 
 
 func _ready() -> void:
@@ -152,12 +154,23 @@ func set_inspected(inspected: bool) -> void:
 	_inspected_glyph.visible = inspected
 
 
+## `_press_active` debounce - real bug found via a genuine Tier 2 emulator touch pass
+## (`tickets/README.md §5`): Godot's own "emulate mouse from touch" delivers a real
+## `InputEventScreenTouch` AND a synthesized `InputEventMouseButton` for the SAME physical
+## tap, so accepting either as an independent trigger fired this signal TWICE per real tap.
+## Harmless here today (`inspect_requested` is idempotent), but left unguarded would silently
+## break the moment anything downstream stops being idempotent - see `HotspotMarker.gd`'s own
+## doc comment for the full trace (same fix, same root cause, found on the same device pass).
 func _on_thumbnail_gui_input(event: InputEvent) -> void:
 	if not (event is InputEventMouseButton or event is InputEventScreenTouch):
 		return
-	if not event.pressed:
-		return
-	inspect_requested.emit(card_id)
+	if event.pressed:
+		if _press_active:
+			return
+		_press_active = true
+		inspect_requested.emit(card_id)
+	else:
+		_press_active = false
 
 
 ## Echoes `PhoneScreenshotOverlay._build_inspected_glyph()` verbatim (gold-ink, not chip-ink -

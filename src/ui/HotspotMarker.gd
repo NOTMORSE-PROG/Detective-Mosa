@@ -55,6 +55,8 @@ const LOCK_RING_WIDTH: float = 2.5
 var _outline: Line2D
 var _fill: Polygon2D
 var _lock_ring: Line2D
+## See `_on_gui_input()`'s own doc comment for why this debounce exists.
+var _press_active: bool = false
 
 
 func _ready() -> void:
@@ -64,6 +66,22 @@ func _ready() -> void:
 	# assumed from `Interactable`'s own precedent - mosa-ui-designer consult named this
 	# project's own floor explicitly for this ticket).
 	custom_minimum_size = Vector2(120, 120)
+	# Real bug found via a genuine Tier 2 emulator touch pass (not desktop, not a scratch
+	# script calling mark() directly - this is the first time this session ANY real
+	# gui_input event was ever delivered to this control): `custom_minimum_size` alone does
+	# NOT set a plain Control's actual `.size` outside a Container (the same real gap
+	# MiniGameHost's own hint-clip and both mini-games' own inspect modals already hit this
+	# session) - every caller (`SpotTheMismatch`, `EvidenceCard`) sets this marker's
+	# `.position` but never its `.size`, so the control's real hit-test rect stayed at the
+	# engine default (0,0). The drawn icon still rendered correctly regardless (its Line2D/
+	# Polygon2D children draw at fixed offsets from `custom_minimum_size/2`, independent of
+	# the parent Control's own `.size`), which is exactly why this was invisible to every
+	# render capture and passed every GUT test - a zero-size hit-box is indistinguishable
+	# from a working one until a REAL tap is delivered through the engine's own input
+	# pipeline, which no test in this project did until this emulator pass. Every hotspot
+	# marker in every mini-game shipped this session was silently untappable on a real
+	# device.
+	size = custom_minimum_size
 	pivot_offset = custom_minimum_size / 2.0
 	gui_input.connect(_on_gui_input)
 
@@ -104,12 +122,26 @@ func _ready() -> void:
 	add_child(_fill)
 
 
+## Real bug found via a genuine Tier 2 emulator touch pass (`tickets/README.md §5`): Godot's
+## own "emulate mouse from touch" delivers BOTH a real `InputEventScreenTouch` AND a
+## synthesized `InputEventMouseButton` for the SAME physical tap - confirmed live via logcat,
+## two `gui_input` calls, same timestamp, both `pressed=true`. Accepting either type as an
+## independent trigger (the original code) fired `pressed` TWICE per real tap; since
+## `SpotTheMismatch`/`ReverseSearch` toggle mark/unmark on each press, every real tap marked
+## then immediately unmarked itself, silently, with zero visual sign anything happened. No
+## desktop capture or GUT test could ever catch this - both drive the game's own methods
+## directly, never through a real delivered input event. `_press_active` collapses the two
+## events (same pressed=true/pressed=false pair, back to back) into exactly one emission.
 func _on_gui_input(event: InputEvent) -> void:
 	if not (event is InputEventMouseButton or event is InputEventScreenTouch):
 		return
-	if not event.pressed:
-		return
-	pressed.emit(hotspot_id)
+	if event.pressed:
+		if _press_active:
+			return
+		_press_active = true
+		pressed.emit(hotspot_id)
+	else:
+		_press_active = false
 
 
 ## `MiniGame.gd`'s own state (`is_marked()`/`is_locked()`) is the single source of truth -

@@ -85,6 +85,8 @@ var _icon_root: Node2D
 var _outline: Line2D
 var _fill: Polygon2D
 var _idle_tween: Tween
+## See `_on_input_event()`'s own doc comment for why this debounce exists.
+var _press_active: bool = false
 
 
 func _ready() -> void:
@@ -131,10 +133,21 @@ func _ready() -> void:
 	input_event.connect(_on_input_event)
 
 
+## Real event-double-delivery finding (found this session via a genuine Tier 2 emulator
+## touch pass, `tickets/README.md §5` - see `HotspotMarker.gd`'s own doc comment for the
+## full trace): Godot's "emulate mouse from touch" delivers a real `InputEventScreenTouch`
+## AND a synthesized `InputEventMouseButton` for the SAME physical tap. `examine()` ALWAYS
+## replays its own juice feedback regardless of repeat-visit state (by design, see its own
+## doc comment below) - without this guard, a double-fired tap would visibly double-pop the
+## icon and double-emit `examined` on every real tap, not just the harmless-looking repeat
+## case its own comment already accounts for.
 func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> void:
 	if not (event is InputEventMouseButton or event is InputEventScreenTouch):
 		return
 	if not event.pressed:
+		_press_active = false
+		return
+	if _press_active:
 		return
 	# mosa-godot-engineer finding, DM-019: a Control's mouse_filter=STOP does not
 	# suppress Area2D picking for the same screen point - this is the real guard against
@@ -142,6 +155,7 @@ func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> voi
 	var touch_controls: Node = get_tree().get_first_node_in_group(&"touch_controls")
 	if touch_controls != null and touch_controls.is_point_inside_joystick(event.position):
 		return
+	_press_active = true
 	examine()
 
 

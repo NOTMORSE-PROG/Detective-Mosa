@@ -7,6 +7,22 @@ signal scene_changed(scene_path: String)
 signal overlay_opened(scene_path: String)
 signal overlay_closed(scene_path: String)
 
+## Real bug found via a genuine Tier 2 emulator touch pass (`tickets/README.md §5`):
+## `open_overlay()` never set an explicit `CanvasLayer.layer` on the overlay it creates, so
+## it defaulted to Godot's own CanvasLayer default (1) - well below `MiniGameHost`'s own
+## `layer = 999` (chosen specifically to escape a location's light range, DM-022). Opening
+## `ConfirmDialog` from inside a mini-game therefore rendered it COMPLETELY HIDDEN behind
+## `MiniGameHost`'s own opaque full-screen backing, and - since a higher CanvasLayer also
+## wins input priority - silently swallowed every tap meant for it too. The dialog was
+## genuinely created (confirmed live via logcat) and genuinely unreachable, so no mini-game
+## in this project could actually be submitted by a real player on a real device. No test
+## this session ever caught it: every scratch capture script and GUT test calls `submit()`
+## directly, bypassing the Submit button AND this dialog entirely. Must stay higher than the
+## highest content layer used anywhere in the project (currently 999, `MiniGameHost.gd`/
+## `Explore.gd`'s own `ObjectiveBanner` layer) so an overlay opened from ANY screen is always
+## reachable, not just the ones tested so far.
+const OVERLAY_LAYER: int = 1000
+
 ## Set by a mini-game mid-submission (CANON #17) so a stray BACK can never discard marks
 ## or fire a submission early. This ticket (DM-051) only establishes the contract - no
 ## mini-game exists yet to set it. Checked first, before anything else, on every BACK.
@@ -105,6 +121,7 @@ func open_overlay(scene_path: String) -> CanvasLayer:
 		layer = CanvasLayer.new()
 		layer.add_child(instance)
 	layer.set_meta(&"scene_path", scene_path)
+	layer.layer = OVERLAY_LAYER
 	get_tree().root.add_child(layer)
 
 	var was_empty := _overlay_stack.is_empty()

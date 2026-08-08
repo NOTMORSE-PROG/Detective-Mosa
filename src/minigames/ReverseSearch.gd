@@ -187,14 +187,29 @@ func _on_inspect_requested(id: StringName) -> void:
 	photo.size = _inspect_photo_slot.size
 
 	_inspect_meta_label.text = tr(String(_reverse_config.result_meta_keys.get(id, &"")))
+	# Real bug found via a genuine Tier 2 emulator touch pass (`tickets/README.md §5`) - see
+	# `EvidencePairs._show_inspect()`'s own doc comment for the full trace: the SAME physical
+	# tap that opens this modal also delivers a second, synthesized input event, which lands
+	# on the newly-topmost `_inspect_layer` and immediately dismisses it if the reveal isn't
+	# deferred past this frame's own event dispatch.
+	_reveal_inspect.call_deferred()
+
+
+func _reveal_inspect() -> void:
 	_inspect_layer.modulate.a = 1.0
 	_inspect_layer.mouse_filter = Control.MOUSE_FILTER_STOP
 
 
+## Real event-double-delivery finding, same root cause `HotspotMarker.gd`'s own doc comment
+## traces in full (Godot's "emulate mouse from touch" fires both a real touch AND a
+## synthesized mouse event per physical tap) - harmless here today since dismissal is
+## idempotent, guarded anyway for consistency with every other tap handler this pass fixed.
 func _on_inspect_dismiss(event: InputEvent) -> void:
 	if not (event is InputEventMouseButton or event is InputEventScreenTouch):
 		return
 	if not event.pressed:
+		return
+	if _inspect_layer.mouse_filter == Control.MOUSE_FILTER_IGNORE:
 		return
 	_inspect_layer.modulate.a = 0.0
 	_inspect_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE

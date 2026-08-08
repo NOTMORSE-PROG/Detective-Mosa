@@ -327,16 +327,34 @@ func _build_inspect_layer() -> void:
 	margin.add_child(_inspect_label)
 
 
+## Real bug found via a genuine Tier 2 emulator touch pass (`tickets/README.md §5`),
+## distinct from (but the same root cause as) `HotspotMarker.gd`'s own finding: the SAME
+## physical tap that opens this modal also delivers a second, synthesized input event
+## (Godot's "emulate mouse from touch") - if `_inspect_layer` becomes the topmost
+## `MOUSE_FILTER_STOP` control synchronously, within the SAME tap's dispatch, that trailing
+## event lands on the modal itself and `_on_inspect_dismiss()` reads it as a fresh tap,
+## closing the modal before the player ever sees it. Deferring the reveal to the next frame
+## lets every event belonging to the opening tap finish dispatching first.
 func _show_inspect(text: String) -> void:
 	_inspect_label.text = text
+	_reveal_inspect.call_deferred()
+
+
+func _reveal_inspect() -> void:
 	_inspect_layer.modulate.a = 1.0
 	_inspect_layer.mouse_filter = Control.MOUSE_FILTER_STOP
 
 
+## Real event-double-delivery finding, same root cause `HotspotMarker.gd`'s own doc comment
+## traces in full (Godot's "emulate mouse from touch" fires both a real touch AND a
+## synthesized mouse event per physical tap) - harmless here today since dismissal is
+## idempotent, guarded anyway for consistency with every other tap handler this pass fixed.
 func _on_inspect_dismiss(event: InputEvent) -> void:
 	if not (event is InputEventMouseButton or event is InputEventScreenTouch):
 		return
 	if not event.pressed:
+		return
+	if _inspect_layer.mouse_filter == Control.MOUSE_FILTER_IGNORE:
 		return
 	_inspect_layer.modulate.a = 0.0
 	_inspect_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
