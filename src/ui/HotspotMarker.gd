@@ -1,59 +1,61 @@
 class_name HotspotMarker
 extends Control
-# DM-023 - the tappable marker for a mini-game's own hotspots. Reuses `Interactable.gd`'s
-# diamond/sparkle silhouette family verbatim (mosa-ui-designer consult: a player who's
-# already learned "diamond = there's something here" from Chase It's own exploration
-# screen (S7) shouldn't have to re-learn a different shape language one screen later -
-# Nielsen consistency, not a new design).
+# DM-023 - the tappable marker for a mini-game's own hotspots. 2026-08-08: reuses
+# `Interactable.gd`'s real magnifying-glass/check-mark icon family verbatim (same
+# consistency reasoning as the diamond it replaces - a player who's already learned "this
+# icon = there's something here" from Chase It's own exploration screen (S7) shouldn't
+# have to re-learn a different shape language one screen later). Full sourcing/licensing
+# in `Interactable.gd`'s own doc comment and `art/ui/icons/LICENSE-game-icons-net.txt`.
 #
 # `Control`-based, not `Area2D` like `Interactable` - mini-games live entirely in
 # `MiniGame.gd`'s `Control` tree (DM-022), so this uses `gui_input` for taps instead of
-# `input_event`/`CollisionShape2D`. The diamond geometry itself (`Line2D`/`Polygon2D`
-# children) is identical either way - both are plain `CanvasItem`s, indifferent to
-# whether their parent is `Node2D` or `Control`.
+# `input_event`/`CollisionShape2D`. The icon/ring children are plain `CanvasItem`s,
+# indifferent to whether their parent is `Node2D` or `Control`.
 #
 # THREE states, not `Interactable`'s two (mosa-ui-designer consult): `MiniGame.gd`'s own
 # submit contract has unmarked / marked-pending / locked, where `Interactable.examine()`
 # only ever had unmarked / examined (idempotent, one outcome). The locked state must read
 # as POSITIVE-ONLY (`MiniGame.gd`'s own class doc: "positive signal only, never a 'wrong'
-# flag" - CANON #17 applied to the UI) - a second, larger concentric outline ring, not a
-# colour/tint change, so it reads as "sealed/confirmed" under a colourblind simulation too.
-# A cleared wrong/decoy mark reverts to the plain unmarked state with NO distinct "this was
-# wrong" cue at all - inventing one would leak exactly the per-mark information CANON #17
-# bans.
+# flag" - CANON #17 applied to the UI) - a ring drawn around the icon, not a colour/tint
+# change, so it reads as "sealed/confirmed" under a colourblind simulation too. A cleared
+# wrong/decoy mark reverts to the plain unmarked state with NO distinct "this was wrong"
+# cue at all - inventing one would leak exactly the per-mark information CANON #17 bans.
 #
-# Colour fix, post-close correction (mosa-critic pass, DM-023): `Interactable.gd`'s own
-# raw `gold` outline is only ever composited over `bg_deep` (`ExploreBackdrop`'s own dark
-# base) - `DESIGN.md §1` names that boundary explicitly ("gold... on bg-deep/bg-base
-# only... never on a cream plate, use gold-ink there"). This marker sits on a light photo
-# panel, not a dark backdrop, and raw `gold` measured under 1.4:1 against it in the actual
-# render - unlike `Interactable`, copying its colour verbatim without re-checking the
-# surface it sits on was the actual bug. `bg_deep` (near-black, contrast-safe against any
-# panel/photo tone by construction) now carries the outline and lock ring; `gold_ink`
-# (the token DESIGN.md names for exactly this cream-surface case) carries the fill.
+# Colour, carried over from the pre-2026-08-08 diamond (still correct, not re-derived):
+# `Interactable.gd`'s own raw `gold` is only ever composited over `bg_deep`
+# (`ExploreBackdrop`'s own dark base) - `DESIGN.md §1` names that boundary explicitly
+# ("gold... on bg-deep/bg-base only... never on a cream plate, use gold-ink there"). This
+# marker sits on a light photo panel, not a dark backdrop, so `bg_deep` (near-black,
+# contrast-safe against any panel/photo tone by construction) carries the marker icon and
+# lock ring; `gold_ink` (the token DESIGN.md names for exactly this cream-surface case)
+# carries the marked badge.
 
 signal pressed(id: StringName)
 
 const PALETTE: Palette = preload("res://data/palette.tres")
+const MARKER_TEXTURE: Texture2D = preload("res://art/ui/icons/icon-clue-marker.png")
+const MARKED_BADGE_TEXTURE: Texture2D = preload("res://art/ui/icons/icon-clue-examined.png")
 
-## Matches `Interactable.TAP_RADIUS`'s own diamond proportions exactly - same shape
-## language, same relative size, just hosted on a `Control` instead of an `Area2D`.
-const ICON_POINTS: PackedVector2Array = [
-	Vector2(0, -14), Vector2(9, 0), Vector2(0, 14), Vector2(-9, 0)
-]
-const ICON_POINTS_CLOSED: PackedVector2Array = [
-	Vector2(0, -14), Vector2(9, 0), Vector2(0, 14), Vector2(-9, 0), Vector2(0, -14)
-]
-## A larger concentric diamond, drawn only when locked - the "sealed" ring `Interactable`
-## never needed a third state for.
-const LOCK_RING_SCALE: float = 1.6
-const OUTLINE_WIDTH: float = 3.0
+## Matches `Interactable`'s own marker sizing exactly - same icon family, same relative
+## size, just hosted on a `Control` instead of an `Area2D`.
+const MARKER_DISPLAY_SIZE: float = 44.0
+const MARKER_SCALE: float = MARKER_DISPLAY_SIZE / 512.0
+const BADGE_DISPLAY_SIZE: float = 22.0
+const BADGE_SCALE: float = BADGE_DISPLAY_SIZE / 512.0
+const BADGE_OFFSET: Vector2 = Vector2(16.0, 16.0)
+
+## A ring around the marker, drawn only when locked - the "sealed" state `Interactable`
+## never needed a third state for. Plain procedural circle (not a second icon asset) -
+## cheap, and a thin ring reads as "confirmed" without competing with the marker/badge
+## icons for silhouette attention.
+const LOCK_RING_RADIUS: float = 30.0
+const LOCK_RING_SEGMENTS: int = 24
 const LOCK_RING_WIDTH: float = 2.5
 
 @export var hotspot_id: StringName = &""
 
-var _outline: Line2D
-var _fill: Polygon2D
+var _marker_sprite: Sprite2D
+var _marked_badge: Sprite2D
 var _lock_ring: Line2D
 ## See `_on_gui_input()`'s own doc comment for why this debounce exists.
 var _press_active: bool = false
@@ -90,8 +92,9 @@ func _ready() -> void:
 	_lock_ring = Line2D.new()
 	_lock_ring.name = "LockRing"
 	var ring_points := PackedVector2Array()
-	for p: Vector2 in ICON_POINTS_CLOSED:
-		ring_points.append(p * LOCK_RING_SCALE + center)
+	for i in range(LOCK_RING_SEGMENTS + 1):
+		var angle := TAU * i / LOCK_RING_SEGMENTS
+		ring_points.append(Vector2(cos(angle), sin(angle)) * LOCK_RING_RADIUS + center)
 	_lock_ring.points = ring_points
 	_lock_ring.width = LOCK_RING_WIDTH
 	_lock_ring.default_color = Color(PALETTE.bg_deep, 1.0)
@@ -99,27 +102,26 @@ func _ready() -> void:
 	_lock_ring.visible = false
 	add_child(_lock_ring)
 
-	_outline = Line2D.new()
-	_outline.name = "Outline"
-	var outline_points := PackedVector2Array()
-	for p: Vector2 in ICON_POINTS_CLOSED:
-		outline_points.append(p + center)
-	_outline.points = outline_points
-	_outline.width = OUTLINE_WIDTH
-	_outline.default_color = Color(PALETTE.bg_deep, 1.0)
-	_outline.light_mask = 0
-	add_child(_outline)
+	_marker_sprite = Sprite2D.new()
+	_marker_sprite.name = "Marker"
+	_marker_sprite.texture = MARKER_TEXTURE
+	_marker_sprite.scale = Vector2(MARKER_SCALE, MARKER_SCALE)
+	_marker_sprite.centered = true
+	_marker_sprite.position = center
+	_marker_sprite.modulate = Color(PALETTE.bg_deep, 1.0)
+	_marker_sprite.light_mask = 0
+	add_child(_marker_sprite)
 
-	_fill = Polygon2D.new()
-	_fill.name = "Fill"
-	var fill_points := PackedVector2Array()
-	for p: Vector2 in ICON_POINTS:
-		fill_points.append(p + center)
-	_fill.polygon = fill_points
-	_fill.color = Color(PALETTE.gold_ink, 1.0)
-	_fill.light_mask = 0
-	_fill.visible = false
-	add_child(_fill)
+	_marked_badge = Sprite2D.new()
+	_marked_badge.name = "MarkedBadge"
+	_marked_badge.texture = MARKED_BADGE_TEXTURE
+	_marked_badge.scale = Vector2(BADGE_SCALE, BADGE_SCALE)
+	_marked_badge.centered = true
+	_marked_badge.position = center + BADGE_OFFSET
+	_marked_badge.modulate = Color(PALETTE.gold_ink, 1.0)
+	_marked_badge.light_mask = 0
+	_marked_badge.visible = false
+	add_child(_marked_badge)
 
 
 ## Real bug found via a genuine Tier 2 emulator touch pass (`tickets/README.md §5`): Godot's
@@ -149,10 +151,10 @@ func _on_gui_input(event: InputEvent) -> void:
 ## exactly the "scene orchestrates, component stays ignorant" split `Interactable`/
 ## `NPCActor` already established.
 func set_marked(marked: bool) -> void:
-	_fill.visible = marked
+	_marked_badge.visible = marked
 
 
 func set_locked(locked: bool) -> void:
 	_lock_ring.visible = locked
 	if locked:
-		_fill.visible = true
+		_marked_badge.visible = true

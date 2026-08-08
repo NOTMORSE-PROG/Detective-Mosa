@@ -43,21 +43,31 @@ const TUNABLES: Tunables = preload("res://data/tunables.tres")
 ## diameter clears the ticket's own touch-floor AC with margin.
 const TAP_RADIUS: float = 60.0
 
-## Diamond/sparkle silhouette, not a plain circle (mosa-minigame-designer + DESIGN.md §0.7
-## - "never colour alone," a hotspot must be shape-differentiated too). A circular glow
-## reads as a generic "collectible" marker; this reads as "something in the scene," the
-## deference this ticket's own discoverability consult explicitly asked for.
-const ICON_POINTS: PackedVector2Array = [
-	Vector2(0, -14), Vector2(9, 0), Vector2(0, 14), Vector2(-9, 0)
-]
-const ICON_POINTS_CLOSED: PackedVector2Array = [
-	Vector2(0, -14), Vector2(9, 0), Vector2(0, 14), Vector2(-9, 0), Vector2(0, -14)
-]
+## 2026-08-08 real asset swap, direct owner complaint on the shipped placeholder ("the
+## diamond something i see, that shit sucks"): the old marker was a hand-drawn Line2D/
+## Polygon2D diamond outline. Replaced with a real licensed icon rather than a redrawn
+## procedural shape - CC BY 3.0, https://game-icons.net, full attribution in
+## `art/ui/icons/LICENSE-game-icons-net.txt`. A magnifying glass reads as "look here /
+## something to investigate" far more directly than an abstract diamond ever did, and it
+## is genuinely single-color/silhouette (512x512 black-on-transparent), so it tints
+## cleanly via `modulate` the same way the old procedural shapes did.
+const MARKER_TEXTURE: Texture2D = preload("res://art/ui/icons/icon-clue-marker.png")
+const EXAMINED_BADGE_TEXTURE: Texture2D = preload("res://art/ui/icons/icon-clue-examined.png")
 
-## Examined state is a STRUCTURAL difference, not a colour swap (§0.7): unexamined draws
-## as a hollow outline only (`Line2D`, no fill), examined adds the filled `Polygon2D` on
-## top of it - a real shape/fill distinction a colourblind simulation still tells apart.
-const OUTLINE_WIDTH: float = 3.0
+## Source PNGs are 512x512 - scaled down to a small in-scene marker, sized close to the
+## old diamond's own ~28px footprint so no other placement in `Explore.gd` needs retuning.
+const MARKER_DISPLAY_SIZE: float = 44.0
+const MARKER_SCALE: float = MARKER_DISPLAY_SIZE / 512.0
+const BADGE_DISPLAY_SIZE: float = 22.0
+const BADGE_SCALE: float = BADGE_DISPLAY_SIZE / 512.0
+## Bottom-right of the marker's own visual footprint, in `IconRoot`'s local space - reads
+## as "attached to" the marker rather than a second, unrelated icon.
+const BADGE_OFFSET: Vector2 = Vector2(16.0, 16.0)
+
+## Examined state is a STRUCTURAL difference, not a colour swap (§0.7): unexamined shows
+## the marker alone, examined adds a small check-mark badge on top of it - the same
+## "adds a real shape, not just a tint" principle the old hollow-vs-filled diamond already
+## satisfied, still true after the asset swap above.
 
 ## Two-layer affordance (mosa-minigame-designer consult, DM-019): a subtle always-on
 ## baseline (findable by someone looking carefully, per the ticket's own "not a
@@ -82,8 +92,8 @@ const NEAR_SCALE: float = 1.18
 
 var _examined: bool = false
 var _icon_root: Node2D
-var _outline: Line2D
-var _fill: Polygon2D
+var _marker_sprite: Sprite2D
+var _examined_badge: Sprite2D
 var _idle_tween: Tween
 ## See `_on_input_event()`'s own doc comment for why this debounce exists.
 var _press_active: bool = false
@@ -103,21 +113,25 @@ func _ready() -> void:
 	_icon_root.name = "IconRoot"
 	add_child(_icon_root)
 
-	_outline = Line2D.new()
-	_outline.name = "Outline"
-	_outline.points = ICON_POINTS_CLOSED
-	_outline.width = OUTLINE_WIDTH
-	_outline.default_color = Color(PALETTE.gold, 1.0)
-	_outline.light_mask = 0  # flat authored shape, not re-lit by a location's PointLight2D
-	_icon_root.add_child(_outline)
+	_marker_sprite = Sprite2D.new()
+	_marker_sprite.name = "Marker"
+	_marker_sprite.texture = MARKER_TEXTURE
+	_marker_sprite.scale = Vector2(MARKER_SCALE, MARKER_SCALE)
+	_marker_sprite.centered = true
+	_marker_sprite.modulate = Color(PALETTE.gold, 1.0)
+	_marker_sprite.light_mask = 0  # flat authored icon, not re-lit by a location's PointLight2D
+	_icon_root.add_child(_marker_sprite)
 
-	_fill = Polygon2D.new()
-	_fill.name = "Fill"
-	_fill.polygon = ICON_POINTS
-	_fill.color = Color(PALETTE.gold, 0.9)
-	_fill.light_mask = 0
-	_fill.visible = false
-	_icon_root.add_child(_fill)
+	_examined_badge = Sprite2D.new()
+	_examined_badge.name = "ExaminedBadge"
+	_examined_badge.texture = EXAMINED_BADGE_TEXTURE
+	_examined_badge.scale = Vector2(BADGE_SCALE, BADGE_SCALE)
+	_examined_badge.centered = true
+	_examined_badge.position = BADGE_OFFSET
+	_examined_badge.modulate = Color(PALETTE.gold, 1.0)
+	_examined_badge.light_mask = 0
+	_examined_badge.visible = false
+	_icon_root.add_child(_examined_badge)
 
 	_examined = clue_id in GameState.clues_found
 	_update_visual_state()
@@ -186,7 +200,7 @@ func update_proximity(distance: float) -> void:
 ## alone, so examined state persists correctly across a save/load without this node
 ## needing to know anything about `SaveManager`.
 func _update_visual_state() -> void:
-	_fill.visible = _examined
+	_examined_badge.visible = _examined
 
 
 ## Slow, always-on ambient pulse (mosa-minigame-designer: `barangay_calm`, not an urgent

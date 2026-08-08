@@ -1,0 +1,17 @@
+Icons sourced from https://game-icons.net, licensed under Creative Commons
+Attribution 3.0 Unported (CC BY 3.0): http://creativecommons.org/licenses/by/3.0/
+
+icon-clue-marker.png
+  "Magnifying glass" icon by Lorc
+  https://game-icons.net/1x1/lorc/magnifying-glass.html
+  Attribution: "Magnifying glass icon by Lorc under CC BY 3.0"
+
+icon-clue-examined.png
+  "Check mark" icon by Delapouite
+  https://game-icons.net/1x1/delapouite/check-mark.html
+  Attribution: "Check mark icon by Delapouite under CC BY 3.0"
+
+Both icons downloaded as flat black-on-transparent PNGs (512x512) and used
+unmodified except for in-engine tint (Godot `modulate`/`self_modulate`) -
+tinting a single-color silhouette is not considered a derivative work under
+CC BY 3.0, but is noted here for transparency.

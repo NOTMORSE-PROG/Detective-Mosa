@@ -81,22 +81,26 @@ func test_second_examine_reports_first_time_false() -> void:
 	assert_signal_emitted_with_parameters(interactable, "examined", [CLUE_ID, false])
 
 
-func test_unexamined_state_shows_outline_only() -> void:
+## "Never colour alone" (DESIGN.md §0.7): examined must be a real shape difference (a
+## check-mark badge appearing), not a tint change - same principle the old hollow-vs-filled
+## diamond satisfied, still true after the 2026-08-08 icon swap (see Interactable.gd's own
+## class doc).
+func test_unexamined_state_hides_the_examined_badge() -> void:
 	var interactable := Interactable.new()
 	interactable.clue_id = CLUE_ID
 	add_child_autofree(interactable)
 
-	assert_false(interactable.get_node("IconRoot/Fill").visible)
+	assert_false(interactable.get_node("IconRoot/ExaminedBadge").visible)
 
 
-func test_examine_reveals_the_filled_state() -> void:
+func test_examine_reveals_the_examined_badge() -> void:
 	var interactable := Interactable.new()
 	interactable.clue_id = CLUE_ID
 	add_child_autofree(interactable)
 
 	interactable.examine()
 
-	assert_true(interactable.get_node("IconRoot/Fill").visible)
+	assert_true(interactable.get_node("IconRoot/ExaminedBadge").visible)
 
 
 ## A save/load round-trip already proves `GameState.clues_found` itself persists
@@ -110,7 +114,7 @@ func test_already_known_clue_starts_examined_on_ready() -> void:
 	interactable.clue_id = CLUE_ID
 	add_child_autofree(interactable)
 
-	assert_true(interactable.get_node("IconRoot/Fill").visible)
+	assert_true(interactable.get_node("IconRoot/ExaminedBadge").visible)
 
 
 func test_proximity_raises_alpha_when_near_and_lowers_when_far() -> void:
