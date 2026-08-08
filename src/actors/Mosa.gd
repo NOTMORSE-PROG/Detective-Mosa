@@ -13,20 +13,23 @@ extends CharacterBody2D
 # missing-shape defect). No floor/wall physically stops her - DM-018's own walkable-extent
 # clamp is done in script (`set_walk_bounds()` below), not via collision.
 #
-# Two art densities, both real and both intentional (`DESIGN.md §5`, 2026-07-31 - "THE GAME
-# IS PIXEL ART... at two deliberate densities - high-res (~1024px) for portraits and
-# backdrops, low-res (~32x50/frame) for the movement sheet"): the idle pose
-# (`M-IdleLeft/Right.png`, 208-223x812) and the walk cycle (`M-Sprites.png`, an 8x5 grid of
-# ~32x51 cells). mosa-art-director consult, DM-018 - this pairing is already ruled on, not
-# a fresh style clash to resolve; the failure mode to avoid is a NON-integer scale factor
-# between them (nearest-filtered pixel art stretched by a fractional multiplier smears
-# instead of reading as deliberate blocky pixels).
+# §5 REVERSAL, 2026-08-08 (direct owner review of the actual rendered walk cycle, not a
+# fresh style preference): the "two deliberate densities" ruling this file used to cite
+# (`DESIGN.md §5`, 2026-07-31 - low-res `M-Sprites.png` movement sheet vs. high-res
+# portraits) was tested against the ACTUAL rendered result, not just the paper decision -
+# even scaled with the exact correct technique this file already used (7x integer,
+# nearest-neighbour, verified by cropping one real frame and upscaling it exactly this way
+# before touching any code), the walk-cycle sheet reads as a muddy, featureless blob next
+# to her own detailed idle art. That is a real art-quality gap, not a rendering bug -
+# nothing here could have fixed it by scaling more carefully. Retired the sprite-sheet walk
+# cycle entirely; `_update_animation()` below now animates her EXISTING idle art with a
+# bob instead, guaranteeing the same art quality standing still or moving, which a
+# mismatched second sheet never could. Full reversal logged in `DESIGN.md`'s own §5 log.
 
 enum Facing { LEFT, RIGHT }
 
 const IDLE_RIGHT_TEXTURE: Texture2D = preload("res://art/characters/mosa/M-IdleRight.png")
 const IDLE_LEFT_TEXTURE: Texture2D = preload("res://art/characters/mosa/M-IdleLeft.png")
-const WALK_TEXTURE: Texture2D = preload("res://art/characters/mosa/M-Sprites.png")
 
 ## `data/asset_manifest.tres`'s `mosa_idle_right`/`mosa_idle_left` slots ship these at their
 ## native dialogue-portrait resolution (208x812 / 223x812, `canvas_size` in the manifest
@@ -40,34 +43,13 @@ const WALK_TEXTURE: Texture2D = preload("res://art/characters/mosa/M-Sprites.png
 ## here rather than being set by each caller.
 const WORLD_SCALE: float = 0.24
 
-## `M-Sprites.png` is a 256x256 sheet. `hframes`/`vframes` (uniform 256/8, 256/5 grid
-## division) was tried first and rejected: verified by direct alpha-channel content
-## scanning (not eyeballed) that the artist's OWN row placement doesn't land on that
-## uniform grid's boundaries - the right-facing row's real content starts at y=197, a
-## full 7.8px above where a naive `vframes=5` division would place that row's boundary
-## (y=204.8), which would silently clip the top of her head. Column spacing DOES match a
-## uniform 32px pitch closely, so only the row (Y) placement needed hand-measuring.
-## Content-bbox union across all 8 columns per row (this ticket's own DM-018 scan, not
-## DM-017's single-column estimate): left row y=[57,83], right row y=[197,224], both
-## height ~27-28px, consistent across every column in the row (no per-frame height
-## variance - ruled out the "hop on frame swap" risk mosa-art-director flagged before
-## picking a fixed anchor). Padded symmetrically to a shared 40px cell height so both
-## directions scale identically and neither crops a frame with unusually raised limbs.
-const WALK_FRAME_W: float = 32.0
-const WALK_FRAME_H: float = 40.0
-const WALK_ROW_Y_LEFT: float = 50.0
-const WALK_ROW_Y_RIGHT: float = 190.0
-const WALK_FRAME_COUNT: int = 8
-const WALK_FRAME_DURATION: float = 0.1
-
-## Integer, not a height-match fit (mosa-art-director consult, DM-018 - the load-bearing
-## finding of that consult): `195 / 28 ~= 6.96`, rounded to the nearest INTEGER (7) rather
-## than used as a fractional scale, so every source pixel of the low-res walk sheet renders
-## as a uniform crisp 7x7 screen-pixel block under this project's nearest-neighbour
-## filtering - a non-integer multiplier is what actually produces the smeared/regressed
-## look, not the resolution gap itself. Lands her walk-cycle height at ~196px, 1px from the
-## idle pose's own 195px - close enough that the swap doesn't read as a size change.
-const WALK_SPRITE_SCALE: float = 7.0
+## Bob-walk tuning (replaces the retired sprite-sheet cycle - see class doc). Height is
+## proportionally small against her ~195px world height (~3%) - a subtle footstep cue, not
+## a cartoonish bounce. Frequency picked against `SPEED`/`WORLD_SCALE` so the bounce cadence
+## reads as a plausible stride rate at her actual walk speed, not tuned to a device yet
+## (same honestly-flagged gap every un-device-tested feel constant in this file already has).
+const WALK_BOB_HEIGHT: float = 6.0
+const WALK_BOB_FREQUENCY: float = 10.0
 
 ## Estimate, not device-tuned (no Android device connected this session) - crosses the
 ## 1024px base canvas in ~4s, a deliberately unhurried pace for a game whose whole thesis
@@ -76,13 +58,10 @@ const WALK_SPRITE_SCALE: float = 7.0
 const SPEED: float = 260.0
 
 var _idle_sprite: Sprite2D
-var _walk_sprite: Sprite2D
-var _walk_atlas: AtlasTexture
 var _facing: Facing = Facing.RIGHT
 var _walk_min_x: float = -INF
 var _walk_max_x: float = INF
-var _walk_frame: int = 0
-var _walk_timer: float = 0.0
+var _walk_cycle_time: float = 0.0
 var _is_walking: bool = false
 
 
@@ -100,33 +79,12 @@ func _ready() -> void:
 	_idle_sprite.centered = true
 	_idle_sprite.offset = Vector2(0, -IDLE_RIGHT_TEXTURE.get_height() / 2.0)
 	# Explicit, not inherited (matches `ExploreBackdrop.gd`'s own established DM-068
-	# hardening convention for its Light2D cookies) - confirmed live this ticket that
-	# relying on inheritance for the walk sprite below produced a genuinely blurred,
-	# bilinear-filtered render despite the project's global default already being
-	# NEAREST (`project.godot`'s `textures/canvas_textures/default_texture_filter=0`).
-	# Set on both sprites for consistency, not just the one that visibly needed it.
+	# hardening convention for its Light2D cookies), even though the project's global
+	# default is already NEAREST (`project.godot`'s own
+	# `textures/canvas_textures/default_texture_filter=0`) - belt and suspenders for a
+	# pixel-art sprite specifically.
 	_idle_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	add_child(_idle_sprite)
-
-	_walk_atlas = AtlasTexture.new()
-	_walk_atlas.atlas = WALK_TEXTURE
-	_walk_atlas.region = Rect2(0, WALK_ROW_Y_RIGHT, WALK_FRAME_W, WALK_FRAME_H)
-
-	_walk_sprite = Sprite2D.new()
-	_walk_sprite.name = "WalkSprite"
-	_walk_sprite.texture = _walk_atlas
-	_walk_sprite.scale = Vector2(WALK_SPRITE_SCALE, WALK_SPRITE_SCALE)
-	# Same bottom-center-at-origin convention as the idle sprite, in the CELL's own fixed
-	# pre-scale space (not a per-frame tight crop) - every frame in the row shares this one
-	# offset, so swapping columns never shifts her anchor.
-	_walk_sprite.centered = true
-	_walk_sprite.offset = Vector2(0, -WALK_FRAME_H / 2.0)
-	# THE root cause of the blurred first render (see the idle sprite's comment above) -
-	# an AtlasTexture region sampled from a tiny source at a 7x integer scale is exactly
-	# where NEAREST vs LINEAR is most visible; this is the fix, not a defensive extra.
-	_walk_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_walk_sprite.visible = false
-	add_child(_walk_sprite)
 
 
 ## Called once by `Explore.gd` after computing the backdrop's own walkable art-space
@@ -167,30 +125,26 @@ func _update_facing(axis: float) -> void:
 		_facing = Facing.RIGHT
 
 
-## Swaps between the idle pose and the walk cycle, and advances the walk cycle's own
-## frame timer while moving. Resets to frame 0 on every fresh start (rather than freezing
-## mid-stride and resuming from there) so she always begins a new walk from the same
-## clean pose - the same convention `_update_facing()`'s own doc comment already applies
-## to facing.
+## Always shows the idle art (see class doc for why the old sprite-sheet swap was
+## retired) - texture only ever changes for facing, never for a moving/still state
+## anymore. While moving, bobs her vertically on a sine timer for a footstep cue; resets
+## cleanly to frame 0 of the bob on every fresh start, the same "never resume mid-stride"
+## convention `_update_facing()`'s own doc comment already applies to facing. Skips the
+## bob entirely under reduce-motion, the same accessibility guard `Interactable.gd`'s own
+## idle pulse already respects.
 func _update_animation(moving: bool, delta: float) -> void:
 	if moving and not _is_walking:
-		_walk_frame = 0
-		_walk_timer = 0.0
+		_walk_cycle_time = 0.0
 	_is_walking = moving
 
-	_idle_sprite.visible = not moving
-	_walk_sprite.visible = moving
-	if not moving:
-		_idle_sprite.texture = IDLE_LEFT_TEXTURE if _facing == Facing.LEFT else IDLE_RIGHT_TEXTURE
+	_idle_sprite.texture = IDLE_LEFT_TEXTURE if _facing == Facing.LEFT else IDLE_RIGHT_TEXTURE
+
+	if not moving or Juice.is_reduce_motion_enabled():
+		_idle_sprite.position.y = 0.0
 		return
 
-	_walk_timer += delta
-	if _walk_timer >= WALK_FRAME_DURATION:
-		_walk_timer -= WALK_FRAME_DURATION
-		_walk_frame = (_walk_frame + 1) % WALK_FRAME_COUNT
-
-	var row_y := WALK_ROW_Y_LEFT if _facing == Facing.LEFT else WALK_ROW_Y_RIGHT
-	_walk_atlas.region = Rect2(_walk_frame * WALK_FRAME_W, row_y, WALK_FRAME_W, WALK_FRAME_H)
+	_walk_cycle_time += delta
+	_idle_sprite.position.y = -absf(sin(_walk_cycle_time * WALK_BOB_FREQUENCY)) * WALK_BOB_HEIGHT
 
 
 ## Per-screen location grade (DM-017, mosa-critic finding: she rendered visibly cooler
@@ -199,10 +153,9 @@ func _update_animation(moving: bool, delta: float) -> void:
 ## engine fact, `ExploreBackdrop`'s edge cases) and she lives in the real Node2D WORLD tree,
 ## not inside the backdrop's CanvasLayer (she has to, for `DM-018`'s `move_and_slide()` and
 ## the camera to treat her as real world content) - so she never receives the backdrop's
-## `CanvasModulate` tint automatically. `modulate` on both sprites directly is the same
+## `CanvasModulate` tint automatically. `modulate` on the idle sprite directly is the same
 ## documented workaround already used for `Control` chrome that needs a grade. Per-screen,
 ## not baked into a constant here: the grade colour depends on wherever she's standing, and
 ## only the scene composing her (`Explore.gd`) knows that.
 func apply_grade(color: Color) -> void:
 	_idle_sprite.modulate = color
-	_walk_sprite.modulate = color

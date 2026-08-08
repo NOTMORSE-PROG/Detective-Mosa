@@ -74,28 +74,54 @@ func test_walk_bounds_clamp_both_directions() -> void:
 	assert_eq(mosa.position.x, start_x - 20.0, "must clamp at the min bound, not overshoot")
 
 
-func test_walking_shows_walk_sprite_and_hides_idle_sprite() -> void:
+## Real bug found via direct owner review, 2026-08-08: the old sprite-sheet walk cycle
+## (`M-Sprites.png`) read as a muddy, featureless blob next to her own detailed idle art,
+## confirmed by upscaling one real frame exactly the way the game did (7x nearest-neighbour)
+## before touching any code - a real art-quality gap, not a rendering bug. Retired entirely;
+## she now always shows the SAME idle art, animated with a vertical bob while walking, so
+## the art quality can never regress on movement.
+func test_walking_keeps_the_idle_sprite_and_bobs_it() -> void:
 	var mosa := Mosa.new()
 	add_child_autofree(mosa)
 	await wait_physics_frames(1)
 
-	assert_true(mosa.get("_idle_sprite").visible, "starts idle: standing still, idle pose shown")
-	assert_false(mosa.get("_walk_sprite").visible)
+	assert_true(mosa.get("_idle_sprite").visible, "the idle sprite is the only sprite now")
+	assert_eq(mosa.get("_idle_sprite").position.y, 0.0, "standing still: no bob offset")
 
 	Input.action_press(&"move_right")
 	gut.simulate(mosa, 5, DELTA)
 
-	assert_false(mosa.get("_idle_sprite").visible, "walking: idle pose must not show underneath")
-	assert_true(mosa.get("_walk_sprite").visible)
+	assert_true(mosa.get("_idle_sprite").visible, "walking must still show the idle art, not swap")
+	assert_true(
+		mosa.get("_idle_sprite").position.y <= 0.0, "walking must apply an upward bob offset"
+	)
 
 	Input.action_release(&"move_right")
 	gut.simulate(mosa, 5, DELTA)
 
-	assert_true(mosa.get("_idle_sprite").visible, "releasing input returns her to the idle pose")
-	assert_false(mosa.get("_walk_sprite").visible)
+	assert_eq(
+		mosa.get("_idle_sprite").position.y, 0.0, "releasing input must settle the bob back to rest"
+	)
 
 
-func test_apply_grade_tints_both_sprites() -> void:
+func test_walking_respects_reduce_motion() -> void:
+	Juice.set_reduce_motion_override_for_testing(true)
+	var mosa := Mosa.new()
+	add_child_autofree(mosa)
+	await wait_physics_frames(1)
+
+	Input.action_press(&"move_right")
+	gut.simulate(mosa, 10, DELTA)
+
+	assert_eq(
+		mosa.get("_idle_sprite").position.y,
+		0.0,
+		"reduce-motion must suppress the walk bob entirely"
+	)
+	Juice.set_reduce_motion_override_for_testing(false)
+
+
+func test_apply_grade_tints_the_sprite() -> void:
 	var mosa := Mosa.new()
 	add_child_autofree(mosa)
 	await wait_physics_frames(1)
@@ -104,4 +130,3 @@ func test_apply_grade_tints_both_sprites() -> void:
 	mosa.apply_grade(grade)
 
 	assert_eq(mosa.get("_idle_sprite").modulate, grade)
-	assert_eq(mosa.get("_walk_sprite").modulate, grade)
