@@ -49,8 +49,9 @@ func test_solved_minigame_shows_a_text_suffix_on_its_label() -> void:
 
 	var has_solved_label := false
 	for label: String in labels:
-		if label.contains(tr("ui.minigame_select.entry_spot_the_mismatch")) and label != tr(
-			"ui.minigame_select.entry_spot_the_mismatch"
+		if (
+			label.contains(tr("ui.minigame_select.entry_spot_the_mismatch"))
+			and label != tr("ui.minigame_select.entry_spot_the_mismatch")
 		):
 			has_solved_label = true
 	assert_true(has_solved_label, "a solved entry's label must differ from its unsolved text")
@@ -84,9 +85,7 @@ func test_solving_a_minigame_survives_the_picker_that_launched_it_being_freed() 
 	button.pressed.emit()
 	await get_tree().process_frame
 
-	assert_false(
-		SceneRouter.has_open_overlay(), "pressing an entry must close the picker overlay"
-	)
+	assert_false(SceneRouter.has_open_overlay(), "pressing an entry must close the picker overlay")
 	var host: MiniGameHost = SceneRouter._mini_game_host
 	assert_not_null(host, "pressing an entry must launch a real MiniGameHost")
 
