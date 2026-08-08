@@ -141,9 +141,7 @@ func _ready() -> void:
 
 	_badge_plate_border = Line2D.new()
 	_badge_plate_border.name = "BadgePlateBorder"
-	_badge_plate_border.points = _circle_points(
-		BADGE_PLATE_RADIUS, BADGE_PLATE_SEGMENTS, true
-	)
+	_badge_plate_border.points = _circle_points(BADGE_PLATE_RADIUS, BADGE_PLATE_SEGMENTS, true)
 	_badge_plate_border.width = BADGE_PLATE_BORDER_WIDTH
 	_badge_plate_border.default_color = PALETTE.chip_border
 	_badge_plate_border.light_mask = 0
