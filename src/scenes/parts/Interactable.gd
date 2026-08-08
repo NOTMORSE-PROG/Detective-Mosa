@@ -48,9 +48,7 @@ const TAP_RADIUS: float = 60.0
 ## Polygon2D diamond outline. Replaced with a real licensed icon rather than a redrawn
 ## procedural shape - CC BY 3.0, https://game-icons.net, full attribution in
 ## `art/ui/icons/LICENSE-game-icons-net.txt`. A magnifying glass reads as "look here /
-## something to investigate" far more directly than an abstract diamond ever did, and it
-## is genuinely single-color/silhouette (512x512 black-on-transparent), so it tints
-## cleanly via `modulate` the same way the old procedural shapes did.
+## something to investigate" far more directly than an abstract diamond ever did.
 const MARKER_TEXTURE: Texture2D = preload("res://art/ui/icons/icon-clue-marker.png")
 const EXAMINED_BADGE_TEXTURE: Texture2D = preload("res://art/ui/icons/icon-clue-examined.png")
 
@@ -63,6 +61,22 @@ const BADGE_SCALE: float = BADGE_DISPLAY_SIZE / 512.0
 ## Bottom-right of the marker's own visual footprint, in `IconRoot`'s local space - reads
 ## as "attached to" the marker rather than a second, unrelated icon.
 const BADGE_OFFSET: Vector2 = Vector2(16.0, 16.0)
+
+## Real contrast bug found via direct owner review of the live render ("the one u cahnged
+## looks shit and not good"), first shipped version of the asset swap above: the icon was
+## tinted `PALETTE.gold` verbatim from the old diamond's own colour, but `court-gold`'s
+## grade IS a warm gold/tan (`DESIGN.md §1`) - a gold icon on a gold backdrop is a
+## near-camouflage, and a thin line-art silhouette (a ring + a diagonal handle, mostly
+## negative space) has far less ink mass than the old FILLED diamond gem ever did, so what
+## little contrast existed was even less visible. Fixed with the same "Reference B" chip
+## component family every other small world-space plate in this game already uses
+## (`ObjectiveBanner`, nameplates, lives) instead of a bare tinted icon floating on a
+## variable-hue backdrop: a small `chip_fill` circle plate + `chip_border` ring behind the
+## icon, `chip_ink` icon on top - a pairing already contrast-verified for exactly this
+## light-plate/dark-ink role everywhere else in the game, not re-derived or guessed here.
+const BADGE_PLATE_RADIUS: float = 32.0
+const BADGE_PLATE_SEGMENTS: int = 20
+const BADGE_PLATE_BORDER_WIDTH: float = 2.0
 
 ## Examined state is a STRUCTURAL difference, not a colour swap (§0.7): unexamined shows
 ## the marker alone, examined adds a small check-mark badge on top of it - the same
@@ -92,6 +106,8 @@ const NEAR_SCALE: float = 1.18
 
 var _examined: bool = false
 var _icon_root: Node2D
+var _badge_plate: Polygon2D
+var _badge_plate_border: Line2D
 var _marker_sprite: Sprite2D
 var _examined_badge: Sprite2D
 var _idle_tween: Tween
@@ -113,12 +129,32 @@ func _ready() -> void:
 	_icon_root.name = "IconRoot"
 	add_child(_icon_root)
 
+	# Plate first, so the icon/badge draw ON TOP of it (add-order = draw order for
+	# CanvasItem siblings) - see BADGE_PLATE_RADIUS's own doc comment for why this plate
+	# exists at all.
+	_badge_plate = Polygon2D.new()
+	_badge_plate.name = "BadgePlate"
+	_badge_plate.polygon = _circle_points(BADGE_PLATE_RADIUS, BADGE_PLATE_SEGMENTS)
+	_badge_plate.color = PALETTE.chip_fill
+	_badge_plate.light_mask = 0
+	_icon_root.add_child(_badge_plate)
+
+	_badge_plate_border = Line2D.new()
+	_badge_plate_border.name = "BadgePlateBorder"
+	_badge_plate_border.points = _circle_points(
+		BADGE_PLATE_RADIUS, BADGE_PLATE_SEGMENTS, true
+	)
+	_badge_plate_border.width = BADGE_PLATE_BORDER_WIDTH
+	_badge_plate_border.default_color = PALETTE.chip_border
+	_badge_plate_border.light_mask = 0
+	_icon_root.add_child(_badge_plate_border)
+
 	_marker_sprite = Sprite2D.new()
 	_marker_sprite.name = "Marker"
 	_marker_sprite.texture = MARKER_TEXTURE
 	_marker_sprite.scale = Vector2(MARKER_SCALE, MARKER_SCALE)
 	_marker_sprite.centered = true
-	_marker_sprite.modulate = Color(PALETTE.gold, 1.0)
+	_marker_sprite.modulate = Color(PALETTE.chip_ink, 1.0)
 	_marker_sprite.light_mask = 0  # flat authored icon, not re-lit by a location's PointLight2D
 	_icon_root.add_child(_marker_sprite)
 
@@ -128,7 +164,7 @@ func _ready() -> void:
 	_examined_badge.scale = Vector2(BADGE_SCALE, BADGE_SCALE)
 	_examined_badge.centered = true
 	_examined_badge.position = BADGE_OFFSET
-	_examined_badge.modulate = Color(PALETTE.gold, 1.0)
+	_examined_badge.modulate = Color(PALETTE.chip_ink, 1.0)
 	_examined_badge.light_mask = 0
 	_examined_badge.visible = false
 	_icon_root.add_child(_examined_badge)
@@ -145,6 +181,21 @@ func _ready() -> void:
 		_icon_root.modulate.a = BASELINE_ALPHA
 	_start_idle_pulse()
 	input_event.connect(_on_input_event)
+
+
+## `closed`=true repeats the first point at the end, the shape `Line2D` needs to actually
+## close a ring instead of leaving one segment open - `Polygon2D` never wants that repeat
+## (it always closes its own fill implicitly), so callers pick per use, same split
+## `HotspotMarker.gd`'s own `ICON_POINTS`/`ICON_POINTS_CLOSED` constants used to encode
+## as two separate arrays before this became a single parameterised helper.
+func _circle_points(radius: float, segments: int, closed: bool = false) -> PackedVector2Array:
+	var points := PackedVector2Array()
+	for i in range(segments):
+		var angle := TAU * i / segments
+		points.append(Vector2(cos(angle), sin(angle)) * radius)
+	if closed:
+		points.append(points[0])
+	return points
 
 
 ## Real event-double-delivery finding (found this session via a genuine Tier 2 emulator

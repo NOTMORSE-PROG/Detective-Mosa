@@ -52,8 +52,21 @@ const LOCK_RING_RADIUS: float = 30.0
 const LOCK_RING_SEGMENTS: int = 24
 const LOCK_RING_WIDTH: float = 2.5
 
+## Consistency pass, same day as `Interactable.gd`'s own real contrast fix ("the icon
+## looks shit"): that fix added a `chip_fill`/`chip_border` backing plate behind the
+## marker so it reads as a real badge with visual weight against ANY backdrop, rather than
+## a bare tinted icon. This marker's own `bg_deep`-on-light-panel contrast was already
+## correct (a prior, separate fix - see class doc), but Reference B's "one visual
+## treatment" rule means the SHAPE language should still match across both screens, not
+## just the colour. Same plate here, purely for cross-screen consistency.
+const BADGE_PLATE_RADIUS: float = 32.0
+const BADGE_PLATE_SEGMENTS: int = 20
+const BADGE_PLATE_BORDER_WIDTH: float = 2.0
+
 @export var hotspot_id: StringName = &""
 
+var _badge_plate: Polygon2D
+var _badge_plate_border: Line2D
 var _marker_sprite: Sprite2D
 var _marked_badge: Sprite2D
 var _lock_ring: Line2D
@@ -89,13 +102,26 @@ func _ready() -> void:
 
 	var center := custom_minimum_size / 2.0
 
+	_badge_plate = Polygon2D.new()
+	_badge_plate.name = "BadgePlate"
+	_badge_plate.polygon = _circle_points(BADGE_PLATE_RADIUS, BADGE_PLATE_SEGMENTS, center)
+	_badge_plate.color = PALETTE.chip_fill
+	_badge_plate.light_mask = 0
+	add_child(_badge_plate)
+
+	_badge_plate_border = Line2D.new()
+	_badge_plate_border.name = "BadgePlateBorder"
+	_badge_plate_border.points = _circle_points(
+		BADGE_PLATE_RADIUS, BADGE_PLATE_SEGMENTS, center, true
+	)
+	_badge_plate_border.width = BADGE_PLATE_BORDER_WIDTH
+	_badge_plate_border.default_color = PALETTE.chip_border
+	_badge_plate_border.light_mask = 0
+	add_child(_badge_plate_border)
+
 	_lock_ring = Line2D.new()
 	_lock_ring.name = "LockRing"
-	var ring_points := PackedVector2Array()
-	for i in range(LOCK_RING_SEGMENTS + 1):
-		var angle := TAU * i / LOCK_RING_SEGMENTS
-		ring_points.append(Vector2(cos(angle), sin(angle)) * LOCK_RING_RADIUS + center)
-	_lock_ring.points = ring_points
+	_lock_ring.points = _circle_points(LOCK_RING_RADIUS, LOCK_RING_SEGMENTS, center, true)
 	_lock_ring.width = LOCK_RING_WIDTH
 	_lock_ring.default_color = Color(PALETTE.bg_deep, 1.0)
 	_lock_ring.light_mask = 0
@@ -122,6 +148,22 @@ func _ready() -> void:
 	_marked_badge.light_mask = 0
 	_marked_badge.visible = false
 	add_child(_marked_badge)
+
+
+## `center` offsets every point into this Control's own top-left-origin local space (the
+## same `+center` every point array here already needed); `closed`=true repeats the first
+## point so a `Line2D` ring actually closes instead of leaving one segment open -
+## `Polygon2D`'s own fill never wants that repeat, it always closes implicitly.
+func _circle_points(
+	radius: float, segments: int, center: Vector2, closed: bool = false
+) -> PackedVector2Array:
+	var points := PackedVector2Array()
+	for i in range(segments):
+		var angle := TAU * i / segments
+		points.append(Vector2(cos(angle), sin(angle)) * radius + center)
+	if closed:
+		points.append(points[0])
+	return points
 
 
 ## Real bug found via a genuine Tier 2 emulator touch pass (`tickets/README.md §5`): Godot's
