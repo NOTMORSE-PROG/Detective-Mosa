@@ -22,9 +22,11 @@ signal interview_started(npc_id: StringName)
 
 const PALETTE: Palette = preload("res://data/palette.tres")
 
-## Logical px radius - matches `Interactable.TAP_RADIUS` (>=96px diameter touch floor),
-## kept as its own constant rather than importing `Interactable`'s since the two
-## components are deliberately not related by inheritance (see class doc).
+## Minimum hit-box edge length, matching `Interactable.TAP_RADIUS`'s own >=96px diameter
+## touch floor (`TAP_RADIUS * 2`) - kept as its own constant rather than importing
+## `Interactable`'s since the two components are deliberately not related by inheritance
+## (see class doc). Only a floor: the real hit box below is sized to the sprite's own
+## rendered bounds, which normally exceeds this easily.
 const TAP_RADIUS: float = 60.0
 
 @export var npc_id: StringName = &""
@@ -41,10 +43,24 @@ func _ready() -> void:
 	add_to_group(&"npc_actors")
 	input_pickable = true
 
-	var shape := CircleShape2D.new()
-	shape.radius = TAP_RADIUS
+	# Real bug found via a genuine Tier 2 emulator touch pass (`tickets/README.md §5`): the
+	# sprite below is anchored FEET-DOWN at this node's local origin (its own `offset`
+	# shifts it up by half its scaled height), but the old hit box was a `TAP_RADIUS`
+	# circle centred on that SAME origin - covering only the character's ankles. A tap
+	# anywhere on the visible torso or face, the natural place a player actually taps,
+	# landed outside the hit box entirely and silently did nothing. The hit box must span
+	# the sprite's own full rendered bounds instead, floored at TAP_RADIUS * 2 per edge for
+	# the touch-floor AC even if `idle_texture` is ever unset.
+	var sprite_size := Vector2(TAP_RADIUS * 2.0, TAP_RADIUS * 2.0)
+	if idle_texture != null:
+		sprite_size = Vector2(idle_texture.get_width(), idle_texture.get_height()) * world_scale
+	var shape := RectangleShape2D.new()
+	shape.size = Vector2(
+		maxf(sprite_size.x, TAP_RADIUS * 2.0), maxf(sprite_size.y, TAP_RADIUS * 2.0)
+	)
 	var collision := CollisionShape2D.new()
 	collision.shape = shape
+	collision.position = Vector2(0, -shape.size.y / 2.0)
 	add_child(collision)
 
 	_sprite = Sprite2D.new()
