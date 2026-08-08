@@ -8,9 +8,26 @@ extends GutTest
 func after_each() -> void:
 	while SceneRouter.has_open_overlay():
 		SceneRouter.close_overlay()
+	SceneRouter.close_mini_game()
+	# queue_free() (both above) is deferred, not immediate - a frame has to pass before the
+	# freed node actually leaves the tree, or GUT's own orphan detector (which runs right
+	# after this) catches it mid-deletion and reports a false leak.
+	await get_tree().process_frame
 	get_tree().paused = false
 	SceneRouter.back_blocked = false
 	SceneRouter.back_handler = Callable()
+
+
+## `PackedScene.pack()` does not take ownership of or free the instance passed to it - the
+## original leak found via this file's own orphan report, fixed for real in
+## `MiniGameSelect.gd::_pack_minigame_scene()`'s own doc comment (the production call site
+## this test's own pattern was modelled after).
+func _make_minigame_scene() -> PackedScene:
+	var instance := MiniGame.new()
+	var scene := PackedScene.new()
+	scene.pack(instance)
+	instance.free()
+	return scene
 
 
 ## Real bug found via a genuine Tier 2 emulator touch pass (`tickets/README.md §5`):
@@ -71,6 +88,48 @@ func test_open_overlay_accepts_a_control_rooted_scene_not_just_canvaslayer() -> 
 	await get_tree().process_frame
 	assert_true(layer is CanvasLayer)
 	assert_eq(layer.get_child_count(), 1)
+
+
+## DM-072 - the missing Explore -> mini-game bridge. `MiniGameHost` deliberately lives
+## directly under `get_tree().root`, not the `_overlay_stack` (`launch_mini_game()`'s own
+## doc comment has the full layering reasoning) - this only proves the tracking/cleanup
+## contract this file now owns for it.
+func test_launch_mini_game_adds_a_real_minigame_host_to_the_tree() -> void:
+	var config := MiniGameConfig.new()
+	var host := SceneRouter.launch_mini_game(_make_minigame_scene(), config)
+
+	assert_true(host is MiniGameHost)
+	assert_true(host.is_inside_tree())
+
+
+func test_launch_mini_game_twice_frees_the_first_host() -> void:
+	var config := MiniGameConfig.new()
+	var first := SceneRouter.launch_mini_game(_make_minigame_scene(), config)
+	SceneRouter.launch_mini_game(_make_minigame_scene(), config)
+	await get_tree().process_frame
+
+	assert_true(
+		not is_instance_valid(first) or first.is_queued_for_deletion(),
+		"a second launch must free the previous host, not stack two"
+	)
+
+
+func test_close_mini_game_frees_the_host() -> void:
+	var config := MiniGameConfig.new()
+	var host := SceneRouter.launch_mini_game(_make_minigame_scene(), config)
+
+	SceneRouter.close_mini_game()
+	await get_tree().process_frame
+
+	assert_true(not is_instance_valid(host) or host.is_queued_for_deletion())
+
+
+func test_close_mini_game_is_a_safe_no_op_when_nothing_is_launched() -> void:
+	SceneRouter.close_mini_game()
+	SceneRouter.close_mini_game()
+	# The real bug class this guards against is a null-deref on a caller that closes
+	# defensively without checking first - reaching this line at all is the proof.
+	assert_true(true, "close_mini_game() must not crash with nothing launched")
 
 
 func test_back_blocked_suppresses_back_entirely() -> void:

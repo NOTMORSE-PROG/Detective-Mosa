@@ -38,6 +38,14 @@ var back_handler: Callable = Callable()
 
 var _overlay_stack: Array[CanvasLayer] = []
 
+## DM-072: tracks the currently-launched `MiniGameHost`, if any - not part of
+## `_overlay_stack` (that stack assumes every entry gets closed by an explicit
+## `close_overlay()`/BACK, while a mini-game is a full gameplay takeover the pause menu
+## opens ON TOP of via the SAME direct-root-add pattern, not a member of the stack itself).
+## Tracked here purely so `go_to()` can free it before a scene swap - see that method's own
+## doc comment.
+var _mini_game_host: Node = null
+
 
 ## Lets a screen that can be reached BOTH as a normal destination (Settings via Title's
 ## own button) AND as a stacked overlay (Settings via the pause menu) tell the two apart,
@@ -89,6 +97,16 @@ func _handle_back() -> void:
 
 
 func go_to(scene_path: String) -> void:
+	# DM-072: `change_scene_to_file()` only ever swaps `current_scene` - it does not know
+	# about `MiniGameHost`, which lives directly under `get_tree().root` by design (this
+	# file's own `launch_mini_game()` doc comment has the full reasoning), the same way an
+	# open overlay does. Every existing "quit while something's stacked on root" path
+	# (`PauseMenu._on_quit_to_title_confirmed()`) already closes its own stack manually
+	# before calling this - a mini-game launched mid-play and abandoned via the SAME
+	# quit-to-title path would otherwise leak a stray full-screen CanvasLayer floating over
+	# whatever loads next forever. Centralised here rather than trusted to every future
+	# caller to remember individually.
+	close_mini_game()
 	var err := get_tree().change_scene_to_file(scene_path)
 	if err == OK:
 		# Layered under whatever SFX the triggering button itself already played
@@ -149,3 +167,29 @@ func close_overlay() -> void:
 		get_tree().paused = false
 		AudioDirector.set_paused(false)
 	overlay_closed.emit(scene_path)
+
+
+## DM-072 - the ONE place that starts a mini-game, matching `MiniGameDevLauncher.gd`'s own
+## already-proven `get_tree().root.add_child(host)` pattern (deliberately NOT routed through
+## `open_overlay()`: `MiniGameHost` hardcodes its own `layer = 999` in `_ready()`, and
+## `open_overlay()`'s `OVERLAY_LAYER = 1000` exists specifically so overlays like
+## `ConfirmDialog` always render ABOVE it - wrapping the host in a second, outer overlay
+## layer would fight that same ordering this session already found and fixed once).
+## Frees any previous instance first, the same re-callable contract `MiniGameHost.launch()`
+## documents for itself.
+func launch_mini_game(minigame_scene: PackedScene, config: MiniGameConfig) -> MiniGameHost:
+	close_mini_game()
+	var host_packed := load("res://src/scenes/MiniGameHost.tscn") as PackedScene
+	var host := host_packed.instantiate() as MiniGameHost
+	get_tree().root.add_child(host)
+	host.launch(minigame_scene, config)
+	_mini_game_host = host
+	return host
+
+
+## Safe to call whether or not a mini-game is actually active (every caller site, including
+## `go_to()`'s own unconditional call on every scene swap, needs that).
+func close_mini_game() -> void:
+	if _mini_game_host != null and is_instance_valid(_mini_game_host):
+		_mini_game_host.queue_free()
+	_mini_game_host = null

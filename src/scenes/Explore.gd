@@ -73,6 +73,34 @@ const FLAG_COURT_ESTABLISHING_SEEN: StringName = &"ch1_court_establishing_seen"
 ## script, not baked into shared autoload code.
 const FLAG_PERFECT_RUN: StringName = &"perfect_run"
 
+## DM-072 - fires `_objective_banner`'s one-time announcement the first moment the CANON
+## #14 gate opens (`Tunables.ch1_clue_unlock_threshold`), same "announce it once, re-derive
+## after that" shape `FLAG_COURT_ESTABLISHING_SEEN` already established. The gate itself
+## still needs no stored flag for its OPEN/CLOSED state (`_on_clue_examined()`'s own
+## existing comment - re-derived live from `GameState.clues_found.size()` every time) - this
+## only remembers whether the player already SAW the announcement, so re-entering the scene
+## after the threshold was already crossed doesn't replay it.
+const FLAG_VERIFY_GATE_ANNOUNCED: StringName = &"ch1_verify_gate_announced"
+
+## `mosa-ui-designer` precedent reused, not reinvented (DM-072): bottom-right, true-edge -
+## the exact anchor `MiniGameHost`'s own Submit button already establishes as this
+## project's "sanctioned primary action" corner, and the mirror image of
+## `TouchControls`' joystick in the opposite corner, so the two never compete for thumb
+## space.
+const VERIFY_BUTTON_MARGIN: float = 16.0
+
+## Real render finding, DM-072 (found by looking at the actual capture, not assumed clear):
+## a bare `Button`'s `.size` is NOT valid to read for right-edge position math until at
+## least one layout pass has run (`MiniGameHost._submit_button`'s own doc comment already
+## names this), and even a `call_deferred()` retry still measured too early here - the
+## first real render showed this label running off the true screen edge, half its own text
+## clipped away. `Settings.gd::_build_back_button()`'s own bottom-left button sidesteps the
+## exact same class of bug the same way: a known FIXED width computed into the position
+## math directly, never `.size` read back from the button itself. Sized generously for
+## "Suriin ang Ebidensya" at the shared 26px ChromeButton font - wider than the label
+## strictly needs, matching Submit's own "reads as a substantial primary CTA" sizing intent.
+const VERIFY_BUTTON_WIDTH: float = 480.0
+
 ## `mosa-ui-designer` consult (DM-021): top-left, true-edge anchored - every clue/NPC this
 ## ticket places sits clear of the top ~150px, `TouchControls`' joystick is the opposite
 ## corner, and `ExploreBackdrop`'s own `LeftEdge` framing polygon already puts a near-black
@@ -148,6 +176,7 @@ var _camera: Camera2D
 var _mosa: Mosa
 var _touch_controls: TouchControls
 var _objective_banner: ObjectiveBanner
+var _verify_button: ChromeButton
 var _spawned: bool = false
 var _establishing_played: bool = false
 
@@ -210,6 +239,16 @@ func _ready() -> void:
 	# simply re-entering this scene after the establishing beat already played) shows the
 	# real number immediately rather than an incorrect zero that only later corrects itself.
 	_objective_banner.set_clue_count(GameState.clues_found.size())
+
+	# DM-072 - same `banner_layer` (layer=999) as the objective banner above, not a second
+	# new CanvasLayer: both are chrome that must sit above this location's own lighting, and
+	# the existing one's own doc comment already explains why 999 is the number that works.
+	_verify_button = ChromeButton.new(tr("ui.explore.verify_button"), true)
+	_verify_button.name = "VerifyButton"
+	_verify_button.custom_minimum_size.x = VERIFY_BUTTON_WIDTH
+	_verify_button.visible = GameState.clues_found.size() >= TUNABLES.ch1_clue_unlock_threshold
+	_verify_button.pressed.connect(_on_verify_pressed)
+	banner_layer.add_child(_verify_button)
 
 	_build_npcs()
 	_build_clues()
@@ -299,6 +338,19 @@ func _on_clue_examined(id: StringName, first_time: bool) -> void:
 	if count >= TUNABLES.ch1_clue_total:
 		GameState.flags[FLAG_PERFECT_RUN] = true
 
+	# DM-072 - the gate itself: re-derived live every call, same as the comment above already
+	# describes. `.visible = true` is safe to repeat on every later clue too (a 4th clue
+	# found after the gate already opened is a no-op here).
+	if count >= TUNABLES.ch1_clue_unlock_threshold:
+		_verify_button.visible = true
+		if not GameState.flags.get(FLAG_VERIFY_GATE_ANNOUNCED, false):
+			GameState.flags[FLAG_VERIFY_GATE_ANNOUNCED] = true
+			_objective_banner.show_objective(tr("ch1.court.objective_gate_open"))
+
+
+func _on_verify_pressed() -> void:
+	SceneRouter.open_overlay("res://src/scenes/MiniGameSelect.tscn")
+
 
 func _clue_key(id: StringName) -> String:
 	# &"ch1_clue_tree" -> "tree" - matches the ch1_court_clue_<key>.dtl filenames directly.
@@ -341,6 +393,14 @@ func _layout_for_viewport() -> void:
 	var margins := SafeAreaInsets.get_edge_margins(vp_size)
 	_objective_banner.position = Vector2(
 		margins["left"] + OBJECTIVE_BANNER_MARGIN, margins["top"] + OBJECTIVE_BANNER_MARGIN
+	)
+
+	# Bottom-right, true-edge (see VERIFY_BUTTON_WIDTH's own doc comment for why this uses
+	# fixed constants, not `_verify_button.size` - a real render caught the label clipped
+	# off the true screen edge when this read `.size` back instead).
+	_verify_button.position = Vector2(
+		vp_size.x - margins["right"] - VERIFY_BUTTON_MARGIN - VERIFY_BUTTON_WIDTH,
+		vp_size.y - margins["bottom"] - VERIFY_BUTTON_MARGIN - ChromeButton.HEIGHT_PRIMARY
 	)
 
 	var min_pos := _backdrop.floor_point_to_screen(WALK_MIN_ART_X)
